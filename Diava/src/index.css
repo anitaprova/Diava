@@ -1,2 +1,18 @@
 @import "tailwindcss";
 
+@theme {
+	
+	--color-sand: #CEC1A8;
+	--color-brown: #B59E7E;
+	--color-darkbrown: #5D4B3D;
+	--color-grey: #AAA396;
+	--color-vanilla: #F1EADA;
+
+	--color-primary: var(--color-brown);
+  --color-secondary: var(--color-darkbrown);
+  --color-background: var(--color-vanilla);
+  --color-text: var(--color-darkbrown);
+
+	--font-cinzel: "Cinzel", serif;
+	--font-merriweather: "Merriweather", serif;
+}
