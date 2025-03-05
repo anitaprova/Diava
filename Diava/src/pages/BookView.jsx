@@ -6,12 +6,13 @@ import Button from "@mui/material/Button";
 import AutoStoriesIcon from "@mui/icons-material/AutoStories";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import Rating from "@mui/material/Rating";
-import ReactHtmlParser from "react-html-parser";
+import { CircularProgress } from "@mui/material";
 
 export default function BookDetail() {
   const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
   const { id } = useParams();
   const [book, setBook] = useState(null);
+  const [seeMore, setSeeMore] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -25,12 +26,12 @@ export default function BookDetail() {
   return (
     <div className="font-merriweather mr-25 ml-25 mt-15 ">
       {book ? (
-        <div className="grid grid-cols-4 gap-x-8">
+        <div className="grid grid-cols-5 gap-x-8">
           <img
             src={book.volumeInfo.imageLinks.thumbnail}
-            className="w-75 drop-shadow-custom"
+            className="w-75 rounded-lg"
           />
-          <Box className="col-span-2">
+          <Box className="col-span-3">
             <Typography variant="title" component="div" fontWeight="bold">
               {book.volumeInfo.title}
             </Typography>
@@ -63,13 +64,32 @@ export default function BookDetail() {
               </p>
             </div>
 
-            <Box className="border p-3 border-grey">
+            <Box className="rounded-lg border p-3 border-grey">
               <Typography variant="h5">Description</Typography>
-              <p
-                dangerouslySetInnerHTML={{
-                  __html: book.volumeInfo.description,
-                }}
-              />
+              {seeMore ? (
+                <div>
+                  <p
+                    dangerouslySetInnerHTML={{
+                      __html: book.volumeInfo.description,
+                    }}
+                  />
+                  <span className="underline" onClick={() => setSeeMore(false)}>
+                    See Less
+                  </span>
+                </div>
+              ) : (
+                <div>
+                  <p
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        book.volumeInfo.description.substr(0, 650) + "...",
+                    }}
+                  />
+                  <span className="underline" onClick={() => setSeeMore(true)}>
+                    See More
+                  </span>
+                </div>
+              )}
             </Box>
           </Box>
 
@@ -79,10 +99,7 @@ export default function BookDetail() {
           </div>
         </div>
       ) : (
-        <p>
-          <CircularProgress color="secondary" />
-          Loading...
-        </p>
+        <p>Loading...</p>
       )}
     </div>
   );
