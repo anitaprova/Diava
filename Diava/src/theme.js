@@ -3,11 +3,12 @@ import { createTheme } from "@mui/material/styles";
 const colors = {
   sand: "#CEC1A8",
   brown: "#B59E7E",
+  coffee: "#CBBFA7",
   darkbrown: "#5D4B3D",
   grey: "#AAA396",
   vanilla: "#F1EADA",
   cream: "#EEE7D7",
-  black: "#00000",
+  black: "#000000",
 };
 
 const theme = createTheme({
@@ -31,12 +32,36 @@ const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
+          fontFamily: "merriweather",
           backgroundColor: colors.brown,
           "&:hover": {
             backgroundColor: colors.darkbrown,
           },
         },
       },
+      variants: [
+        {
+          props: { variant: "coffee" },
+          style: {
+            backgroundColor: colors.coffee,
+            color: colors.darkbrown,
+            "&:hover": {
+              backgroundColor: colors.brown,
+            },
+          },
+        },
+
+        {
+          props: { variant: "dark" },
+          style: {
+            backgroundColor: colors.darkbrown,
+            color: colors.cream,
+            "&:hover": {
+              backgroundColor: colors.coffee,
+            },
+          },
+        },
+      ],
     },
     MuiAppBar: {
       styleOverrides: {
@@ -49,9 +74,27 @@ const theme = createTheme({
     MuiTypography: {
       styleOverrides: {
         root: {
-          fontFamily: "'Cinzel', serif",
+          fontFamily: "Merriweather",
         },
       },
+      variants: [
+        {
+          props: { variant: "title" },
+          style: {
+            fontSize: "35px",
+            fontWeight: 700,
+            color: colors.darkbrown,
+          },
+        },
+        {
+          props: { variant: "subtitle" },
+          style: {
+            fontSize: "20px",
+            fontWeight: 500,
+            color: colors.grey,
+          },
+        },
+      ],
     },
     MuiCard: {
       styleOverrides: {
@@ -59,6 +102,15 @@ const theme = createTheme({
           backgroundColor: colors.brown,
         },
       },
+      variants: [
+        {
+          props: { variant: "outlined" },
+          style: {
+            border: `2px solid ${colors.darkbrown}`,
+            backgroundColor: colors.cream,
+          },
+        },
+      ],
     },
   },
 });

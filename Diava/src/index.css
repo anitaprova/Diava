@@ -1,7 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&display=swap');
 @import "tailwindcss";
 
 @theme {
-	
 	--color-sand: #CEC1A8;
 	--color-brown: #B59E7E;
 	--color-darkbrown: #5D4B3D;
@@ -15,4 +15,6 @@
 
 	--font-cinzel: "Cinzel", serif;
 	--font-merriweather: "Merriweather", serif;
+
+	--drop-shadow-custom: -15px 20px 0px 0px #CBBFA7;
 }
