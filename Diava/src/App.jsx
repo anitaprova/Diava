@@ -14,7 +14,7 @@ function App() {
         <Navbar></Navbar>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/Book" element={<Book />} />
+          <Route path="/book/:id" element={<Book />} />
           <Route path="/search" element={<SearchResults />} />
         </Routes>
       </ThemeProvider>
