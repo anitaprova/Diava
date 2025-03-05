@@ -7,12 +7,17 @@ import AutoStoriesIcon from "@mui/icons-material/AutoStories";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import Rating from "@mui/material/Rating";
 import { CircularProgress } from "@mui/material";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 
 export default function BookDetail() {
   const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
   const { id } = useParams();
   const [book, setBook] = useState(null);
   const [seeMore, setSeeMore] = useState(false);
+  const genresRaw = book?.volumeInfo?.categories || [];
+  const genres = [
+    ...new Set(genresRaw.flatMap((category) => category.split("/"))),
+  ];
 
   useEffect(() => {
     if (id) {
@@ -27,10 +32,21 @@ export default function BookDetail() {
     <div className="font-merriweather mr-25 ml-25 mt-15 ">
       {book ? (
         <div className="grid grid-cols-5 gap-x-8">
-          <img
-            src={book.volumeInfo.imageLinks.thumbnail}
-            className="w-75 rounded-lg"
-          />
+          <div className="flex flex-col gap-y-5">
+            <img
+              src={book.volumeInfo.imageLinks.thumbnail}
+              className="w-75 rounded-lg"
+            />
+            <ul className="flex flex-wrap text-sm gap-3">
+              {genres &&
+                genres.map((genre) => (
+                  <li className="bg-sand p-1 text-center rounded-sm w-fit">
+                   <LocalOfferIcon color="secondary"/> {genre}
+                  </li>
+                ))}
+            </ul>
+          </div>
+
           <Box className="col-span-3">
             <Typography variant="title" component="div" fontWeight="bold">
               {book.volumeInfo.title}
@@ -48,7 +64,7 @@ export default function BookDetail() {
 
               <Typography className="flex gap-x-2">
                 <AccessTimeIcon fontSize="small" /> ~
-                {Math.floor(book.volumeInfo.pageCount / 0.5 / 60)} hrs
+                {Math.floor(book.volumeInfo.pageCount / 0.6 / 60)} hrs
               </Typography>
             </Typography>
 
@@ -99,7 +115,7 @@ export default function BookDetail() {
           </div>
         </div>
       ) : (
-        <p>Loading...</p>
+        <p><CircularProgress /> Loading...</p>
       )}
     </div>
   );
