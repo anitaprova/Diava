@@ -8,6 +8,8 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import Rating from "@mui/material/Rating";
 import { CircularProgress } from "@mui/material";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import Skeleton from "@mui/material/Skeleton";
+import Stack from "@mui/material/Stack";
 
 export default function BookDetail() {
   const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
@@ -115,7 +117,23 @@ export default function BookDetail() {
           </div>
         </div>
       ) : (
-        <p><CircularProgress /> Loading...</p>
+        <Stack spacing={1}>
+        <div className="grid grid-cols-5 gap-x-8">
+          <Skeleton variant="rounded" width={250} height={400} />
+
+          <div className="col-span-3">
+            <Skeleton variant="text" width={500} height={60} />
+            <Skeleton variant="text" width={100} height={40} />
+            <Skeleton variant="text" width={150} height={40} />
+            <Skeleton variant="text" width={550} height={350} />
+          </div>
+
+          <div className="flex flex-col gap-y-5 h-fit">
+            <Skeleton variant="rectangular" width={250} height={40} />
+            <Skeleton variant="rectangular" width={250} height={40} />
+          </div>
+        </div>
+      </Stack>
       )}
     </div>
   );

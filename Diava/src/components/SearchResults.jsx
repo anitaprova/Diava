@@ -54,14 +54,14 @@ export default function SearchResults() {
       </div>
       <div className="mt-5">
         <h2 className="text-darkbrown">
-          {results.length} for "{query}"
+          {results.length} results for "{query}"
         </h2>
         <ul className="flex flex-wrap gap-15">
           {results.length > 0 ? (
             results.map((book) => (
               <li key={book.id}>
                 <Card
-                  className="h-[400px] w-50"
+                  className="h-[400px] w-50 cursor-pointer"
                   onClick={() => navigate(`/book/${book.id}`)}
                   style={{ backgroundColor: "transparent" }}
                 >
@@ -75,11 +75,15 @@ export default function SearchResults() {
                     }}
                   />
                   <CardContent>
-                    <Typography component="div">
+                    <Typography component="div" noWrap>
                       {book.volumeInfo.title}
                     </Typography>
-                    <Typography variant="body">
+                    <Typography variant="body" noWrap>
                       by {book.volumeInfo.authors.map((author) => author)}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      {book.volumeInfo.description?.substring(0, 50)}
+                      {book.volumeInfo.description?.length > 50 ? "..." : ""}
                     </Typography>
                   </CardContent>
                 </Card>
