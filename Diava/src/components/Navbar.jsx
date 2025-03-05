@@ -22,7 +22,7 @@ export default function Navbar() {
   return (
     <AppBar position="static">
       <Toolbar className="flex justify-between">
-        <Typography variant="h3">DIAVA</Typography>
+        <Typography variant="h4">DIAVA</Typography>
 
         <div className="bg-sand flex items-center flex-grow mx-30 rounded-2xl px-3">
           <SearchIcon className="mr-2" />

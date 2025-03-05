@@ -99,7 +99,7 @@ const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          backgroundColor: colors.brown,
+          backgroundColor: colors.cream,
         },
       },
       variants: [
@@ -107,7 +107,7 @@ const theme = createTheme({
           props: { variant: "outlined" },
           style: {
             border: `2px solid ${colors.darkbrown}`,
-            backgroundColor: colors.cream,
+            backgroundColor: colors.white,
           },
         },
       ],
