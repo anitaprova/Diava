@@ -16,7 +16,6 @@ function App() {
   return (
     <>
       <ThemeProvider theme={theme}>
-        <Navbar></Navbar>
         {!isAuthPage && <Navbar />}
         <Routes>
           <Route path="/" element={<Home />} />
