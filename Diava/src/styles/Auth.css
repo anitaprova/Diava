@@ -1,0 +1,229 @@
+/* Import Cinzel font */
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&display=swap");
+
+/* Main container for authentication pages */
+.auth-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+/* Left side styling - contains logo, image, and features */
+.auth-left {
+  flex: 1;
+  background-color: #584738; /* Brown theme color */
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: white;
+  overflow-y: auto;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Brand section styling - logo and image */
+.brand {
+  text-align: center;
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.brand h1 {
+  font-size: 4.5rem;
+  text-align: center;
+  margin-bottom: 2rem;
+  font-family: "Cinzel", serif;
+  font-weight: 100;
+}
+
+.brand img {
+  width: 90%;
+  max-width: 500px;
+  border-radius: 10px;
+  margin: 0 auto;
+  display: block;
+  max-height: 50vh;
+  object-fit: contain;
+}
+
+/* Features section styling */
+.features {
+  display: flex;
+  justify-content: space-around;
+  margin: 0;
+  padding: 0 2rem 3rem;
+  flex-wrap: wrap;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #584738;
+}
+
+.feature {
+  text-align: center;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  flex: 1;
+  min-width: 150px;
+}
+
+.feature i {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  color: white;
+}
+
+.feature span {
+  font-size: 1.3rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Right side styling - contains the form */
+.auth-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #aaa396;
+  padding: 2rem;
+  overflow-y: auto;
+  min-height: 100vh;
+}
+
+/* Form container styling */
+.auth-form-container {
+  background: white;
+  padding: 2rem;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 450px;
+  border: 1px solid #ddd;
+}
+
+/* Form header styling */
+.auth-form-container h2 {
+  text-align: center;
+  color: #584738;
+  margin-bottom: 2rem;
+  font-family: "Playfair Display", serif;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+/* Form layout */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Name fields container for signup */
+.name-fields {
+  display: flex;
+  gap: 1rem;
+}
+
+.name-fields input {
+  flex: 1;
+  width: 50%;
+}
+
+/* Input field styling */
+input {
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+/* Primary button styling */
+.auth-button {
+  background-color: #584738;
+  color: white;
+  padding: 0.8rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+}
+
+.auth-button:hover {
+  background-color: #6d5a43;
+}
+
+/* Google authentication button styling */
+.google-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: white;
+  border: 1px solid #ddd;
+  padding: 0.8rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+}
+
+.google-button:hover {
+  background-color: #f5f5f5;
+}
+
+/* Sign in/up switch link styling */
+.auth-switch {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.auth-switch a {
+  color: #8b7355;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+/* Forgot password link styling */
+.forgot-password {
+  color: #8b7355;
+  text-decoration: none;
+  text-align: right;
+  font-size: 0.9rem;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+}
+
+/* Add media queries for smaller screens */
+@media (max-height: 800px) {
+  .brand img {
+    max-height: 40vh;
+  }
+
+  .feature {
+    padding: 0.5rem;
+  }
+
+  .auth-form-container {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .auth-container {
+    flex-direction: column;
+  }
+
+  .auth-left,
+  .auth-right {
+    min-height: auto;
+  }
+}
