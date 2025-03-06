@@ -1,14 +1,17 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
-import { FaGoogle, FaBook, FaGamepad, FaUsers } from "react-icons/fa";
+import { FaBook, FaGamepad, FaUsers, FaGoogle } from "react-icons/fa";
 import "../styles/Auth.css";
 
-const Login = () => {
+const SignUp = () => {
   // State to manage form input values
   const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
 
   // Handle input changes
@@ -23,12 +26,14 @@ const Login = () => {
   // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
+    // Firebase authentication will be implemented here
     console.log("Form submitted:", formData);
   };
 
-  // Handle Google Sign In
-  const handleGoogleSignIn = () => {
-    console.log("Google sign in clicked");
+  // Handle Google Sign Up
+  const handleGoogleSignUp = () => {
+    // Google authentication will be implemented here
+    console.log("Google sign up clicked");
   };
 
   return (
@@ -57,12 +62,32 @@ const Login = () => {
         </div>
       </div>
 
-      {/* Right side - Login Form */}
+      {/* Right side - Sign Up Form */}
       <div className="auth-right">
         <div className="auth-form-container">
-          <h2>Welcome Back</h2>
+          <h2>Welcome to Diava</h2>
           <form onSubmit={handleSubmit}>
-            {/* Login form fields */}
+            {/* Name fields */}
+            <div className="name-fields">
+              <input
+                type="text"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                placeholder="First Name"
+                required
+              />
+              <input
+                type="text"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                placeholder="Last Name"
+                required
+              />
+            </div>
+
+            {/* Email and password fields */}
             <input
               type="email"
               name="email"
@@ -79,26 +104,31 @@ const Login = () => {
               placeholder="Password"
               required
             />
-            <Link to="/forgot-password" className="forgot-password">
-              Forgot password?
-            </Link>
+            <input
+              type="password"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="Confirm Password"
+              required
+            />
 
             {/* Submit buttons */}
             <button type="submit" className="auth-button">
-              Sign In
+              Sign Up
             </button>
             <button
               type="button"
               className="google-button"
-              onClick={handleGoogleSignIn}
+              onClick={handleGoogleSignUp}
             >
-              <FaGoogle /> Sign in with Google
+              <FaGoogle /> Sign up with Google
             </button>
           </form>
 
-          {/* Link to signup page */}
+          {/* Link to login page */}
           <p className="auth-switch">
-            Don't have an account? <Link to="/signup">Sign Up</Link>
+            Already have an account? <Link to="/login">Sign In</Link>
           </p>
         </div>
       </div>
@@ -106,4 +136,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default SignUp;
