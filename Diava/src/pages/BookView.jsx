@@ -112,7 +112,7 @@ export default function BookDetail() {
           </Box>
 
           <div className="flex flex-col gap-y-5 h-fit">
-            <Button variant="soft">Add to List</Button>
+            <Button variant="soft">Want to Read</Button>
             <Button variant="dark">Add Review</Button>
           </div>
         </div>

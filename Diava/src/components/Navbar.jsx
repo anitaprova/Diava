@@ -39,7 +39,6 @@ export default function Navbar() {
     }
   }, 1000);
 
-
   useEffect(() => {
     searchDelayed(query);
   }, [query]);
@@ -78,7 +77,22 @@ export default function Navbar() {
                   navigate(`/book/${selectedBook.id}`);
                 }
               }}
-              renderInput={(params) => <TextField {...params} />}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  sx={{
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      border: "none",
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      border: "none",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      border: "none",
+                    },
+                  }}
+                />
+              )}
               renderOption={(props, result) => (
                 <Box
                   component="li"
@@ -101,14 +115,6 @@ export default function Navbar() {
               )}
             />
           </Stack>
-
-          {/* <InputBase
-            placeholder="Search..."
-            className="outline-none w-full text-lg text-grey"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={searchBook}
-          /> */}
         </div>
 
         <div className="flex gap-x-6">
