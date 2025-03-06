@@ -1,5 +1,8 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import Book from "./pages/BookView.jsx";
+import SearchResults from "./components/SearchResults.jsx";
+import { ThemeProvider } from "@mui/material/styles";
+import theme from "./theme";
 import Home from "./pages/Home.jsx";
 import Navbar from "./components/Navbar.jsx";
 import Login from "./pages/Login.jsx";
@@ -12,13 +15,17 @@ function App() {
 
   return (
     <>
-      {!isAuthPage && <Navbar />}
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/Book" element={<Book />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<SignUp />} />
-      </Routes>
+      <ThemeProvider theme={theme}>
+        <Navbar></Navbar>
+        {!isAuthPage && <Navbar />}
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/book/:id" element={<Book />} />
+          <Route path="/search" element={<SearchResults />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<SignUp />} />
+        </Routes>
+      </ThemeProvider>
     </>
   );
 }
