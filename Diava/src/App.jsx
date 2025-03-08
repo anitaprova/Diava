@@ -7,6 +7,7 @@ import Home from "./pages/Home.jsx";
 import Navbar from "./components/Navbar.jsx";
 import Login from "./pages/Login.jsx";
 import SignUp from "./pages/SignUp.jsx";
+import Review from "./pages/Review.jsx";
 import "./index.css";
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
           <Route path="/search" element={<SearchResults />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/review/:id" element={<Review />} />
         </Routes>
       </ThemeProvider>
     </>

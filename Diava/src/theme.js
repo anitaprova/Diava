@@ -112,6 +112,24 @@ const theme = createTheme({
         },
       ],
     },
+    MuiTextField: {
+      variants: [
+        {
+          props: { variant: "outlined" },
+          style: {},
+        },
+      ],
+    },
+    MuiRating: {
+      variants: [
+        {
+          props: { variant: "heart" },
+          style: {
+            color: "#ff6d75",
+          },
+        },
+      ],
+    },
   },
 });
 

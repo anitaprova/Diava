@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Typography, Box } from "@mui/material";
 import Button from "@mui/material/Button";
@@ -14,6 +15,7 @@ import Stack from "@mui/material/Stack";
 export default function BookDetail() {
   const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
   const { id } = useParams();
+  const navigate = useNavigate();
   const [book, setBook] = useState(null);
   const [seeMore, setSeeMore] = useState(false);
   const genresRaw = book?.volumeInfo?.categories || [];
@@ -32,7 +34,7 @@ export default function BookDetail() {
 
   return (
     <div className="font-merriweather mr-25 ml-25 mt-15 ">
-      {book ? (
+      {book && book.volumeInfo.imageLinks ? (
         <div className="grid grid-cols-5 gap-x-8">
           <div className="flex flex-col gap-y-5">
             <img
@@ -43,7 +45,7 @@ export default function BookDetail() {
               {genres &&
                 genres.map((genre) => (
                   <li className="bg-sand p-1 text-center rounded-sm w-fit">
-                   <LocalOfferIcon color="secondary"/> {genre}
+                    <LocalOfferIcon color="secondary" /> {genre}
                   </li>
                 ))}
             </ul>
@@ -113,27 +115,32 @@ export default function BookDetail() {
 
           <div className="flex flex-col gap-y-5 h-fit">
             <Button variant="soft">Want to Read</Button>
-            <Button variant="dark">Add Review</Button>
+            <Button
+              variant="dark"
+              onClick={() => navigate(`/review/${book.id}`)}
+            >
+              Add Review
+            </Button>
           </div>
         </div>
       ) : (
         <Stack spacing={1}>
-        <div className="grid grid-cols-5 gap-x-8">
-          <Skeleton variant="rounded" width={250} height={400} />
+          <div className="grid grid-cols-5 gap-x-8">
+            <Skeleton variant="rounded" width={250} height={400} />
 
-          <div className="col-span-3">
-            <Skeleton variant="text" width={500} height={60} />
-            <Skeleton variant="text" width={100} height={40} />
-            <Skeleton variant="text" width={150} height={40} />
-            <Skeleton variant="text" width={550} height={350} />
-          </div>
+            <div className="col-span-3">
+              <Skeleton variant="text" width={500} height={60} />
+              <Skeleton variant="text" width={100} height={40} />
+              <Skeleton variant="text" width={150} height={40} />
+              <Skeleton variant="text" width={550} height={350} />
+            </div>
 
-          <div className="flex flex-col gap-y-5 h-fit">
-            <Skeleton variant="rectangular" width={250} height={40} />
-            <Skeleton variant="rectangular" width={250} height={40} />
+            <div className="flex flex-col gap-y-5 h-fit">
+              <Skeleton variant="rectangular" width={250} height={40} />
+              <Skeleton variant="rectangular" width={250} height={40} />
+            </div>
           </div>
-        </div>
-      </Stack>
+        </Stack>
       )}
     </div>
   );
