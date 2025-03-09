@@ -18,11 +18,12 @@ function App() {
       <ThemeProvider theme={theme}>
         {!isAuthPage && <Navbar />}
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/book/:id" element={<Book />} />
-          <Route path="/search" element={<SearchResults />} />
+          <Route path="/" element={<Login />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/book/:id" element={<Book />} />
+          <Route path="/search" element={<SearchResults />} />
         </Routes>
       </ThemeProvider>
     </>
