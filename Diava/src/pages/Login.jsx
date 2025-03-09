@@ -3,7 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
 import { FaGoogle, FaBook, FaGamepad, FaUsers } from "react-icons/fa";
 import "../styles/Auth.css";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 
 const Login = () => {
@@ -41,8 +41,15 @@ const Login = () => {
   };
 
   // Handle Google Sign In
-  const handleGoogleSignIn = (e) => {
-    e.preventDefault()
+  function handleGoogleSignIn() {
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider).then(async(result) => {
+      console.log(result);
+
+      if (result.user) {
+        window.location.href = "/home";
+      }
+    });
 
     console.log("Google sign in clicked");
   };
