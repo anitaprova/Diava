@@ -1,10 +1,13 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
 import { FaGoogle, FaBook, FaGamepad, FaUsers } from "react-icons/fa";
 import "../styles/Auth.css";
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { auth } from "../firebase/firebase";
 
 const Login = () => {
+
   // State to manage form input values
   const [formData, setFormData] = useState({
     email: "",
@@ -21,13 +24,41 @@ const Login = () => {
   };
 
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    try {
+      const userCredentials = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      const user = userCredentials.user;
+      
+      if (!user.emailVerified) {
+        console.log("Email is not verified. Check the provided email's inbox to verify.");
+        alert("Please verify your email before trying to log in");
+
+        return;
+      }
+
+      window.location.href = "/home";
+      console.log("User logged in sucessfully.")
+    }
+    catch (error) {
+      console.log(error);
+    }
+
     console.log("Form submitted:", formData);
   };
 
   // Handle Google Sign In
-  const handleGoogleSignIn = () => {
+  function handleGoogleSignIn() {
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider).then(async(result) => {
+      console.log(result);
+
+      if (result.user) {
+        window.location.href = "/home";
+      }
+    });
+
     console.log("Google sign in clicked");
   };
 
