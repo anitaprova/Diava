@@ -1,10 +1,13 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
 import { FaGoogle, FaBook, FaGamepad, FaUsers } from "react-icons/fa";
 import "../styles/Auth.css";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase/firebase";
 
 const Login = () => {
+
   // State to manage form input values
   const [formData, setFormData] = useState({
     email: "",
@@ -21,13 +24,26 @@ const Login = () => {
   };
 
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    try {
+      await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      window.location.href = "/home";
+
+      console.log("User logged in sucessfully.")
+    }
+    catch (error) {
+      console.log(error);
+    }
+
     console.log("Form submitted:", formData);
   };
 
   // Handle Google Sign In
-  const handleGoogleSignIn = () => {
+  const handleGoogleSignIn = (e) => {
+    e.preventDefault()
+
     console.log("Google sign in clicked");
   };
 
