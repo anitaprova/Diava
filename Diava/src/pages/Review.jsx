@@ -1,6 +1,7 @@
 import React from "react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Typography, Box } from "@mui/material";
 import Button from "@mui/material/Button";
@@ -17,6 +18,7 @@ export default function Review() {
   const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
   const [book, setBook] = useState(null);
   const { id } = useParams();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (id) {
@@ -32,28 +34,24 @@ export default function Review() {
         <Box
           component={"div"}
           variant="outlined"
-          className="border solid p-8 space-y-12 w-full rounded-sm"
+          className="bg-vanilla border border-brown solid p-8 space-y-12 w-full rounded-sm"
         >
           <div className="flex gap-x-4">
             <img src={book.volumeInfo.imageLinks.thumbnail} />
-            <div>
-              <h2 className="text-xl">{book.volumeInfo.title}</h2>
-              <p className="text-grey">
-                by {book.volumeInfo.authors.join(",")}
-              </p>
+            <div className="flex flex-col justify-between">
+              <div>
+                <h2 className="text-xl">{book.volumeInfo.title}</h2>
+                <p className="text-grey">
+                  by {book.volumeInfo.authors.join(",")}
+                </p>
+              </div>
+              <div className="flex flex-col mt-2 mb-4 gap-x-4">
+                <span>
+                  <StarsIcon /> Rating
+                </span>
+                <Rating defaultValue={0.0} precision={0.5} size="large" />
+              </div>
             </div>
-          </div>
-
-          <div className="flex flex-col mt-2 mb-4 gap-x-4">
-            <span>
-              <StarsIcon /> Rating
-            </span>
-            <Rating
-              value={book.volumeInfo.averageRating}
-              defaultValue={0.0}
-              precision={0.5}
-              size="large"
-            />
           </div>
 
           <div className="space-y-4">
@@ -62,12 +60,7 @@ export default function Review() {
                 <p>
                   <CalendarMonthIcon /> Start Date
                 </p>
-                <TextField
-                  fullWidth
-                  size="small"
-                  variant="outlined"
-                  type="date"
-                />
+                <TextField fullWidth size="small" type="date" />
               </span>
 
               <span className="w-full">
@@ -112,7 +105,9 @@ export default function Review() {
           </div>
 
           <div className="flex justify-center">
-            <Button variant="dark">Save Review</Button>
+            <Button variant="dark" onClick={() => navigate(`/book/${book.id}`)}>
+              Save Review
+            </Button>
           </div>
         </Box>
       ) : (

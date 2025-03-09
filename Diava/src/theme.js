@@ -12,6 +12,9 @@ const colors = {
 };
 
 const theme = createTheme({
+  typography: {
+    fontFamily: "Merriweather, serif",
+  },
   palette: {
     primary: {
       main: colors.brown,
@@ -20,7 +23,7 @@ const theme = createTheme({
       main: colors.darkbrown,
     },
     background: {
-      default: colors.vanilla,
+      default: colors.cream,
       paper: colors.vanilla,
     },
     text: {
@@ -115,8 +118,10 @@ const theme = createTheme({
     MuiTextField: {
       variants: [
         {
-          props: { variant: "outlined" },
-          style: {},
+          props: { variant: "input" },
+          style: {
+            backgroundColor: colors.brown,
+          },
         },
       ],
     },
