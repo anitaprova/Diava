@@ -28,9 +28,17 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      await signInWithEmailAndPassword(auth, formData.email, formData.password);
-      window.location.href = "/home";
+      const userCredentials = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      const user = userCredentials.user;
+      
+      if (!user.emailVerified) {
+        console.log("Email is not verified. Check the provided email's inbox to verify.");
+        alert("Please verify your email before trying to log in");
 
+        return;
+      }
+
+      window.location.href = "/home";
       console.log("User logged in sucessfully.")
     }
     catch (error) {

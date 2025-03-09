@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
 import { FaBook, FaGamepad, FaUsers, FaGoogle } from "react-icons/fa";
 import "../styles/Auth.css";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { auth } from '../firebase/firebase'
 
 const SignUp = () => {
@@ -31,12 +31,16 @@ const SignUp = () => {
     e.preventDefault();
 
     try {
-      await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-      const user = auth.currentUser;
-      window.location.href = "/home";
+      await createUserWithEmailAndPassword(auth, formData.email, formData.password)
+        .then( async (userCredentials) => {
+          const user = userCredentials.user;
 
-      console.log(user);
-      console.log("User signed up successfully.");
+          await sendEmailVerification(user);
+          window.location.href = "/login";
+          
+          console.log(user);
+          console.log("User signed up successfully.");
+        });
     }
     catch (error) {
       console.log(error.message);
