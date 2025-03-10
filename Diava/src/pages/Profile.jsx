@@ -15,15 +15,19 @@ import NotebookCard from "../components/Notebook";
 export default function Profile() {
   return (
     <Box className="flex flex-col">
-      <Box className="bg-vanilla pb-5">
+      <Box className="bg-vanilla pb-5 text-darkbrown">
         <Box className="flex items-center justify-between mr-25">
           <Box className="flex items-center">
             <AccountCircleIcon
-              sx={{ width: 64, height: 64, margin: 5 }}
+              sx={{
+                width: 100,
+                height: 100,
+                margin: 5,
+              }}
               fontSize="large"
             />
             <Box>
-              <Typography variant="h5">
+              <Typography variant="h4">
                 Hello, <span className="font-bold">Username!</span>
               </Typography>
               <Typography variant="h7">Level 10</Typography>
@@ -34,19 +38,19 @@ export default function Profile() {
         </Box>
 
         <Box className="flex gap-x-5 justify-around text-xl text-center">
-          <Typography variant="h5">
+          <Typography variant="h4">
             123
             <Typography variant="body2">Books Read</Typography>
           </Typography>
-          <Typography variant="h5">
+          <Typography variant="h4">
             12,345
             <Typography variant="body2">Pages Read</Typography>
           </Typography>
-          <Typography variant="h5">
+          <Typography variant="h4">
             80
             <Typography variant="body2">Reviews</Typography>
           </Typography>
-          <Typography variant="h5">
+          <Typography variant="h4">
             15
             <Typography variant="body2">Badges</Typography>
           </Typography>
@@ -159,8 +163,8 @@ export default function Profile() {
             }
             hole={12}
             rows={[
-              <div className="flex justify-between item-center">
-                <span>🎯 Write 5 more reviews</span>
+              <div className="flex justify-between">
+                🎯 Write 5 more reviews
               </div>,
               <div className="flex justify-between">
                 <span>🎯 Complete Current Book</span>

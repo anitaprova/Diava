@@ -4,7 +4,7 @@ import { Paper, Typography, Box } from "@mui/material";
 export default function NotebookCard({ title, rows, hole }) {
   return (
     <Paper
-      className="w-full mx-auto rounded-md overflow-hidden shadow-lg"
+      className="w-full mx-auto rounded-md text-darkbrown overflow-hidden shadow-lg"
       sx={{
         backgroundColor: "#c1a882",
         color: "#433422",
