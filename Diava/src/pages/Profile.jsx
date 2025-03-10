@@ -59,18 +59,23 @@ export default function Profile() {
             title="Reading Progress"
             hole={10}
             rows={[
-              <div className="flex justify-between items-center">
-                <span>2025 Reading Challenge</span> <span>24/50</span>
+              <div className="flex justify-between w-full">
+                <span className="fgrow">2025 Reading Challenge</span>{" "}
+                <span>24/50</span>
               </div>,
-              <div className="flex justify-between items-center">
-                <span>Current Pace</span> <span>2 Books Ahead of Schedule</span>
+              <div className="flex justify-between w-full">
+                <span>
+                  <TrendingUpIcon /> <span>Current Pace</span>
+                </span>
+                <span>2 Books Ahead of Schedule</span>
               </div>,
-              <div className="flex justify-between items-center">
-                <span>Next Milestone</span>{" "}
+              <div className="flex justify-between w-full">
+                <span>
+                  <TrackChangesIcon /> <span>Next Milestone</span>
+                </span>
                 <span>25 Books - Silver Reader</span>
               </div>,
             ]}
-            icons={[null, <TrendingUpIcon />, <TrackChangesIcon />]}
           />
         </div>
 
@@ -78,7 +83,7 @@ export default function Profile() {
           title="Your Badges"
           hole={6}
           rows={[
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between gap-8 w-fit">
               <div className="bg-vanilla rounded-lg p-1 flex flex-col items-center">
                 <Medal />
                 Copper
@@ -96,7 +101,7 @@ export default function Profile() {
             title="Recent Achievements"
             hole={10}
             rows={[
-              <div className="flex justify-between items-center">
+              <div className="flex justify-around w-full">
                 <span className="flex flex-col items-center gap-2">
                   <span>
                     <Trophy /> <strong>Review Master</strong>
@@ -110,10 +115,10 @@ export default function Profile() {
                   <span>Read 5 Different Genres</span>
                 </span>
               </div>,
-              <div className="flex justify-between items-center">
+              <div className="flex justify-around w-full">
                 <span className="flex flex-col items-center gap-2">
                   <span>
-                    🏆 <strong>Speed Reader</strong>
+                    🏃 <strong>Speed Reader</strong>
                   </span>
                   <span>Finish a book in a day</span>
                 </span>
@@ -132,13 +137,13 @@ export default function Profile() {
           title="Reading Stats"
           hole={6}
           rows={[
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between w-full">
               <span>Average Reading Time</span> <span>2 Days</span>
             </div>,
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between w-full">
               <span>Favorite Genre</span> <span>Fiction</span>
             </div>,
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between w-full">
               <span>Longest Streak</span> <span>42 Days</span>
             </div>,
           ]}
@@ -154,14 +159,14 @@ export default function Profile() {
             }
             hole={12}
             rows={[
-              <div className="flex justify-between items-center">
-                <span>✔ Write 5 more reviews</span>
+              <div className="flex justify-between item-center">
+                <span>🎯 Write 5 more reviews</span>
               </div>,
-              <div className="flex justify-between items-center">
-                <span>✔ Complete Current Book</span>
+              <div className="flex justify-between">
+                <span>🎯 Complete Current Book</span>
               </div>,
-              <div className="flex justify-between items-center">
-                <span>✔ Read 3 more classics</span>
+              <div className="flex justify-between">
+                <span>🎯 Read 3 more classics</span>
               </div>,
             ]}
           />

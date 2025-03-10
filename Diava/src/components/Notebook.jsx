@@ -28,9 +28,7 @@ export default function NotebookCard({ title, rows, hole }) {
           key={index}
           className="px-4 py-2 border-t border-gray-600 flex justify-between items-center"
         >
-          <Typography variant="body2" className="font-medium">
-            {row}
-          </Typography>
+          {row}
         </Box>
       ))}
     </Paper>
