@@ -41,7 +41,7 @@ export default function Profile() {
     <Box className="flex flex-col">
       <Box className="bg-vanilla pb-5 text-darkbrown">
         <Box className="flex items-center justify-between mr-25">
-          <Box className="flex items-center">
+          <Box className="flex items-center ml-10">
             <AccountCircleIcon
               sx={{
                 width: 100,
@@ -112,13 +112,13 @@ export default function Profile() {
           hole={6}
           rows={[
             <div className="flex justify-between gap-8 w-fit">
-              <div className="bg-vanilla rounded-lg p-1 flex flex-col items-center">
+              <div className="bg-vanilla w-15 rounded-lg p-1 flex flex-col items-center">
                 <Medal />
                 Copper
               </div>
-              <div className="bg-vanilla rounded-lg p-1 flex flex-col items-center">
+              <div className="bg-vanilla w-15 rounded-lg p-1 flex flex-col items-center">
                 <Medal />
-                Copper
+                Gold
               </div>
             </div>,
           ]}
@@ -188,7 +188,7 @@ export default function Profile() {
                 <Add className="bg-vanilla rounded-sm mr-4" />
               </div>
             }
-            hole={12}
+            hole={16}
             rows={goals.map((goal, index) =>
               editIndex === index ? (
                 <input
@@ -197,7 +197,7 @@ export default function Profile() {
                   onKeyDown={handleEnter}
                   defaultChecked="Enter Goal"
                   onChange={(event) => setText(event.target.value)}
-                  className="w-full"
+                  className="w-full ml-10"
                 />
               ) : (
                 <div
