@@ -26,7 +26,7 @@ export default function NotebookCard({ title, rows, hole }) {
       {rows.map((row, index) => (
         <Box
           key={index}
-          className="px-4 py-2 border-t border-gray-600 flex justify-between items-center"
+          className="px-4 py-2 border-t border-grey-600 flex justify-between items-center"
         >
           {row}
         </Box>

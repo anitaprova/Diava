@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { Box, Button, Typography, Chip, Paper } from "@mui/material";
 import {
@@ -13,6 +13,30 @@ import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import NotebookCard from "../components/Notebook";
 
 export default function Profile() {
+  const [goals, setGoals] = useState([
+    "Write 5 Reviews",
+    "Complete Current Book",
+    "Read 3 more classics",
+  ]);
+
+  const [editIndex, setEditIndex] = useState(null);
+  const [text, setText] = useState("");
+
+  const handleClick = () => {
+    setGoals([...goals, "Double click and enter a goal!"]);
+    console.log();
+  };
+
+  const handleEnter = (event) => {
+    if (event.key === "Enter") {
+      const updatedGoals = [...goals];
+      updatedGoals[editIndex] = text;
+      setGoals(updatedGoals);
+      setEditIndex(null);
+      setText("");
+    }
+  };
+
   return (
     <Box className="flex flex-col">
       <Box className="bg-vanilla pb-5 text-darkbrown">
@@ -156,23 +180,36 @@ export default function Profile() {
         <div className="col-span-3">
           <NotebookCard
             title={
-              <div className="flex justify-between items-center w-full">
+              <div
+                className="flex justify-between items-center w-full"
+                onClick={handleClick}
+              >
                 <span className="flex-grow text-center">Goals</span>
-                <Add className="bg-vanilla rounded-sm mr-4" />{" "}
+                <Add className="bg-vanilla rounded-sm mr-4" />
               </div>
             }
             hole={12}
-            rows={[
-              <div className="flex justify-between">
-                🎯 Write 5 more reviews
-              </div>,
-              <div className="flex justify-between">
-                <span>🎯 Complete Current Book</span>
-              </div>,
-              <div className="flex justify-between">
-                <span>🎯 Read 3 more classics</span>
-              </div>,
-            ]}
+            rows={goals.map((goal, index) =>
+              editIndex === index ? (
+                <input
+                  type="text"
+                  value={text}
+                  onKeyDown={handleEnter}
+                  defaultChecked="Enter Goal"
+                  onChange={(event) => setText(event.target.value)}
+                  className="w-full"
+                />
+              ) : (
+                <div
+                  className="w-full ml-10"
+                  onDoubleClick={() => {
+                    setEditIndex(index), setText(goal);
+                  }}
+                >
+                  🎯{goal}
+                </div>
+              )
+            )}
           />
         </div>
       </div>
