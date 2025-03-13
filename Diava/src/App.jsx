@@ -7,11 +7,12 @@ import Home from "./pages/Home.jsx";
 import Navbar from "./components/Navbar.jsx";
 import Login from "./pages/Login.jsx";
 import SignUp from "./pages/SignUp.jsx";
+import ChatPage from "./pages/ChatPage.jsx";
 import "./index.css";
 
 function App() {
   const location = useLocation();
-  const isAuthPage = ["/","/login", "/signup"].includes(location.pathname);
+  const isAuthPage = ["/", "/login", "/signup"].includes(location.pathname);
 
   return (
     <>
@@ -24,6 +25,7 @@ function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/book/:id" element={<Book />} />
           <Route path="/search" element={<SearchResults />} />
+          <Route path="/chat" element={<ChatPage />} />
         </Routes>
       </ThemeProvider>
     </>
