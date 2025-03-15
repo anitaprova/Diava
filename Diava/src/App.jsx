@@ -8,6 +8,7 @@ import Navbar from "./components/Navbar.jsx";
 import Login from "./pages/Login.jsx";
 import SignUp from "./pages/SignUp.jsx";
 import Review from "./pages/Review.jsx";
+import Profile from "./pages/Profile.jsx";
 import "./index.css";
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/review/:id" element={<Review />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/home" element={<Home />} />
           <Route path="/book/:id" element={<Book />} />
           <Route path="/search" element={<SearchResults />} />
