@@ -1,8 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Typography, Box } from "@mui/material";
 import Button from "@mui/material/Button";
+import ButtonGroup from "@mui/material/ButtonGroup";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import ClickAwayListener from "@mui/material/ClickAwayListener";
+import Grow from "@mui/material/Grow";
+import Paper from "@mui/material/Paper";
+import Popper from "@mui/material/Popper";
+import MenuItem from "@mui/material/MenuItem";
+import MenuList from "@mui/material/MenuList";
 import AutoStoriesIcon from "@mui/icons-material/AutoStories";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import Rating from "@mui/material/Rating";
@@ -14,12 +23,43 @@ import Stack from "@mui/material/Stack";
 export default function BookDetail() {
   const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
   const { id } = useParams();
+  const navigate = useNavigate();
   const [book, setBook] = useState(null);
   const [seeMore, setSeeMore] = useState(false);
   const genresRaw = book?.volumeInfo?.categories || [];
   const genres = [
     ...new Set(genresRaw.flatMap((category) => category.split("/"))),
   ];
+  const options = [
+    "Want to Read",
+    "Currently Reading",
+    "Read",
+  ];
+
+  const [open, setOpen] = React.useState(false);
+  const anchorRef = React.useRef(null);
+  const [selectedIndex, setSelectedIndex] = React.useState(1);
+
+  const handleClick = () => {
+    console.info(`You clicked ${options[selectedIndex]}`);
+  };
+
+  const handleMenuItemClick = (event, index) => {
+    setSelectedIndex(index);
+    setOpen(false);
+  };
+
+  const handleToggle = () => {
+    setOpen((prevOpen) => !prevOpen);
+  };
+
+  const handleClose = (event) => {
+    if (anchorRef.current && anchorRef.current.contains(event.target)) {
+      return;
+    }
+    setOpen(false);
+
+  };
 
   useEffect(() => {
     if (id) {
@@ -32,7 +72,7 @@ export default function BookDetail() {
 
   return (
     <div className="font-merriweather mr-25 ml-25 mt-15 ">
-      {book ? (
+      {book && book.volumeInfo.imageLinks ? (
         <div className="grid grid-cols-5 gap-x-8">
           <div className="flex flex-col gap-y-5">
             <img
@@ -43,7 +83,7 @@ export default function BookDetail() {
               {genres &&
                 genres.map((genre) => (
                   <li className="bg-sand p-1 text-center rounded-sm w-fit">
-                   <LocalOfferIcon color="secondary"/> {genre}
+                    <LocalOfferIcon color="secondary" /> {genre}
                   </li>
                 ))}
             </ul>
@@ -111,29 +151,90 @@ export default function BookDetail() {
             </Box>
           </Box>
 
-          <div className="flex flex-col gap-y-5 h-fit">
-            <Button variant="soft">Want to Read</Button>
-            <Button variant="dark">Add Review</Button>
+          <div className="flex flex-col gap-y-5 h-fit w-fit">
+            <ButtonGroup>
+              <Button
+                variant="soft"
+                ref={anchorRef}
+                onClick={handleClick}
+              >
+                {options[selectedIndex]}
+              </Button>
+              <Button
+                size="small"
+                aria-controls={open ? "split-button-menu" : undefined}
+                aria-expanded={open ? "true" : undefined}
+                aria-haspopup="menu"
+                variant="soft"
+                onClick={handleToggle}
+              >
+                <ArrowDropDownIcon />
+              </Button>
+            </ButtonGroup>
+
+            <Popper
+              sx={{ zIndex: 1 }}
+              open={open}
+              anchorEl={anchorRef.current}
+              role={undefined}
+              transition
+              disablePortal
+            >
+              {({ TransitionProps, placement }) => (
+                <Grow
+                  {...TransitionProps}
+                  style={{
+                    transformOrigin:
+                      placement === "bottom" ? "center top" : "center bottom",
+                  }}
+                >
+                  <Paper>
+                    <ClickAwayListener onClickAway={handleClose}>
+                      <MenuList id="split-button-menu" autoFocusItem>
+                        {options.map((option, index) => (
+                          <MenuItem
+                            key={option}
+                            selected={index === selectedIndex}
+                            onClick={(event) =>
+                              handleMenuItemClick(event, index)
+                            }
+                          >
+                            {option}
+                          </MenuItem>
+                        ))}
+                      </MenuList>
+                    </ClickAwayListener>
+                  </Paper>
+                </Grow>
+              )}
+            </Popper>
+
+            <Button
+              variant="dark"
+              onClick={() => navigate(`/review/${book.id}`)}
+            >
+              Add Review
+            </Button>
           </div>
         </div>
       ) : (
         <Stack spacing={1}>
-        <div className="grid grid-cols-5 gap-x-8">
-          <Skeleton variant="rounded" width={250} height={400} />
+          <div className="grid grid-cols-5 gap-x-8">
+            <Skeleton variant="rounded" width={250} height={400} />
 
-          <div className="col-span-3">
-            <Skeleton variant="text" width={500} height={60} />
-            <Skeleton variant="text" width={100} height={40} />
-            <Skeleton variant="text" width={150} height={40} />
-            <Skeleton variant="text" width={550} height={350} />
-          </div>
+            <div className="col-span-3">
+              <Skeleton variant="text" width={500} height={60} />
+              <Skeleton variant="text" width={100} height={40} />
+              <Skeleton variant="text" width={150} height={40} />
+              <Skeleton variant="text" width={550} height={350} />
+            </div>
 
-          <div className="flex flex-col gap-y-5 h-fit">
-            <Skeleton variant="rectangular" width={250} height={40} />
-            <Skeleton variant="rectangular" width={250} height={40} />
+            <div className="flex flex-col gap-y-5 h-fit">
+              <Skeleton variant="rectangular" width={250} height={40} />
+              <Skeleton variant="rectangular" width={250} height={40} />
+            </div>
           </div>
-        </div>
-      </Stack>
+        </Stack>
       )}
     </div>
   );

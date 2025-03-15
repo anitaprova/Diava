@@ -12,6 +12,9 @@ const colors = {
 };
 
 const theme = createTheme({
+  typography: {
+    fontFamily: "Merriweather, serif",
+  },
   palette: {
     primary: {
       main: colors.brown,
@@ -20,7 +23,7 @@ const theme = createTheme({
       main: colors.darkbrown,
     },
     background: {
-      default: colors.vanilla,
+      default: colors.cream,
       paper: colors.vanilla,
     },
     text: {
@@ -108,6 +111,26 @@ const theme = createTheme({
           style: {
             border: `2px solid ${colors.darkbrown}`,
             backgroundColor: colors.white,
+          },
+        },
+      ],
+    },
+    MuiTextField: {
+      variants: [
+        {
+          props: { variant: "input" },
+          style: {
+            backgroundColor: colors.brown,
+          },
+        },
+      ],
+    },
+    MuiRating: {
+      variants: [
+        {
+          props: { variant: "heart" },
+          style: {
+            color: "#ff6d75",
           },
         },
       ],
