@@ -3,8 +3,11 @@ import { Link } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
 import { FaBook, FaGamepad, FaUsers, FaGoogle } from "react-icons/fa";
 import "../styles/Auth.css";
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { auth } from '../firebase/firebase'
 
 const SignUp = () => {
+
   // State to manage form input values
   const [formData, setFormData] = useState({
     firstName: "",
@@ -24,9 +27,25 @@ const SignUp = () => {
   };
 
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Firebase authentication will be implemented here
+
+    try {
+      await createUserWithEmailAndPassword(auth, formData.email, formData.password)
+        .then( async (userCredentials) => {
+          const user = userCredentials.user;
+
+          await sendEmailVerification(user);
+          window.location.href = "/login";
+          
+          console.log(user);
+          console.log("User signed up successfully.");
+        });
+    }
+    catch (error) {
+      console.log(error.message);
+    }
+
     console.log("Form submitted:", formData);
   };
 
