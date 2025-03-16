@@ -48,9 +48,9 @@ const mockConversations = {
   1: [
     {
       id: "1-1",
-      sender: "Jayson",
-      initial: "J",
-      content: "Lorem ipsum dolor sit amet...",
+      sender: "Daryl",
+      initial: "D",
+      content: "Hey how are you?",
       timestamp: "10:30 AM",
     },
     {
@@ -64,8 +64,8 @@ const mockConversations = {
     },
     {
       id: "1-3",
-      sender: "Jayson",
-      initial: "J",
+      sender: "Daryl",
+      initial: "D",
       content: "Oh, how are you liking it so far?",
       timestamp: "10:33 AM",
     },
@@ -81,8 +81,8 @@ const mockConversations = {
   2: [
     {
       id: "2-1",
-      sender: "Sarah",
-      initial: "S",
+      sender: "Arielle",
+      initial: "A",
       content: "Have you read that new book??",
       timestamp: "Yesterday",
     },
@@ -96,8 +96,8 @@ const mockConversations = {
     },
     {
       id: "2-3",
-      sender: "Sarah",
-      initial: "S",
+      sender: "Arielle",
+      initial: "A",
       content: "It's fantastic! I think you'd really enjoy it.",
       timestamp: "Yesterday",
     },
@@ -105,15 +105,15 @@ const mockConversations = {
   3: [
     {
       id: "3-1",
-      sender: "Book Club Alpha",
-      initial: "B",
+      sender: "Anita",
+      initial: "A",
       content: "Meeting tomorrow at 5pm!",
       timestamp: "3 hrs ago",
     },
     {
       id: "3-2",
-      sender: "Michael",
-      initial: "M",
+      sender: "Anita",
+      initial: "A",
       content: "I'll be there. Should we finish chapter 12?",
       timestamp: "2 hrs ago",
     },
@@ -129,8 +129,8 @@ const mockConversations = {
   4: [
     {
       id: "4-1",
-      sender: "Michael",
-      initial: "M",
+      sender: "Nathan",
+      initial: "N",
       content: "I finished the chapter you recommended",
       timestamp: "1 day ago",
     },
@@ -144,8 +144,8 @@ const mockConversations = {
     },
     {
       id: "4-3",
-      sender: "Michael",
-      initial: "M",
+      sender: "Nathan",
+      initial: "N",
       content: "It was mind-blowing! That plot twist at the end...",
       timestamp: "1 day ago",
     },
@@ -153,15 +153,15 @@ const mockConversations = {
   5: [
     {
       id: "5-1",
-      sender: "Fantasy Readers",
-      initial: "F",
+      sender: "Jayson",
+      initial: "J",
       content: "What did everyone think of the ending?",
       timestamp: "2 days ago",
     },
     {
       id: "5-2",
-      sender: "Alex",
-      initial: "A",
+      sender: "Jayson",
+      initial: "J",
       content: "I didn't see it coming at all!",
       timestamp: "2 days ago",
     },
