@@ -36,7 +36,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           fontFamily: "merriweather",
-          textTransform: 'none',
+          textTransform: "none",
           backgroundColor: colors.brown,
           "&:hover": {
             backgroundColor: colors.darkbrown,
@@ -135,6 +135,16 @@ const theme = createTheme({
           },
         },
       ],
+    },
+    MuiLinearProgress: {
+      styleOverrides: {
+        root: {
+          borderRadius: 10,
+        },
+        bar: {
+          borderRadius: 10,
+        },
+      },
     },
   },
 });
