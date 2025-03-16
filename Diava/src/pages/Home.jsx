@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Typography, Box, Button } from "@mui/material";
 import LinearProgress from "@mui/material/LinearProgress";
+import ArrowCircleRightIcon from "@mui/icons-material/ArrowCircleRight";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -62,13 +63,13 @@ export default function Home() {
   const [recommendation, setRecommendation] = useState([""]);
   console.log(toRead);
   return (
-    <div className="ml-50 mr-50 mt-10 mb-10 font-merriweather">
-      <div className="grid grid-flow-col grid-rows-4 gap-x-8">
+    <div className="ml-50 mr-50 mt-10 mb-25 font-merriweather text-darkbrown">
+      <div className="grid grid-flow-col grid-rows-4 gap-x-20">
         <div className="row-span-4">
           <Typography variant="h4" className="w-full">
             Currently Reading
           </Typography>
-          <Box className="bg-sand flex flex-col gap-y-3 rounded-lg h-full w-auto">
+          <Box className="bg-sand flex flex-col gap-y-3 rounded-lg h-full w-auto shadow-custom">
             {currentlyReading.length > 0 ? (
               toRead.slice(0, 3).map((book) => (
                 <div className="flex mt-5 ml-5 gap-x-5">
@@ -107,14 +108,14 @@ export default function Home() {
                 </div>
               ))
             ) : (
-              <p>Nothing added yet</p>
+              <p>Nothing added yet!</p>
             )}
           </Box>
         </div>
 
         <div className="col-span-1 row-span-2">
           <Typography variant="h4">To Read Pile</Typography>
-          <Box className="bg-sand flex gap-x-2 rounded-lg">
+          <Box className="bg-sand flex gap-x-2 rounded-lg overflow-x-auto shadow-custom">
             {toRead.length > 0 ? (
               toRead
                 .slice(0, 3)
@@ -126,14 +127,23 @@ export default function Home() {
                   />
                 ))
             ) : (
-              <p>Nothing added yet</p>
+              <p>Nothing added yet!</p>
             )}
+            <ArrowCircleRightIcon
+              size="large"
+              sx={{
+                display: "flex",
+                alignSelf: "center",
+                width: 30,
+                height: 30,
+              }}
+            />
           </Box>
         </div>
 
         <div className="col-span-1 row-span-2">
-          <Typography variant="h4">Recommendation</Typography>
-          <Box className="bg-sand flex rounded-lg">
+          <Typography variant="h4">Recommendations</Typography>
+          <Box className="bg-sand flex gap-x-2 rounded-lg overflow-x-auto shadow-custom">
             {recommendation.length > 0 ? (
               toRead
                 .slice(0, 3)
@@ -145,8 +155,17 @@ export default function Home() {
                   />
                 ))
             ) : (
-              <p>Nothing added yet</p>
+              <p>Nothing added yet!</p>
             )}
+            <ArrowCircleRightIcon
+              size="large"
+              sx={{
+                alignSelf: "center",
+                textAlign: "right",
+                width: 30,
+                height: 30,
+              }}
+            />
           </Box>
         </div>
       </div>
