@@ -8,6 +8,9 @@ import Navbar from "./components/Navbar.jsx";
 import Login from "./pages/Login.jsx";
 import SignUp from "./pages/SignUp.jsx";
 import Review from "./pages/Review.jsx";
+import CurrentlyReading from "./pages/CurrentlyReading.jsx";
+import ToRead from "./pages/ToRead.jsx";
+import Recommendations from "./pages/Recommendations.jsx";
 import "./index.css";
 
 function App() {
@@ -26,6 +29,9 @@ function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/book/:id" element={<Book />} />
           <Route path="/search" element={<SearchResults />} />
+          <Route path="/currentlyreading" element={<CurrentlyReading />} />
+          <Route path="/recommendations" element={<Recommendations />} />
+          <Route path="/toread" element={<ToRead />} />
         </Routes>
       </ThemeProvider>
     </>
