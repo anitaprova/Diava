@@ -36,6 +36,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           fontFamily: "merriweather",
+          textTransform: 'none',
           backgroundColor: colors.brown,
           "&:hover": {
             backgroundColor: colors.darkbrown,
