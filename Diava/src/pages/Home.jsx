@@ -66,7 +66,11 @@ export default function Home() {
     <div className="ml-50 mr-50 mt-10 mb-25 font-merriweather text-darkbrown">
       <div className="grid grid-flow-col grid-rows-4 gap-x-20">
         <div className="row-span-4">
-          <Typography variant="h4" className="w-full">
+          <Typography
+            variant="h4"
+            className="w-full"
+            onClick={() => navigate(`/currentlyreading`)}
+          >
             Currently Reading
           </Typography>
           <Box className="bg-sand flex flex-col gap-y-3 rounded-lg h-full w-auto shadow-custom">
@@ -114,7 +118,9 @@ export default function Home() {
         </div>
 
         <div className="col-span-1 row-span-2">
-          <Typography variant="h4">To Read Pile</Typography>
+          <Typography variant="h4" onClick={() => navigate(`/toread`)}>
+            To Read Pile
+          </Typography>
           <Box className="bg-sand flex gap-x-2 rounded-lg overflow-x-auto shadow-custom">
             {toRead.length > 0 ? (
               toRead
@@ -137,12 +143,15 @@ export default function Home() {
                 width: 30,
                 height: 30,
               }}
+              onClick={() => navigate(`/toread`)}
             />
           </Box>
         </div>
 
         <div className="col-span-1 row-span-2">
-          <Typography variant="h4">Recommendations</Typography>
+          <Typography variant="h4" onClick={() => navigate(`/recommendations`)}>
+            Recommendations
+          </Typography>
           <Box className="bg-sand flex gap-x-2 rounded-lg overflow-x-auto shadow-custom">
             {recommendation.length > 0 ? (
               toRead
@@ -165,6 +174,7 @@ export default function Home() {
                 width: 30,
                 height: 30,
               }}
+              onClick={() => navigate(`/recommendations`)}
             />
           </Box>
         </div>
