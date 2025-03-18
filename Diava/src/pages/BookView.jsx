@@ -28,7 +28,7 @@ export default function BookDetail() {
   const [seeMore, setSeeMore] = useState(false);
   const genresRaw = book?.volumeInfo?.categories || [];
   const genres = [
-    ...new Set(genresRaw.flatMap((category) => category.split("/"))),
+    ...new Set(genresRaw.flatMap((category) => category.split("/")))
   ];
   const options = [
     "Want to Read",

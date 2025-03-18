@@ -27,7 +27,7 @@ export default function CurrentlyReading() {
   return (
     <div className="font-merriweather ml-50 mr-50 mt-10">
       <Typography variant="h4">Currently Reading</Typography>
-      <Box className="bg-mocha rounded-lg flex gap-4">
+      <Box className="bg-mocha rounded-lg flex gap-4 shadow-custom">
         {books.length > 0 ? (
           books.map((book) => (
             <img
