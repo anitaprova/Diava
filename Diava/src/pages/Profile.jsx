@@ -31,7 +31,7 @@ export default function Profile() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      navigate("/login", {replace: ture});
+      navigate("/login", {replace: true});
       console.log("Signed out successfully.");
     }
     catch (error) {
