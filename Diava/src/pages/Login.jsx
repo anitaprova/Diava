@@ -1,12 +1,21 @@
 import React, { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
 import { FaGoogle, FaBook, FaGamepad, FaUsers } from "react-icons/fa";
 import "../styles/Auth.css";
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "../firebase/firebase";
+import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
+  const navigate = useNavigate();
+  const mainpage = "/profile";
+
+  // Check if user is logged in
+  const { currentUser } = useAuth();
+  if (currentUser) {
+    return <Navigate to={mainpage} replace />
+  }
 
   // State to manage form input values
   const [formData, setFormData] = useState({
@@ -38,7 +47,7 @@ const Login = () => {
         return;
       }
 
-      window.location.href = "/home";
+      navigate(mainpage);
       console.log("User logged in sucessfully.")
     }
     catch (error) {
@@ -55,7 +64,7 @@ const Login = () => {
       console.log(result);
 
       if (result.user) {
-        window.location.href = "/home";
+        navigate(mainpage);
       }
     });
 
