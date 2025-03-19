@@ -2,6 +2,8 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import Book from "./pages/BookView.jsx";
 import SearchResults from "./components/SearchResults.jsx";
 import { ThemeProvider } from "@mui/material/styles";
+import { AuthProvider } from "./context/AuthContext.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import theme from "./theme";
 import Home from "./pages/Home.jsx";
 import Navbar from "./components/Navbar.jsx";
@@ -17,19 +19,24 @@ function App() {
 
   return (
     <>
-      <ThemeProvider theme={theme}>
-        {!isAuthPage && <Navbar />}
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/review/:id" element={<Review />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/book/:id" element={<Book />} />
-          <Route path="/search" element={<SearchResults />} />
-        </Routes>
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider theme={theme}>
+          {!isAuthPage && <Navbar />}
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Login />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
+
+            {/* Private Routs */}
+            <Route path="/review/:id" element={<ProtectedRoute><Review /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+            <Route path="/book/:id" element={<ProtectedRoute><Book /></ProtectedRoute>} />
+            <Route path="/search" element={<ProtectedRoute><SearchResults /></ProtectedRoute>} />
+          </Routes>
+        </ThemeProvider>
+      </AuthProvider>
     </>
   );
 }

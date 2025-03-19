@@ -11,6 +11,11 @@ import {
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import NotebookCard from "../components/Notebook";
+import { auth } from "../firebase/firebase";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { signOut } from "firebase/auth";
+
 
 export default function Profile() {
   const [goals, setGoals] = useState([
@@ -21,6 +26,18 @@ export default function Profile() {
 
   const [editIndex, setEditIndex] = useState(null);
   const [text, setText] = useState("");
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/login", {replace: ture});
+      console.log("Signed out successfully.");
+    }
+    catch (error) {
+      console.log(error);
+    }
+  }
 
   const handleClick = () => {
     setGoals([...goals, "Double click and enter a goal!"]);
@@ -213,6 +230,18 @@ export default function Profile() {
           />
         </div>
       </div>
+
+      {/* Log out button here. Needs to be formatted correctly */}
+      <Button
+        variant="contained"
+        color="secondary"
+        onClick={handleLogout}
+        style={{ marginTop: "20px", marginLeft: "20px" }}
+      >
+        Logout
+      </Button>
+
+
     </Box>
   );
 }

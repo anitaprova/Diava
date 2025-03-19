@@ -1,12 +1,21 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
 import { FaBook, FaGamepad, FaUsers, FaGoogle } from "react-icons/fa";
 import "../styles/Auth.css";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { auth } from '../firebase/firebase'
+import { useAuth } from "../context/AuthContext";
 
 const SignUp = () => {
+  const navigate = useNavigate();
+  const mainpage = "/profile";
+
+  // Check if user is logged in
+  const { currentUser } = useAuth();
+  if (currentUser) {
+    return <Navigate to={mainpage} replace />
+  }
 
   // State to manage form input values
   const [formData, setFormData] = useState({
@@ -37,7 +46,7 @@ const SignUp = () => {
           const user = userCredentials.user;
 
           await sendEmailVerification(user);
-          window.location.href = "/login";
+          navigate("/login");
           
           console.log(user);
           console.log("User signed up successfully.");
