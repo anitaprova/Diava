@@ -43,7 +43,6 @@ const Login = () => {
       if (!user.emailVerified) {
         console.log("Email is not verified. Check the provided email's inbox to verify.");
         alert("Please verify your email before trying to log in");
-
         return;
       }
 

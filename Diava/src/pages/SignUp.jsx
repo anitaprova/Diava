@@ -44,11 +44,8 @@ const SignUp = () => {
       await createUserWithEmailAndPassword(auth, formData.email, formData.password)
         .then( async (userCredentials) => {
           const user = userCredentials.user;
-
           await sendEmailVerification(user);
           navigate("/login");
-          
-          console.log(user);
           console.log("User signed up successfully.");
         });
     }
