@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
 import { FaBook, FaGamepad, FaUsers, FaGoogle } from "react-icons/fa";
 import "../styles/Auth.css";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
-import { auth } from '../firebase/firebase'
+import { auth, db } from "../firebase/firebase";
+import { setDoc, doc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 
 const SignUp = () => {
@@ -45,6 +46,16 @@ const SignUp = () => {
         .then( async (userCredentials) => {
           const user = userCredentials.user;
           await sendEmailVerification(user);
+          alert("Go to your email and verify your account.");
+
+          if (user) {
+            await setDoc(doc(db, "Users", user.uid), {
+              email: user.email,
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+            });
+          }
+
           navigate("/login");
           console.log("User signed up successfully.");
         });
@@ -59,6 +70,7 @@ const SignUp = () => {
   // Handle Google Sign Up
   const handleGoogleSignUp = () => {
     // Google authentication will be implemented here
+    // Seperate page will be needed
     console.log("Google sign up clicked");
   };
 
