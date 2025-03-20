@@ -4,6 +4,7 @@ import { Box, Typography, InputBase, IconButton } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import UserAvatar from "./UserAvatar";
 import ChatMessage from "./ChatMessage";
+import { FaHashtag } from "react-icons/fa";
 
 const WindowContainer = styled(Box)({
   flex: 1,
@@ -176,18 +177,81 @@ const mockConversations = {
   ],
 };
 
-const ChatWindow = ({ selectedChat }) => {
+// Mock channel data
+const mockChannelMessages = {
+  "1-1": [
+    {
+      id: "c1-1",
+      sender: "Daryl",
+      initial: "D",
+      content: "Welcome to the General channel!",
+      timestamp: "2 days ago",
+    },
+    {
+      id: "c1-2",
+      sender: "Arielle",
+      initial: "A",
+      content: "Has anyone read '1984' recently?",
+      timestamp: "1 day ago",
+    },
+    {
+      id: "c1-3",
+      sender: "You",
+      initial: "Y",
+      content: "I read it last month. It's still so relevant.",
+      timestamp: "1 day ago",
+      isUser: true,
+    },
+  ],
+  "1-2": [
+    {
+      id: "c2-1",
+      sender: "Nathan",
+      initial: "N",
+      content: "I recommend 'Fahrenheit 451' if you haven't read it yet.",
+      timestamp: "3 days ago",
+    },
+    {
+      id: "c2-2",
+      sender: "You",
+      initial: "Y",
+      content: "Great recommendation! I'd also suggest 'Brave New World'.",
+      timestamp: "2 days ago",
+      isUser: true,
+    },
+  ],
+  "1-3": [
+    {
+      id: "c3-1",
+      sender: "Anita",
+      initial: "A",
+      content: "This month we're reading 'To Kill a Mockingbird'",
+      timestamp: "1 week ago",
+    },
+    {
+      id: "c3-2",
+      sender: "Jayson",
+      initial: "J",
+      content: "I'm halfway through. The character development is amazing.",
+      timestamp: "5 days ago",
+    },
+  ],
+};
+
+const ChatWindow = ({ selectedChat, isClubChannel = false, clubName = "" }) => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
 
   // Update messages when selected chat changes
   useEffect(() => {
     if (selectedChat) {
-      // Get messages for the selected conversation
-      const conversationMessages = mockConversations[selectedChat.id] || [];
-      setMessages(conversationMessages);
+      // Get messages for the selected conversation or channel
+      const chatMessages = isClubChannel
+        ? mockChannelMessages[selectedChat.id] || []
+        : mockConversations[selectedChat.id] || [];
+      setMessages(chatMessages);
     }
-  }, [selectedChat]);
+  }, [selectedChat, isClubChannel]);
 
   const handleSendMessage = () => {
     if (message.trim() && selectedChat) {
@@ -218,7 +282,9 @@ const ChatWindow = ({ selectedChat }) => {
     return (
       <WindowContainer sx={{ justifyContent: "center", alignItems: "center" }}>
         <Typography variant="h6" color="textSecondary">
-          Select a conversation to start chatting
+          {isClubChannel
+            ? "Select a channel to start chatting"
+            : "Select a conversation to start chatting"}
         </Typography>
       </WindowContainer>
     );
@@ -227,10 +293,29 @@ const ChatWindow = ({ selectedChat }) => {
   return (
     <WindowContainer>
       <ChatHeader>
-        <UserAvatar initial={selectedChat.initial} />
-        <Typography variant="h6" sx={{ marginLeft: 2 }}>
-          {selectedChat.name}
-        </Typography>
+        {isClubChannel ? (
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <FaHashtag size={20} style={{ marginRight: "8px" }} />
+            <Typography variant="h6">
+              {selectedChat.name}
+              {clubName && (
+                <Typography
+                  variant="caption"
+                  sx={{ ml: 1, color: "text.secondary" }}
+                >
+                  {clubName}
+                </Typography>
+              )}
+            </Typography>
+          </Box>
+        ) : (
+          <>
+            <UserAvatar initial={selectedChat.initial} />
+            <Typography variant="h6" sx={{ marginLeft: 2 }}>
+              {selectedChat.name}
+            </Typography>
+          </>
+        )}
       </ChatHeader>
 
       <MessagesContainer>
