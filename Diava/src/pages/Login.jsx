@@ -4,7 +4,8 @@ import bookBackground from "../assets/book-background.jpg";
 import { FaGoogle, FaBook, FaGamepad, FaUsers } from "react-icons/fa";
 import "../styles/Auth.css";
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { auth } from "../firebase/firebase";
+import { auth, db } from "../firebase/firebase";
+import { setDoc, doc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
@@ -13,7 +14,7 @@ const Login = () => {
 
   // Check if user is logged in
   const { currentUser } = useAuth();
-  if (currentUser) {
+  if (currentUser && currentUser.emailVerified) {
     return <Navigate to={mainpage} replace />
   }
 
@@ -57,17 +58,30 @@ const Login = () => {
   };
 
   // Handle Google Sign In
-  function handleGoogleSignIn() {
-    const provider = new GoogleAuthProvider();
-    signInWithPopup(auth, provider).then(async(result) => {
+  const handleGoogleSignIn = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
       console.log(result);
 
       if (result.user) {
+        /*
+        NOTE: The code to add teh user into the databse should stay here until
+        the implementation of a proper google sign up page to get first and last name
+        */
+        // Store user in database
+        await setDoc(doc(db, "Users", result.user.uid), {
+          email: result.user.email,
+          firstName: result.user.displayName || "",
+          lastName: "",
+        });
+
         navigate(mainpage);
       }
-    });
-
-    console.log("Google sign in clicked");
+    }
+    catch (error) {
+      console.log(error);
+    }
   };
 
   return (
