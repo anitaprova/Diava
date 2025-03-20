@@ -66,7 +66,7 @@ const Login = () => {
 
       if (result.user) {
         /*
-        NOTE: The code to add teh user into the databse should stay here until
+        NOTE: The code to add the user into the databse should stay here until
         the implementation of a proper google sign up page to get first and last name
         */
         // Store user in database

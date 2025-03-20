@@ -11,6 +11,7 @@ import Login from "./pages/Login.jsx";
 import SignUp from "./pages/SignUp.jsx";
 import Review from "./pages/Review.jsx";
 import Profile from "./pages/Profile.jsx";
+import Messages from "./pages/Messages.jsx";
 import "./index.css";
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
             <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
             <Route path="/book/:id" element={<ProtectedRoute><Book /></ProtectedRoute>} />
             <Route path="/search" element={<ProtectedRoute><SearchResults /></ProtectedRoute>} />
+            <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
           </Routes>
         </ThemeProvider>
       </AuthProvider>
