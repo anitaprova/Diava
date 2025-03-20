@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
 import { FaBook, FaGamepad, FaUsers, FaGoogle } from "react-icons/fa";
@@ -10,13 +10,15 @@ import { useAuth } from "../context/AuthContext";
 
 const SignUp = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const mainpage = "/profile";
 
   // Check if user is logged in
-  const { currentUser } = useAuth();
-  if (currentUser && currentUser.emailVerified) {
-    return <Navigate to={mainpage} replace />
-  }
+  useEffect(() => {
+      if (currentUser && currentUser.emailVerified) {
+        navigate(mainpage, { replace: true });
+      }
+    }, [currentUser, navigate]);
 
   // State to manage form input values
   const [formData, setFormData] = useState({

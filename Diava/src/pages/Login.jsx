@@ -1,22 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
 import { FaGoogle, FaBook, FaGamepad, FaUsers } from "react-icons/fa";
 import "../styles/Auth.css";
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth, db } from "../firebase/firebase";
-import { setDoc, doc } from "firebase/firestore";
+import { getDoc, setDoc, doc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const mainpage = "/profile";
 
   // Check if user is logged in
-  const { currentUser } = useAuth();
-  if (currentUser && currentUser.emailVerified) {
-    return <Navigate to={mainpage} replace />
-  }
+  useEffect(() => {
+    if (currentUser && currentUser.emailVerified) {
+      navigate(mainpage, { replace: true });
+    }
+  }, [currentUser, navigate]);
 
   // State to manage form input values
   const [formData, setFormData] = useState({
@@ -70,11 +72,16 @@ const Login = () => {
         the implementation of a proper google sign up page to get first and last name
         */
         // Store user in database
-        await setDoc(doc(db, "Users", result.user.uid), {
-          email: result.user.email,
-          firstName: result.user.displayName || "",
-          lastName: "",
-        });
+        const userRef = doc(db, "Users", result.user.uid);
+        const userDoc = await getDoc(userRef);
+
+        if (!userDoc.exists()) {
+          await setDoc(doc(db, "Users", result.user.uid), {
+            email: result.user.email,
+            firstName: result.user.displayName || "",
+            lastName: "",
+          });
+        }
 
         navigate(mainpage);
       }
