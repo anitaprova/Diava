@@ -1,7 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Typography, Box, Button } from "@mui/material";
+import { Typography, Box, Button, TextField } from "@mui/material";
 import Rating from "@mui/material/Rating";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 
 export default function ToRead() {
   const { id } = useParams();
@@ -46,6 +52,21 @@ export default function ToRead() {
       rating: 3,
     },
   ]);
+	const [open, setOpen] = useState(false);
+	const [newLog, setNewLog] = useState({
+    pageRange: "",
+    comment: "",
+    date: "",
+    rating: 3,
+  });
+
+	const handleOpen = () => {
+    setOpen(true);
+  };
+
+	const handleClose = () => {
+    setOpen(false);
+  };
 
   return (
     <div className="font-merriweather ml-50 mr-50 mt-10 mb-10">
@@ -84,9 +105,64 @@ export default function ToRead() {
               </Box>
             </Box>
 
-            <Button variant="dark" className="self-center w-fit">
+            <Button
+              variant="dark"
+              className="self-center w-fit"
+              onClick={handleOpen}
+            >
               Add Log
             </Button>
+
+            <Dialog open={open} onClose={handleClose} fullWidth>
+              <DialogTitle>Add a New Log</DialogTitle>
+              <DialogContent className="space-y-5">
+                <div className="gap-x-5">
+                  <Typography>Session Rating</Typography>
+                  <Rating defaultValue={0.0} precision={0.5} size="large" />
+                </div>
+
+                <div className="flex gap-5 w-full">
+                  <span className="w-full">
+                    <Typography>
+                      <CalendarMonthIcon /> Start Date
+                    </Typography>
+                    <TextField fullWidth size="small" type="date" />
+                  </span>
+
+                  <span className="w-full">
+                    <Typography>
+                      <CalendarMonthIcon /> End Date
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      variant="outlined"
+                      type="date"
+                    />
+                  </span>
+                </div>
+
+                <div>
+                  <Typography>Notes</Typography>
+                  <TextField
+                    size="large"
+                    variant="outlined"
+                    minRows={8}
+                    multiline
+                    fullWidth
+                  />
+                </div>
+              </DialogContent>
+              <DialogActions>
+                <Button
+                  onClick={handleClose}
+                  type="submit"
+                  variant="coffee"
+                >
+                  Add Log
+                </Button>
+              </DialogActions>
+            </Dialog>
           </Box>
         </div>
       ) : (
