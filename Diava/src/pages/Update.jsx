@@ -32,20 +32,20 @@ export default function ToRead() {
 
   const [logs, setLogs] = useState([
     {
-      pageRange: "30-40",
+      page: "40",
       comment:
         '"Really enjoyed today\'s chapter! The pacing is picking up and the characters..."',
       date: "03/02/2025",
       rating: 5,
     },
     {
-      pageRange: "10-20",
+      page: "20",
       comment: '"Wow I can\'t believe that she did that."',
       date: "02/25/2025",
       rating: 4,
     },
     {
-      pageRange: "0-10",
+      page: "10",
       comment:
         '"I\'m loving the book so far, interested to see where the story heads and I love the characters...."',
       date: "02/23/2025",
@@ -57,7 +57,7 @@ export default function ToRead() {
     pageRange: "",
     comment: "",
     date: "",
-    rating: 3,
+    rating: 0,
   });
 
 	const handleOpen = () => {
@@ -113,32 +113,64 @@ export default function ToRead() {
               Add Log
             </Button>
 
-            <Dialog open={open} onClose={handleClose} fullWidth>
+            <Dialog
+              open={open}
+              onClose={handleClose}
+              fullWidth
+              slotProps={{
+                paper: {
+                  component: "form",
+                  onSubmit: (event) => {
+                    event.preventDefault();
+                    const formData = new FormData(event.currentTarget);
+                    const formJson = Object.fromEntries(formData.entries());
+                    const date = formJson.date;
+                    const notes = formJson.notes;
+                    const rating = formJson.rating;
+										const page = formJson.page;
+                    setLogs((prevState) => [
+                      {
+                        page: page,
+												date: date,
+                        comment: notes,
+                        rating: rating,
+                      },
+                      ...prevState,
+                    ]);
+
+                    handleClose();
+                  },
+                },
+              }}
+            >
               <DialogTitle>Add a New Log</DialogTitle>
               <DialogContent className="space-y-5">
                 <div className="gap-x-5">
+                  <Typography>On Page</Typography>
+                  <TextField
+                    size="small"
+                    variant="outlined"
+                    type="number"
+                    name="page"
+                  />
+                </div>
+
+                <div className="gap-x-5">
                   <Typography>Session Rating</Typography>
-                  <Rating defaultValue={0.0} precision={0.5} size="large" />
+                  <Rating
+                    defaultValue={0.0}
+                    precision={0.5}
+                    name="rating"
+                    size="large"
+                  />
                 </div>
 
                 <div className="flex gap-5 w-full">
                   <span className="w-full">
                     <Typography>
-                      <CalendarMonthIcon /> Start Date
+                      <CalendarMonthIcon /> Date
                     </Typography>
-                    <TextField fullWidth size="small" type="date" />
-                  </span>
-
-                  <span className="w-full">
-                    <Typography>
-                      <CalendarMonthIcon /> End Date
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      variant="outlined"
-                      type="date"
-                    />
+                    <TextField fullWidth size="small" name="date" type="date" />
                   </span>
                 </div>
 
@@ -147,6 +179,7 @@ export default function ToRead() {
                   <TextField
                     size="large"
                     variant="outlined"
+                    name="notes"
                     minRows={8}
                     multiline
                     fullWidth
@@ -154,12 +187,8 @@ export default function ToRead() {
                 </div>
               </DialogContent>
               <DialogActions>
-                <Button
-                  onClick={handleClose}
-                  type="submit"
-                  variant="coffee"
-                >
-                  Add Log
+                <Button type="submit" variant="coffee">
+                  Update
                 </Button>
               </DialogActions>
             </Dialog>
@@ -177,7 +206,7 @@ export default function ToRead() {
           >
             <Box className="flex flex-col">
               <Typography variant="h5">
-                Pages: {entry.pageRange}{" "}
+                Page: {entry.page}{" "}
                 <Rating
                   value={entry.rating}
                   precision={0.5}
