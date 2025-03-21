@@ -73,9 +73,9 @@ export default function Home() {
           >
             Currently Reading
           </Typography>
-          <Box className="bg-sand flex flex-col gap-y-3 rounded-lg h-full w-auto shadow-custom">
+          <Box className="bg-sand flex flex-col justify-around rounded-lg h-full w-auto shadow-custom">
             {currentlyReading.length > 0 ? (
-              toRead.slice(0, 3).map((book) => (
+              toRead.slice(0, 2).map((book) => (
                 <div className="flex mt-5 ml-5 gap-x-5">
                   <img
                     src={book.volumeInfo.imageLinks.thumbnail}
@@ -114,6 +114,13 @@ export default function Home() {
             ) : (
               <p>Nothing added yet!</p>
             )}
+            <Button
+              variant="dark"
+              className="w-fit self-center"
+              onClick={() => navigate(`/currentlyreading`)}
+            >
+              See More
+            </Button>
           </Box>
         </div>
 
@@ -148,7 +155,7 @@ export default function Home() {
           </Box>
         </div>
 
-        <div className="col-span-1 row-span-2">
+        <div className="col-span-1 row-span-2 mt-5">
           <Typography variant="h4" onClick={() => navigate(`/recommendations`)}>
             Recommendations
           </Typography>

@@ -68,9 +68,9 @@ export default function ToRead() {
   ];
 
   return (
-    <div className="font-merriweather ml-50 mr-50 mt-10">
+    <div className="font-merriweather ml-50 mr-50 mt-10 mb-10">
       <Typography variant="h4">To Read Pile</Typography>
-      <Box className="bg-mocha rounded-lg grid grid-cols-2 gap-x-4 shadow-custom">
+      <Box className="bg-mocha rounded-lg grid grid-cols-2 shadow-custom">
         {books.length > 0 ? (
           books.map((book) => (
             <div className="bg-vanilla rounded-md p-6 w-fit flex mt-5 ml-5 mb-5 gap-x-5">
