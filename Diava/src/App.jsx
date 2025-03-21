@@ -11,6 +11,7 @@ import Review from "./pages/Review.jsx";
 import CurrentlyReading from "./pages/CurrentlyReading.jsx";
 import ToRead from "./pages/ToRead.jsx";
 import Recommendations from "./pages/Recommendations.jsx";
+import Update from "./pages/Update.jsx";
 import "./index.css";
 
 function App() {
@@ -32,6 +33,7 @@ function App() {
           <Route path="/currentlyreading" element={<CurrentlyReading />} />
           <Route path="/recommendations" element={<Recommendations />} />
           <Route path="/toread" element={<ToRead />} />
+          <Route path="/update/:id" element={<Update />} />
         </Routes>
       </ThemeProvider>
     </>

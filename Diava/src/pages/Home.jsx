@@ -106,7 +106,12 @@ export default function Home() {
                         </Box>
                       </div>
 
-                      <Button variant="dark">Update Progress</Button>
+                      <Button
+                        variant="dark"
+                        onClick={() => navigate(`/update/${book.id}`)}
+                      >
+                        Update Progress
+                      </Button>
                     </div>
                   </div>
                 </div>
