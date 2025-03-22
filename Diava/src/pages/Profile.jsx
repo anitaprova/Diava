@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { Box, Button, Typography, Chip, Paper } from "@mui/material";
 import {
@@ -11,6 +11,7 @@ import {
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import NotebookCard from "../components/Notebook";
+import axios from'axios'
 
 export default function Profile() {
   const [goals, setGoals] = useState([
@@ -22,15 +23,42 @@ export default function Profile() {
   const [editIndex, setEditIndex] = useState(null);
   const [text, setText] = useState("");
 
+  const getGoals = async () => {
+    try {
+      const response  = await axios.get('http://localhost:5000/goals')
+
+    } catch (err) {
+      console.error("Error creating goal:", error)
+    }
+};
+
+  
+  const createGoal = async (goalData) => {
+    try {
+      const response = await axios.post("http://localhost:5000/goals", goalData);
+      setGoals([...goals, response.data]); 
+    } catch (error) {
+      console.error("Error creating goal:", error);
+    }
+  };
+  useEffect(() => {
+    getGoals();
+  }, []);
+
+
   const handleClick = () => {
     setGoals([...goals, "Double click and enter a goal!"]);
     console.log();
   };
 
-  const handleEnter = (event) => {
-    if (event.key === "Enter") {
+  const handleEnter = async (event) => {
+    if (event.key === "Enter" && editIndex !== null) {
       const updatedGoals = [...goals];
       updatedGoals[editIndex] = text;
+      const user_id = 12345678
+      const new_goal = {id: 26, user_id, goal: text, is_completed: false};
+      await createGoal(new_goal);
+      console.log('New goal added: ', createGoal.goalData);
       setGoals(updatedGoals);
       setEditIndex(null);
       setText("");
