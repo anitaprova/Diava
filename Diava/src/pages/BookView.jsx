@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { Typography, Box } from "@mui/material";
 import Button from "@mui/material/Button";
@@ -28,7 +27,7 @@ export default function BookDetail() {
   const [seeMore, setSeeMore] = useState(false);
   const genresRaw = book?.volumeInfo?.categories || [];
   const genres = [
-    ...new Set(genresRaw.flatMap((category) => category.split("/"))),
+    ...new Set(genresRaw.flatMap((category) => category.split("/")))
   ];
   const options = [
     "Want to Read",

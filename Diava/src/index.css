@@ -4,6 +4,7 @@
 @theme {
 	--color-sand: #CEC1A8;
 	--color-brown: #B59E7E;
+	--color-mocha: #C5AD91;
 	--color-darkbrown: #5D4B3D;
 	--color-grey: #AAA396;
 	--color-vanilla: #F1EADA;
@@ -16,5 +17,6 @@
 	--font-cinzel: "Cinzel", serif;
 	--font-merriweather: "Merriweather", serif;
 
-	--drop-shadow-custom: -15px 20px 0px 0px #CBBFA7;
+	--shadow-custom: -15px 20px 0px 0px #5D4B3D;
+	--shadow-small: -10px 10px 0px 0px #AAA396;
 }
