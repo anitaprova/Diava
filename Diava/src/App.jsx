@@ -33,15 +33,79 @@ function App() {
             <Route path="/signup" element={<SignUp />} />
 
             {/* Private Routs */}
-            <Route path="/review/:id" element={<ProtectedRoute><Review /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-            <Route path="/book/:id" element={<ProtectedRoute><Book /></ProtectedRoute>} />
-            <Route path="/search" element={<ProtectedRoute><SearchResults /></ProtectedRoute>} />
-            <Route path="/currentlyreading" element={<CurrentlyReading />} /></ProtectedRoute>} />
-            <Route path="/recommendations" element={<Recommendations />} /></ProtectedRoute>} />
-            <Route path="/toread" element={<ToRead />} /></ProtectedRoute>} />
-            <Route path="/update/:id" element={<Update />} /></ProtectedRoute>} />
+            <Route
+              path="/review/:id"
+              element={
+                <ProtectedRoute>
+                  <Review />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/home"
+              element={
+                <ProtectedRoute>
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/book/:id"
+              element={
+                <ProtectedRoute>
+                  <Book />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/search"
+              element={
+                <ProtectedRoute>
+                  <SearchResults />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/currentlyreading"
+              element={
+                <ProtectedRoute>
+                  {" "}
+                  <CurrentlyReading />{" "}
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/recommendations"
+              element={
+                <ProtectedRoute>
+                  <Recommendations />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/toread"
+              element={
+                <ProtectedRoute>
+                  <ToRead />{" "}
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/update/:id"
+              element={
+                <ProtectedRoute>
+                  <Update />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </ThemeProvider>
       </AuthProvider>

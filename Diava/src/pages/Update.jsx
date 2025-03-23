@@ -53,12 +53,6 @@ export default function ToRead() {
     },
   ]);
 	const [open, setOpen] = useState(false);
-	const [newLog, setNewLog] = useState({
-    pageRange: "",
-    comment: "",
-    date: "",
-    rating: 0,
-  });
 
 	const handleOpen = () => {
     setOpen(true);
