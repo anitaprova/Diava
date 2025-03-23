@@ -1,21 +1,24 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
 import { FaBook, FaGamepad, FaUsers, FaGoogle } from "react-icons/fa";
 import "../styles/Auth.css";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
-import { auth } from '../firebase/firebase'
+import { auth, db } from "../firebase/firebase";
+import { setDoc, doc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 
 const SignUp = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const mainpage = "/profile";
 
   // Check if user is logged in
-  const { currentUser } = useAuth();
-  if (currentUser) {
-    return <Navigate to={mainpage} replace />
-  }
+  useEffect(() => {
+      if (currentUser && currentUser.emailVerified) {
+        navigate(mainpage, { replace: true });
+      }
+    }, [currentUser, navigate]);
 
   // State to manage form input values
   const [formData, setFormData] = useState({
@@ -44,11 +47,25 @@ const SignUp = () => {
       await createUserWithEmailAndPassword(auth, formData.email, formData.password)
         .then( async (userCredentials) => {
           const user = userCredentials.user;
-
           await sendEmailVerification(user);
+          alert("Go to your email and verify your account.");
+
+          /* 
+          NOTE: this is done BEFORE user verifies account due to potential issues
+          of having the first and last names persist if they wait or refresh the page.
+          Accounts not verified can be removed after a set time or a better solution
+          can be made to ensure fields are filled even if user doesn't make the account there.
+          */
+          // Store user in database.
+          if (user) {
+            await setDoc(doc(db, "Users", user.uid), {
+              email: user.email,
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+            });
+          }
+
           navigate("/login");
-          
-          console.log(user);
           console.log("User signed up successfully.");
         });
     }
@@ -62,6 +79,7 @@ const SignUp = () => {
   // Handle Google Sign Up
   const handleGoogleSignUp = () => {
     // Google authentication will be implemented here
+    // Seperate page will be needed
     console.log("Google sign up clicked");
   };
 
