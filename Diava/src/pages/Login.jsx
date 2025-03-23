@@ -1,12 +1,24 @@
-import React, { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
 import { FaGoogle, FaBook, FaGamepad, FaUsers } from "react-icons/fa";
 import "../styles/Auth.css";
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { auth } from "../firebase/firebase";
+import { auth, db } from "../firebase/firebase";
+import { getDoc, setDoc, doc } from "firebase/firestore";
+import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const mainpage = "/profile";
+
+  // Check if user is logged in
+  useEffect(() => {
+    if (currentUser && currentUser.emailVerified) {
+      navigate(mainpage, { replace: true });
+    }
+  }, [currentUser, navigate]);
 
   // State to manage form input values
   const [formData, setFormData] = useState({
@@ -34,11 +46,10 @@ const Login = () => {
       if (!user.emailVerified) {
         console.log("Email is not verified. Check the provided email's inbox to verify.");
         alert("Please verify your email before trying to log in");
-
         return;
       }
 
-      window.location.href = "/home";
+      navigate(mainpage);
       console.log("User logged in sucessfully.")
     }
     catch (error) {
@@ -49,17 +60,35 @@ const Login = () => {
   };
 
   // Handle Google Sign In
-  function handleGoogleSignIn() {
-    const provider = new GoogleAuthProvider();
-    signInWithPopup(auth, provider).then(async(result) => {
+  const handleGoogleSignIn = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
       console.log(result);
 
       if (result.user) {
-        window.location.href = "/home";
-      }
-    });
+        /*
+        NOTE: The code to add the user into the databse should stay here until
+        the implementation of a proper google sign up page to get first and last name
+        */
+        // Store user in database
+        const userRef = doc(db, "Users", result.user.uid);
+        const userDoc = await getDoc(userRef);
 
-    console.log("Google sign in clicked");
+        if (!userDoc.exists()) {
+          await setDoc(doc(db, "Users", result.user.uid), {
+            email: result.user.email,
+            firstName: result.user.displayName || "",
+            lastName: "",
+          });
+        }
+
+        navigate(mainpage);
+      }
+    }
+    catch (error) {
+      console.log(error);
+    }
   };
 
   return (
