@@ -15,6 +15,7 @@ import { auth } from "../firebase/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
+import axios from "axios"
 
 
 export default function Profile() {
@@ -38,7 +39,43 @@ export default function Profile() {
       console.log(error);
     }
   }
+  
+  const getGoals = async () => {
+    try {
+      const response  = await axios.get('http://localhost:5000/goals')
 
+    } catch (err) {
+      console.error("Error creating goal:", error)
+    }
+  };
+  const createGoal = async (goalData) => {
+    try {
+      const response = await axios.post("http://localhost:5000/goals", goalData);
+      setGoals([...goals, response.data]); 
+    } catch (error) {
+      console.error("Error creating goal:", error);
+    }
+  };
+
+  const handleClick = () => {
+    setGoals([...goals, "Double click and enter a goal!"]);
+    console.log();
+  };
+
+  const handleEnter = async (event) => {
+    if (event.key === "Enter" && editIndex !== null) {
+      const updatedGoals = [...goals];
+      updatedGoals[editIndex] = text;
+      const user_id = 12345678
+      const new_goal = {user_id, goal: text, is_completed: false};
+      await createGoal(new_goal);
+      console.log('New goal added: ', createGoal.goalData);
+      setGoals(updatedGoals);
+      setEditIndex(null);
+      setText("");
+    }
+  };
+  /*
   const handleClick = () => {
     setGoals([...goals, "Double click and enter a goal!"]);
     console.log();
@@ -53,7 +90,7 @@ export default function Profile() {
       setText("");
     }
   };
-
+*/
   return (
     <Box className="flex flex-col">
       <Box className="bg-vanilla pb-5 text-darkbrown">
