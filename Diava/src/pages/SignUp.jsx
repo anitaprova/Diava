@@ -1,10 +1,12 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
 import { FaBook, FaGamepad, FaUsers, FaGoogle } from "react-icons/fa";
 import "../styles/Auth.css";
 
 const SignUp = () => {
+  const navigate = useNavigate();
+
   // State to manage form input values
   const [formData, setFormData] = useState({
     firstName: "",
@@ -29,12 +31,16 @@ const SignUp = () => {
     e.preventDefault();
     // Firebase authentication will be implemented here
     console.log("Form submitted:", formData);
+    // Navigate to home page after successful signup
+    navigate("/");
   };
 
   // Handle Google Sign Up
   const handleGoogleSignUp = () => {
     // Google authentication will be implemented here
     console.log("Google sign up clicked");
+    // After Google auth, redirect to profile setup
+    navigate("/profile-setup");
   };
 
   return (

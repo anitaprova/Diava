@@ -4,11 +4,14 @@ import Home from "./pages/Home.jsx";
 import Navbar from "./components/Navbar.jsx";
 import Login from "./pages/Login.jsx";
 import SignUp from "./pages/SignUp.jsx";
+import ProfileSetup from "./pages/ProfileSetup.jsx";
 import "./index.css";
 
 function App() {
   const location = useLocation();
-  const isAuthPage = ["/login", "/signup"].includes(location.pathname);
+  const isAuthPage = ["/login", "/signup", "/profile-setup"].includes(
+    location.pathname
+  );
 
   return (
     <>
@@ -18,6 +21,7 @@ function App() {
         <Route path="/Book" element={<Book />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/profile-setup" element={<ProfileSetup />} />
       </Routes>
     </>
   );
