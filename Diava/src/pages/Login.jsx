@@ -3,19 +3,20 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
 import { FaGoogle, FaBook, FaGamepad, FaUsers } from "react-icons/fa";
 import "../styles/Auth.css";
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 import { auth, db } from "../firebase/firebase";
-import { getDoc, setDoc, doc } from "firebase/firestore";
+import { getDoc, doc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const { currentUser } = useAuth();
   const mainpage = "/profile";
 
   // Check if user is logged in
   useEffect(() => {
-    if (currentUser && currentUser.emailVerified) {
+    if (currentUser && currentUser.emailVerified && !loading) {
       navigate(mainpage, { replace: true });
     }
   }, [currentUser, navigate]);
@@ -60,34 +61,38 @@ const Login = () => {
   };
 
   // Handle Google Sign In
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       console.log(result);
 
       if (result.user) {
-        /*
-        NOTE: The code to add the user into the databse should stay here until
-        the implementation of a proper google sign up page to get first and last name
-        */
-        // Store user in database
+        // Get user doc
         const userRef = doc(db, "Users", result.user.uid);
         const userDoc = await getDoc(userRef);
 
+        // Check if gmail exists in database
         if (!userDoc.exists()) {
-          await setDoc(doc(db, "Users", result.user.uid), {
-            email: result.user.email,
-            firstName: result.user.displayName || "",
-            lastName: "",
-          });
-        }
+          console.log("User is not in database. Signing out.")
+          await signOut(auth);
 
+          // Make sure user is logged out first
+          setLoading(false); 
+          navigate("/googlesignup", { replace: true });
+          return;
+        }
+        
+        setLoading(false); 
         navigate(mainpage);
       }
     }
     catch (error) {
       console.log(error);
+      setLoading(false); 
     }
   };
 
