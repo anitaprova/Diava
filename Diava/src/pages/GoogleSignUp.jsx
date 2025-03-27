@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
-import { FaBook, FaGamepad, FaUsers, FaGoogle } from "react-icons/fa";
+import { FaBook, FaGamepad, FaUsers } from "react-icons/fa";
 import "../styles/Auth.css";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth, db } from "../firebase/firebase";
-import { setDoc, doc } from "firebase/firestore";
+import { getDoc, setDoc, doc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 
-const SignUp = () => {
+const GoogleSignUp = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const mainpage = "/profile";
@@ -25,9 +25,6 @@ const SignUp = () => {
     firstName: "",
     lastName: "",
     username: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
   });
 
   // Handle input changes
@@ -44,36 +41,32 @@ const SignUp = () => {
     e.preventDefault();
 
     try {
-      await createUserWithEmailAndPassword(auth, formData.email, formData.password)
-        .then( async (userCredentials) => {
-          const user = userCredentials.user;
-          await sendEmailVerification(user);
-          alert("Go to your email and verify your account.");
-
-          // Store user in database.
-          if (user) {
-            await setDoc(doc(db, "Users", user.uid), {
-              email: user.email,
-              firstName: formData.firstName,
-              lastName: formData.lastName,
-            });
-          }
-
-          navigate("/login");
-          console.log("User signed up successfully.");
-        });
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      console.log(result);
+    
+      if (result.user) {
+        const userRef = doc(db, "Users", result.user.uid);
+        const userDoc = await getDoc(userRef);
+    
+        // Store user in database
+        if (!userDoc.exists()) {
+          await setDoc(doc(db, "Users", result.user.uid), {
+            email: result.user.email,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+          });
+        }
+    
+          navigate(mainpage);
+      }
     }
     catch (error) {
-      console.log(error.message);
+      console.log(error);
     }
 
-    console.log("Form submitted:", formData);
-  };
-
-  // Handle Google Sign Up
-  const handleGoogleSignUp = () => {
-    console.log("Google sign up clicked");
-    navigate("/googlesignup");
+    console.log("Google sign up complete:", formData);
+    navigate(mainpage);
   };
 
   return (
@@ -102,10 +95,10 @@ const SignUp = () => {
         </div>
       </div>
 
-      {/* Right side - Sign Up Form */}
+      {/* Right side - Profile Setup Form */}
       <div className="auth-right">
         <div className="auth-form-container">
-          <h2>Welcome to Diava</h2>
+          <h2>Complete Your Profile</h2>
           <form onSubmit={handleSubmit}>
             {/* Name fields */}
             <div className="name-fields">
@@ -133,57 +126,19 @@ const SignUp = () => {
               name="username"
               value={formData.username}
               onChange={handleChange}
-              placeholder="Username"
+              placeholder="Choose a Username"
               required
             />
 
-            {/* Email and password fields */}
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Email"
-              required
-            />
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Password"
-              required
-            />
-            <input
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              placeholder="Confirm Password"
-              required
-            />
-
-            {/* Submit buttons */}
+            {/* Submit button */}
             <button type="submit" className="auth-button">
-              Sign Up
-            </button>
-            <button
-              type="button"
-              className="google-button"
-              onClick={handleGoogleSignUp}
-            >
-              <FaGoogle /> Sign up with Google
+              Complete Setup
             </button>
           </form>
-
-          {/* Link to login page */}
-          <p className="auth-switch">
-            Already have an account? <Link to="/login">Sign In</Link>
-          </p>
         </div>
       </div>
     </div>
   );
 };
 
-export default SignUp;
+export default GoogleSignUp;

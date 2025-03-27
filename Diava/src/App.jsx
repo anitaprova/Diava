@@ -15,11 +15,12 @@ import ToRead from "./pages/ToRead.jsx";
 import Recommendations from "./pages/Recommendations.jsx";
 import Update from "./pages/Update.jsx";
 import Profile from "./pages/Profile.jsx";
+import GoogleSignUp from "./pages/GoogleSignUp.jsx";
 import "./index.css";
 
 function App() {
   const location = useLocation();
-  const isAuthPage = ["/","/login", "/signup"].includes(location.pathname);
+  const isAuthPage = ["/","/login", "/signup", "/googlesignup"].includes(location.pathname);
 
   return (
     <>
@@ -31,8 +32,9 @@ function App() {
             <Route path="/" element={<Login />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
+            <Route path="/googlesignup" element={<GoogleSignUp />} />
 
-            {/* Private Routs */}
+            {/* Private Routes */}
             <Route
               path="/review/:id"
               element={
