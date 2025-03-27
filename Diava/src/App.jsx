@@ -20,7 +20,9 @@ import "./index.css";
 
 function App() {
   const location = useLocation();
-  const isAuthPage = ["/","/login", "/signup", "/googlesignup"].includes(location.pathname);
+  const isAuthPage = ["/", "/login", "/signup", "/googlesignup"].includes(
+    location.pathname
+  );
 
   return (
     <>

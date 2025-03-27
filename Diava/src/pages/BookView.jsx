@@ -27,13 +27,9 @@ export default function BookDetail() {
   const [seeMore, setSeeMore] = useState(false);
   const genresRaw = book?.volumeInfo?.categories || [];
   const genres = [
-    ...new Set(genresRaw.flatMap((category) => category.split("/")))
+    ...new Set(genresRaw.flatMap((category) => category.split("/"))),
   ];
-  const options = [
-    "Want to Read",
-    "Currently Reading",
-    "Read",
-  ];
+  const options = ["Want to Read", "Currently Reading", "Read"];
 
   const [open, setOpen] = React.useState(false);
   const anchorRef = React.useRef(null);
@@ -57,7 +53,6 @@ export default function BookDetail() {
       return;
     }
     setOpen(false);
-
   };
 
   useEffect(() => {
@@ -152,11 +147,7 @@ export default function BookDetail() {
 
           <div className="flex flex-col gap-y-5 h-fit w-fit">
             <ButtonGroup>
-              <Button
-                variant="soft"
-                ref={anchorRef}
-                onClick={handleClick}
-              >
+              <Button variant="soft" ref={anchorRef} onClick={handleClick}>
                 {options[selectedIndex]}
               </Button>
               <Button
