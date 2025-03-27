@@ -12,6 +12,9 @@ const colors = {
 };
 
 const theme = createTheme({
+  typography: {
+    fontFamily: "Merriweather, serif",
+  },
   palette: {
     primary: {
       main: colors.brown,
@@ -20,7 +23,7 @@ const theme = createTheme({
       main: colors.darkbrown,
     },
     background: {
-      default: colors.vanilla,
+      default: colors.cream,
       paper: colors.vanilla,
     },
     text: {
@@ -33,6 +36,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           fontFamily: "merriweather",
+          textTransform: "none",
           backgroundColor: colors.brown,
           "&:hover": {
             backgroundColor: colors.darkbrown,
@@ -111,6 +115,36 @@ const theme = createTheme({
           },
         },
       ],
+    },
+    MuiTextField: {
+      variants: [
+        {
+          props: { variant: "input" },
+          style: {
+            backgroundColor: colors.brown,
+          },
+        },
+      ],
+    },
+    MuiRating: {
+      variants: [
+        {
+          props: { variant: "heart" },
+          style: {
+            color: "#ff6d75",
+          },
+        },
+      ],
+    },
+    MuiLinearProgress: {
+      styleOverrides: {
+        root: {
+          borderRadius: 10,
+        },
+        bar: {
+          borderRadius: 10,
+        },
+      },
     },
   },
 });
