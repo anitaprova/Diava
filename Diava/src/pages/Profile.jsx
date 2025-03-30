@@ -13,7 +13,6 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import NotebookCard from "../components/Notebook";
 import { auth } from "../firebase/firebase";
-import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import axios from "axios"
@@ -280,16 +279,6 @@ export default function Profile() {
           />
         </div>
       </div>
-
-      {/* Log out button here. Needs to be formatted correctly */}
-      <Button
-        variant="contained"
-        color="secondary"
-        onClick={handleLogout}
-        style={{ marginTop: "20px", marginLeft: "20px" }}
-      >
-        Logout
-      </Button>
     </Box>
   );
 }
