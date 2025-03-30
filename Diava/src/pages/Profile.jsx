@@ -8,6 +8,7 @@ import {
   WorkspacePremium as Medal,
   Add as Add,
 } from "@mui/icons-material";
+import CloseIcon from "@mui/icons-material/Close";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import NotebookCard from "../components/Notebook";
@@ -259,12 +260,20 @@ export default function Profile() {
                 />
               ) : (
                 <div
-                  className="w-full ml-10"
+                  className="flex w-full ml-10 justify-between"
                   onDoubleClick={() => {
                     setEditIndex(index), setText(goal);
                   }}
                 >
-                  🎯{goal}
+                  <Typography>🎯{goal}</Typography>
+                  <CloseIcon
+                    onClick={() => {
+                      setGoals(goals.filter((arg) => arg !== goal));
+                    }}
+                    sx={{
+                      cursor: "pointer",
+                    }}
+                  />
                 </div>
               )
             )}
@@ -281,8 +290,6 @@ export default function Profile() {
       >
         Logout
       </Button>
-
-
     </Box>
   );
 }
