@@ -17,6 +17,7 @@ import Stack from "@mui/material/Stack";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
+import Tooltip from "@mui/material/Tooltip";
 import Divider from "@mui/material/Divider";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase/firebase";
@@ -147,15 +148,17 @@ export default function Navbar() {
             <ChatBubbleIcon fontSize="large" />
           </IconButton>
 
-          <IconButton
-            onClick={handleClick}
-            aria-controls={open ? "account-menu" : undefined}
-            aria-haspopup="true"
-            aria-expanded={open ? "true" : undefined}
-            color="inherit"
-          >
-            <AccountCircleIcon fontSize="large" />
-          </IconButton>
+          <Tooltip title="Account">
+            <IconButton
+              onClick={handleClick}
+              aria-controls={open ? "account-menu" : undefined}
+              aria-haspopup="true"
+              aria-expanded={open ? "true" : undefined}
+              color="inherit"
+            >
+              <AccountCircleIcon fontSize="large" />
+            </IconButton>
+          </Tooltip>
           <Menu
             anchorEl={anchorEl}
             id="account-menu"
@@ -193,7 +196,7 @@ export default function Navbar() {
             transformOrigin={{ horizontal: "right", vertical: "top" }}
             anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
           >
-            <MenuItem onClick={handleClose}>
+            <MenuItem onClick={() => navigate(`/profile`)}>
               <ListItemIcon>
                 <AccountCircleIcon fontSize="small" />
               </ListItemIcon>
