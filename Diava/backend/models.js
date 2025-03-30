@@ -106,24 +106,23 @@ const updateList = async (id, body) => {
 };
 
 // Deleting an existing List
-// const deleteList = async (id, body) => {
-//   try {
-//     const { user_id, name } = body;
-//     const results = await pool.query(
-//       "UPDATE lists SET user_id = $1, name = $2 RETURNING *",
-//       [user_id, name]
-//     );
+const deleteList = async (id) => {
+  try {
+    const results = await pool.query(
+      "DELETE FROM lists WHERE id = $1 RETURNING *",
+      [id]
+    );
 
-//     if (results.rowCount === 0) {
-//       throw new Error("List not found");
-//     }
+    if (results.rowCount === 0) {
+      throw new Error("List not found");
+    }
 
-//     return results.rows[0];
-//   } catch (error) {
-//     console.error("Error updating List:", error);
-//     throw new Error("Internal server error");
-//   }
-// };
+    return results.rows[0];
+  } catch (error) {
+    console.error("Error delete List:", error);
+    throw new Error("Internal server error");
+  }
+};
 
 module.exports = {
   getGoals,
@@ -132,4 +131,5 @@ module.exports = {
   getLists,
   addList,
   updateList,
+  deleteList,
 };
