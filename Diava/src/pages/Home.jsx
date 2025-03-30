@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Typography, Box, Button } from "@mui/material";
 import LinearProgress from "@mui/material/LinearProgress";
 import ArrowCircleRightIcon from "@mui/icons-material/ArrowCircleRight";
+import axios from "axios";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -61,7 +62,15 @@ export default function Home() {
   ]);
   const [currentlyReading, setCurrentlyReading] = useState([""]);
   const [recommendation, setRecommendation] = useState([""]);
-  console.log(toRead);
+  const [userLists, setUserLists] = useState([""]);
+
+  useEffect(() => {
+    axios
+      .get(`http://localhost:5000/list`)
+      .then((response) => setUserLists(response.data || []))
+      .catch((error) => console.error("Error fetching books:", error));
+  }, []);
+
   return (
     <div className="ml-50 mr-50 mt-10 mb-25 font-merriweather text-darkbrown">
       <div className="grid grid-flow-col grid-rows-4 gap-x-20">
@@ -189,6 +198,17 @@ export default function Home() {
               onClick={() => navigate(`/recommendations`)}
             />
           </Box>
+        </div>
+      </div>
+
+      <div className="mt-30">
+        <Typography variant="h4">Your Lists</Typography>
+        <div className="grid">
+          {userLists.length > 0 ? (
+            userLists.map((list) => <Typography variant="h5">{list.name}</Typography>)
+          ) : (
+            <p>Nothing added yet!</p>
+          )}
         </div>
       </div>
     </div>

@@ -1,10 +1,10 @@
-const { Pool } = require('pg');
+const { Pool } = require("pg");
 
 const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'Diava',
-  password: 'Capstone2025!',
+  user: "postgres",
+  host: "localhost",
+  database: "diava",
+  password: "Capstone2025!",
   port: 5432,
 });
 
@@ -22,7 +22,7 @@ const getGoals = async () => {
 // Create a new goal
 const createGoal = async (body) => {
   try {
-    const {user_id, goal, is_completed } = body;
+    const { user_id, goal, is_completed } = body;
     const results = await pool.query(
       "INSERT INTO goals (user_id, goal, is_completed) VALUES ($1, $2, $3) RETURNING *",
       [user_id, goal, is_completed]
@@ -54,8 +54,41 @@ const updateGoal = async (id, body) => {
   }
 };
 
+// Get all lists
+const getLists = async () => {
+  try {
+    const results = await pool.query("SELECT * FROM lists");
+    return results.rows;
+  } catch (error) {
+    console.error("Error fetching lists:", error);
+    throw new Error("Internal server error");
+  }
+};
+
+// Add new list
+const addList = async (body) => {
+  try {
+    const { user_id, name } = body;
+    const results = await pool.query(
+      "INSERT INTO lists (user_id, name) VALUES ($1, $2) RETURNING *",
+      [user_id, name]
+    );
+
+    if (results.rowCount === 0) {
+      throw new Error("Goal not found");
+    }
+
+    return results.rows[0];
+  } catch (error) {
+    console.error("Error updating goal:", error);
+    throw new Error("Internal server error");
+  }
+};
+
 module.exports = {
   getGoals,
   createGoal,
-  updateGoal
+  updateGoal,
+  getLists,
+  addList,
 };
