@@ -4,6 +4,7 @@ import { Typography, Box, Button } from "@mui/material";
 import LinearProgress from "@mui/material/LinearProgress";
 import ArrowCircleRightIcon from "@mui/icons-material/ArrowCircleRight";
 import axios from "axios";
+import CustomList from "../components/CustomList";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -203,9 +204,11 @@ export default function Home() {
 
       <div className="mt-30">
         <Typography variant="h4">Your Lists</Typography>
-        <div className="grid">
-          {userLists.length > 0 ? (
-            userLists.map((list) => <Typography variant="h5">{list.name}</Typography>)
+        <div className="">
+          {userLists?.length > 0 ? (
+            userLists.map((list) => (
+              <CustomList id={list.list_id} name={list.name} />
+            ))
           ) : (
             <p>Nothing added yet!</p>
           )}
