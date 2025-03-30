@@ -1,10 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Typography, Box, Button } from "@mui/material";
+import { Typography, Box, Button, TextField } from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import { auth } from "../firebase/firebase";
 import axios from "axios";
 
-export default function CustomList({ id, name }) {
+export default function CustomList({ id, name, list_id }) {
   const navigate = useNavigate();
+  const [currName, setCurrName] = useState(name);
   const [books, setBooks] = useState([
     {
       id: "3vo0NQbIN2YC",
@@ -25,9 +32,70 @@ export default function CustomList({ id, name }) {
     },
   ]);
 
+  const [open, setOpen] = useState(false);
+  const handleOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  const updateList = async (listData) => {
+      try {
+        const response = await axios.put(`http://localhost:5000/list/${id}`, listData);
+        setCurrName(response.data.name);
+        console.log(response);
+      } catch (error) {
+        console.error("Error updating list:", error.response.data);
+      }
+    };
+  
+
   return (
     <div className="mb-10 w-full">
-      <Typography variant="h5">{name}</Typography>
+      <Typography variant="h5">
+        {currName ? currName : name} 
+        
+        <EditIcon onClick={handleOpen} />{" "}
+      </Typography>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        fullWidth
+        slotProps={{
+          paper: {
+            component: "form",
+            onSubmit: (event) => {
+              event.preventDefault();
+              const formData = new FormData(event.currentTarget);
+              const formJson = Object.fromEntries(formData.entries());
+              const newName = formJson.name;
+              updateList({
+                user_id: auth.currentUser.uid,
+                name: newName,
+                list_id: list_id, 
+                id: id
+              });
+              
+              handleClose();
+            },
+          },
+        }}
+      >
+        <DialogTitle>Edit {name}</DialogTitle>
+        <DialogContent className="space-y-5">
+          <div className="gap-x-5">
+            <Typography>New name</Typography>
+            <TextField size="small" variant="outlined" name="name" />
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button type="submit" variant="coffee">
+            Update
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Box className="bg-vanilla shadow-custom w-full rounded-md">
         {books.length > 0 ? (
           books.map((book) => (

@@ -71,7 +71,6 @@ export default function Home() {
   const [currentlyReading, setCurrentlyReading] = useState([""]);
   const [recommendation, setRecommendation] = useState([""]);
   const [userLists, setUserLists] = useState([""]);
-  console.log(userLists);
   const [open, setOpen] = useState(false);
   const handleOpen = () => {
     setOpen(true);
@@ -80,8 +79,6 @@ export default function Home() {
   const handleClose = () => {
     setOpen(false);
   };
-
-  // console.log(auth.currentUser.uid);
 
   const createList = async (listData) => {
     try {
@@ -272,7 +269,7 @@ export default function Home() {
         <div>
           {userLists.length > 0 ? (
             userLists.map((list) => (
-              <CustomList id={list.list_id} name={list.name} />
+              <CustomList id={list.id} name={list.name} list_id={list.list_id} />
             ))
           ) : (
             <p>Nothing added yet!</p>
