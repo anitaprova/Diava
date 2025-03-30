@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { Typography, Box } from "@mui/material";
 import Button from "@mui/material/Button";
@@ -30,11 +29,7 @@ export default function BookDetail() {
   const genres = [
     ...new Set(genresRaw.flatMap((category) => category.split("/"))),
   ];
-  const options = [
-    "Want to Read",
-    "Currently Reading",
-    "Read",
-  ];
+  const options = ["Want to Read", "Currently Reading", "Read"];
 
   const [open, setOpen] = React.useState(false);
   const anchorRef = React.useRef(null);
@@ -58,7 +53,6 @@ export default function BookDetail() {
       return;
     }
     setOpen(false);
-
   };
 
   useEffect(() => {
@@ -153,11 +147,7 @@ export default function BookDetail() {
 
           <div className="flex flex-col gap-y-5 h-fit w-fit">
             <ButtonGroup>
-              <Button
-                variant="soft"
-                ref={anchorRef}
-                onClick={handleClick}
-              >
+              <Button variant="soft" ref={anchorRef} onClick={handleClick}>
                 {options[selectedIndex]}
               </Button>
               <Button

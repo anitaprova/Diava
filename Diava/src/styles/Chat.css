@@ -1,0 +1,77 @@
+/* Custom scrollbar for chat components */
+.MuiBox-root::-webkit-scrollbar {
+  width: 6px;
+}
+
+.MuiBox-root::-webkit-scrollbar-track {
+  background: #f1eada;
+}
+
+.MuiBox-root::-webkit-scrollbar-thumb {
+  background-color: #aaa396;
+  border-radius: 6px;
+}
+
+/* Ensure the chat page takes full height */
+.chat-page {
+  height: calc(100vh - 64px);
+  overflow: hidden;
+}
+
+/* Club avatar styles */
+.club-avatar-wrapper {
+  margin: 8px 0;
+  padding: 4px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.club-avatar-wrapper:hover {
+  background-color: rgba(206, 193, 168, 0.5);
+}
+
+.club-avatar-wrapper.selected {
+  background-color: #cec1a8;
+}
+
+/* Channel styles */
+.channel-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin: 0 8px;
+}
+
+.channel-item:hover {
+  background-color: #b8b3a7;
+}
+
+.channel-item.selected {
+  background-color: #cec1a8;
+}
+
+.channel-icon {
+  margin-right: 8px;
+  font-size: 14px;
+  color: #5d4b3d;
+}
+
+/* Feature styles */
+.features-section {
+  margin-top: auto;
+  border-top: 1px solid #ddd;
+  padding-top: 8px;
+}
+
+/* Tab styles */
+.MuiTabs-indicator {
+  background-color: #5d4b3d !important;
+}
+
+.MuiTab-root.Mui-selected {
+  color: #5d4b3d !important;
+  font-weight: 600;
+}

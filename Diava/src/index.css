@@ -1,20 +1,22 @@
-@import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&display=swap");
 @import "tailwindcss";
 
 @theme {
-	--color-sand: #CEC1A8;
-	--color-brown: #B59E7E;
-	--color-darkbrown: #5D4B3D;
-	--color-grey: #AAA396;
-	--color-vanilla: #F1EADA;
+  --color-sand: #cec1a8;
+  --color-brown: #b59e7e;
+  --color-mocha: #c5ad91;
+  --color-darkbrown: #5d4b3d;
+  --color-grey: #aaa396;
+  --color-vanilla: #f1eada;
 
-	--color-primary: var(--color-brown);
+  --color-primary: var(--color-brown);
   --color-secondary: var(--color-darkbrown);
   --color-background: var(--color-vanilla);
   --color-text: var(--color-darkbrown);
 
-	--font-cinzel: "Cinzel", serif;
-	--font-merriweather: "Merriweather", serif;
+  --font-cinzel: "Cinzel", serif;
+  --font-merriweather: "Merriweather", serif;
 
-	--drop-shadow-custom: -15px 20px 0px 0px #CBBFA7;
+  --shadow-custom: -15px 20px 0px 0px #5d4b3d;
+  --shadow-small: -10px 10px 0px 0px #aaa396;
 }

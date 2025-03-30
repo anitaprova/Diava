@@ -22,10 +22,10 @@ const getGoals = async () => {
 // Create a new goal
 const createGoal = async (body) => {
   try {
-    const {id, user_id, goal, is_completed } = body;
+    const {user_id, goal, is_completed } = body;
     const results = await pool.query(
-      "INSERT INTO goals (id, user_id, goal, is_completed) VALUES ($1, $2, $3, $4) RETURNING *",
-      [id, user_id, goal, is_completed]
+      "INSERT INTO goals (user_id, goal, is_completed) VALUES ($1, $2, $3) RETURNING *",
+      [user_id, goal, is_completed]
     );
     return results.rows[0]; // Return the created goal
   } catch (error) {

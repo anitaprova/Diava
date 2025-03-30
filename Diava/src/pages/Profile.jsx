@@ -11,7 +11,12 @@ import {
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import NotebookCard from "../components/Notebook";
-import axios from'axios'
+import { auth } from "../firebase/firebase";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { signOut } from "firebase/auth";
+import axios from "axios"
+
 
 export default function Profile() {
   const [goals, setGoals] = useState([
@@ -22,7 +27,19 @@ export default function Profile() {
 
   const [editIndex, setEditIndex] = useState(null);
   const [text, setText] = useState("");
+  const navigate = useNavigate();
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/login", {replace: true});
+      console.log("Signed out successfully.");
+    }
+    catch (error) {
+      console.log(error);
+    }
+  }
+  
   const getGoals = async () => {
     try {
       const response  = await axios.get('http://localhost:5000/goals')
@@ -30,9 +47,7 @@ export default function Profile() {
     } catch (err) {
       console.error("Error creating goal:", error)
     }
-};
-
-  
+  };
   const createGoal = async (goalData) => {
     try {
       const response = await axios.post("http://localhost:5000/goals", goalData);
@@ -41,11 +56,26 @@ export default function Profile() {
       console.error("Error creating goal:", error);
     }
   };
-  useEffect(() => {
-    getGoals();
-  }, []);
 
+  const handleClick = () => {
+    setGoals([...goals, "Double click and enter a goal!"]);
+    console.log();
+  };
 
+  const handleEnter = async (event) => {
+    if (event.key === "Enter" && editIndex !== null) {
+      const updatedGoals = [...goals];
+      updatedGoals[editIndex] = text;
+      const user_id = 12345678
+      const new_goal = {user_id, goal: text, is_completed: false};
+      await createGoal(new_goal);
+      console.log('New goal added: ', createGoal.goalData);
+      setGoals(updatedGoals);
+      setEditIndex(null);
+      setText("");
+    }
+  };
+  /*
   const handleClick = () => {
     setGoals([...goals, "Double click and enter a goal!"]);
     console.log();
@@ -64,7 +94,7 @@ export default function Profile() {
       setText("");
     }
   };
-
+*/
   return (
     <Box className="flex flex-col">
       <Box className="bg-vanilla pb-5 text-darkbrown">
@@ -241,6 +271,18 @@ export default function Profile() {
           />
         </div>
       </div>
+
+      {/* Log out button here. Needs to be formatted correctly */}
+      <Button
+        variant="contained"
+        color="secondary"
+        onClick={handleLogout}
+        style={{ marginTop: "20px", marginLeft: "20px" }}
+      >
+        Logout
+      </Button>
+
+
     </Box>
   );
 }
