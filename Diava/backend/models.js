@@ -75,13 +75,13 @@ const addList = async (body) => {
     );
 
     if (results.rowCount === 0) {
-      throw new Error("Goal not found");
+      throw new Error("List not found");
     }
 
     return results.rows[0];
   } catch (error) {
-    console.error("Error updating goal:", error);
-    throw new Error("Internal server error");
+    console.error("Error updating list:", error);
+    throw new Error("Database error:", error);
   }
 };
 

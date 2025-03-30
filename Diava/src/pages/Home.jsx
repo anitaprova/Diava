@@ -1,10 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Typography, Box, Button } from "@mui/material";
+import { Typography, Box, Button, TextField } from "@mui/material";
 import LinearProgress from "@mui/material/LinearProgress";
+import Add from "@mui/icons-material/Add";
 import ArrowCircleRightIcon from "@mui/icons-material/ArrowCircleRight";
 import axios from "axios";
 import CustomList from "../components/CustomList";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import { auth } from "../firebase/firebase";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -64,6 +71,27 @@ export default function Home() {
   const [currentlyReading, setCurrentlyReading] = useState([""]);
   const [recommendation, setRecommendation] = useState([""]);
   const [userLists, setUserLists] = useState([""]);
+  console.log(userLists);
+  const [open, setOpen] = useState(false);
+  const handleOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  // console.log(auth.currentUser.uid);
+
+  const createList = async (listData) => {
+    try {
+      const response = await axios.post("http://localhost:5000/list", listData);
+      console.log(response);
+      setUserLists([...userLists, response.data]);
+    } catch (error) {
+      console.error("Error creating list:", error.response.data);
+    }
+  };
 
   useEffect(() => {
     axios
@@ -203,9 +231,46 @@ export default function Home() {
       </div>
 
       <div className="mt-30">
-        <Typography variant="h4">Your Lists</Typography>
-        <div className="">
-          {userLists?.length > 0 ? (
+        <Typography variant="h4" className="flex justify-between">
+          Your Lists{" "}
+          <Add className="bg-vanilla rounded-sm mr-4" onClick={handleOpen} />
+        </Typography>
+        <Dialog
+          open={open}
+          onClose={handleClose}
+          fullWidth
+          slotProps={{
+            paper: {
+              component: "form",
+              onSubmit: (event) => {
+                event.preventDefault();
+                const formData = new FormData(event.currentTarget);
+                const formJson = Object.fromEntries(formData.entries());
+                const name = formJson.name;
+                createList({
+                  user_id: auth.currentUser.uid,
+                  name: name,
+                });
+                handleClose();
+              },
+            },
+          }}
+        >
+          <DialogTitle>Add a New List</DialogTitle>
+          <DialogContent className="space-y-5">
+            <div className="gap-x-5">
+              <Typography>Name</Typography>
+              <TextField size="small" variant="outlined" name="name" />
+            </div>
+          </DialogContent>
+          <DialogActions>
+            <Button type="submit" variant="coffee">
+              Add
+            </Button>
+          </DialogActions>
+        </Dialog>
+        <div>
+          {userLists.length > 0 ? (
             userLists.map((list) => (
               <CustomList id={list.list_id} name={list.name} />
             ))
