@@ -70,13 +70,16 @@ const updateGoal = async (id, body) => {
 };
 
 // Get all lists
-const getLists = async () => {
+const getLists = async (user_id) => {
   try {
-    const results = await pool.query("SELECT * FROM lists");
+    const results = await pool.query(
+      "SELECT * FROM lists WHERE user_id = $1",
+      [user_id]
+    );
     return results.rows;
   } catch (error) {
     console.error("Error fetching lists:", error);
-    throw new Error("Internal server error");
+    throw new Error("Internal server error", error);
   }
 };
 

@@ -92,7 +92,9 @@ export default function Home() {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:5000/list`)
+      .get(`http://localhost:5000/list`, {
+        params: { user_id: auth.currentUser.uid }
+      })
       .then((response) => setUserLists(response.data || []))
       .catch((error) => console.error("Error fetching books:", error));
   }, []);

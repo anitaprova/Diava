@@ -38,7 +38,8 @@ app.put("/goals/:id", async (req, res) => {
 
 app.get("/list", async (req, res) => {
   try {
-    const response = await DiavaModel.getLists();
+    const { user_id } = req.query; 
+    const response = await DiavaModel.getLists(user_id);
     res.status(200).json(response);
   } catch (error) {
     res.status(500).json({ error: error.message });
