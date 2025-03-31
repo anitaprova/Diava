@@ -42,22 +42,35 @@ export default function CustomList({ id, name, list_id }) {
   };
 
   const updateList = async (listData) => {
-      try {
-        const response = await axios.put(`http://localhost:5000/list/${id}`, listData);
-        setCurrName(response.data.name);
-        console.log(response);
-      } catch (error) {
-        console.error("Error updating list:", error.response.data);
-      }
-    };
-  
+    try {
+      const response = await axios.put(
+        `http://localhost:5000/list/${id}`,
+        listData
+      );
+      setCurrName(response.data.name);
+      console.log(response);
+    } catch (error) {
+      console.error("Error updating list:", error.response.data);
+    }
+  };
+
+  const deleteList = async (listData) => {
+    try {
+      const response = await axios.delete(
+        `http://localhost:5000/list/${id}`,
+        listData
+      );
+      console.log(response);
+      window.location.reload();
+    } catch (error) {
+      console.error("Error deleting list:", error.response.data);
+    }
+  };
 
   return (
     <div className="mb-10 w-full">
       <Typography variant="h5">
-        {currName ? currName : name} 
-        
-        <EditIcon onClick={handleOpen} />{" "}
+        {currName ? currName : name} <EditIcon onClick={handleOpen} />
       </Typography>
       <Dialog
         open={open}
@@ -74,10 +87,10 @@ export default function CustomList({ id, name, list_id }) {
               updateList({
                 user_id: auth.currentUser.uid,
                 name: newName,
-                list_id: list_id, 
-                id: id
+                list_id: list_id,
+                id: id,
               });
-              
+
               handleClose();
             },
           },
@@ -91,6 +104,12 @@ export default function CustomList({ id, name, list_id }) {
           </div>
         </DialogContent>
         <DialogActions>
+          <Button variant="dark" onClick={() => {
+            deleteList();
+            handleClose();
+          }}>
+            Delete
+          </Button>
           <Button type="submit" variant="coffee">
             Update
           </Button>

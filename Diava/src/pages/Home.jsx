@@ -70,7 +70,7 @@ export default function Home() {
   ]);
   const [currentlyReading, setCurrentlyReading] = useState([""]);
   const [recommendation, setRecommendation] = useState([""]);
-  const [userLists, setUserLists] = useState([""]);
+  const [userLists, setUserLists] = useState([]);
   const [open, setOpen] = useState(false);
   const handleOpen = () => {
     setOpen(true);

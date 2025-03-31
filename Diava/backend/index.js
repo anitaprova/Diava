@@ -67,7 +67,7 @@ app.put("/list/:id", async (req, res) => {
 app.delete("/list/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const response = await DiavaModel.deleteList(id, req.body);
+    const response = await DiavaModel.deleteList(id);
     res.status(200).json(response);
   } catch (error) {
     res.status(500).json({ error: error.message });
