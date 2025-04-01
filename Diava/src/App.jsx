@@ -5,6 +5,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import theme from "./theme";
+import ChatPage from "./pages/ChatPage.jsx"
 import Home from "./pages/Home.jsx";
 import Navbar from "./components/Navbar.jsx";
 import Login from "./pages/Login.jsx";
@@ -37,6 +38,14 @@ function App() {
             <Route path="/googlesignup" element={<GoogleSignUp />} />
 
             {/* Private Routes */}
+            <Route
+              path="/chats"
+              element={
+                <ProtectedRoute>
+                  <ChatPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/review/:id"
               element={

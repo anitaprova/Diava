@@ -267,18 +267,6 @@ export default function Profile() {
           />
         </div>
       </div>
-
-      {/* Log out button here. Needs to be formatted correctly */}
-      <Button
-        variant="contained"
-        color="secondary"
-        onClick={handleLogout}
-        style={{ marginTop: "20px", marginLeft: "20px" }}
-      >
-        Logout
-      </Button>
-
-
     </Box>
   );
 }
