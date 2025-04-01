@@ -28,7 +28,7 @@ export default function Profile() {
     try {
       const response  = await axios.get('http://localhost:5000/goals')
 
-    } catch (err) {
+    } catch (error) {
       console.error("Error creating goal:", error)
     }
   };

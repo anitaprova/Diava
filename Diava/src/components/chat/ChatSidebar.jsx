@@ -19,6 +19,7 @@ import { GiTrophyCup } from "react-icons/gi";
 import { collection, query, where, getDocs, getDoc, setDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
+import { useChat } from "../../context/ChatContext";
 
 const SidebarContainer = styled(Box)(({ theme }) => ({
   width: 300,
@@ -75,7 +76,7 @@ const ChannelText = styled(ListItemText)(({ theme }) => ({
 }));
 
 const ChatSidebar = ({
-  conversations,
+  chats,
   selectedChat,
   setSelectedChat,
   viewMode,
@@ -91,6 +92,7 @@ const ChatSidebar = ({
   const [user, setUser] = useState(null);
   const [club, setClub] = useState(null);
   const { currentUser } = useAuth();
+  const { dispatch } = useChat();
 
   // Update tab value when viewMode changes
   useEffect(() => {
@@ -109,6 +111,11 @@ const ChatSidebar = ({
   const handleInputChange = (e) => {
     setInputText(e.target.value);
   };
+
+  const handleSelectedChat = (c) => {
+    setSelectedChat(c);
+    dispatch({type:"CHANGE_USER", payload: c.userInfo});
+  }
 
   const handleInputSubmit = (e) => {
     if (e.key === "Enter") {
@@ -130,6 +137,8 @@ const ChatSidebar = ({
   };
 
   const handleUserSearch = async () => {
+    if (inputText == "") return;
+    
     const q = query(
       collection(db, "Users"),
       where("uid", "==", inputText) // In the future "uid" should be replaced with "username"
@@ -157,16 +166,21 @@ const ChatSidebar = ({
   };
 
   const createPrivateChat = async () => {
-    if (!currentUser || !user) return;
+    if (!currentUser || !user) {
+      console.log("A user was null");
+      return;
+    }
 
-    const combinedUID = currentUser.uid > user.uid ? currentUser.uid + user.uid : user.uid + currentUser.uid;
+    const combinedUID = currentUser.uid > user.uid 
+      ? currentUser.uid + user.uid 
+      : user.uid + currentUser.uid;
+
+    console.log(combinedUID);
 
     try {
       const res = await getDoc(doc(db, "Chats", combinedUID));
 
       if (!res.exists()) {
-        await setDoc(doc(db, "Chats", combinedUID), { messages: [] });
-
         await updateDoc(doc(db, "UserChats", currentUser.uid), {
           [combinedUID+".userInfo"]: {
             uid:user.uid,
@@ -181,12 +195,14 @@ const ChatSidebar = ({
         const currentUserInfo = userDoc.data();
 
         await updateDoc(doc(db, "UserChats", user.uid), {
-          [combinedUID+".userInfo"]: {
+          [combinedUID + ".userInfo"]: {
             uid:currentUser.uid,
             username:currentUserInfo.username
           },
-          [combinedUID+".date"]: serverTimestamp()
+          [combinedUID + ".date"]: serverTimestamp()
         });
+
+        await setDoc(doc(db, "Chats", combinedUID), { messages: [] });
 
         console.log("Created private chat.");
       }
@@ -299,18 +315,24 @@ const ChatSidebar = ({
       )}
 
       <ContentContainer>
-        {viewMode === "messages"
-          ? // Show conversations for Messages tab
-            conversations.map((conversation) => (
+        {viewMode === "messages" ? (
+          // Show conversations for Messages tab
+          chats? (
+            Object.entries(chats)?.map((chat) => (
               <ChatConversation
-                key={conversation.id}
-                conversation={conversation}
-                isSelected={selectedChat?.id === conversation.id}
-                onClick={() => setSelectedChat(conversation)}
+                key={chat[0]}
+                chat={chat[1]}
+                isSelected={selectedChat?.id === chat[0]}
+                onClick={() => handleSelectedChat(chat[1])}
               />
             ))
-          : // Show channels for the selected club
-            renderChannels()}
+          ) : (
+            <Typography variant="body2">No conversations available</Typography> // Default view if chats are empty
+          )
+        ) : (
+          // Show channels for the selected club
+          renderChannels()
+        )}
       </ContentContainer>
     </SidebarContainer>
   );

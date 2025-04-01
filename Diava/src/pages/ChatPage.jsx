@@ -7,6 +7,7 @@ import "../styles/Chat.css";
 import { onSnapshot, doc } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import { useAuth } from "../context/AuthContext";
+import { useChat } from "../context/ChatContext";
 
 const ChatContainer = styled("div")({
   display: "flex",
@@ -16,30 +17,30 @@ const ChatContainer = styled("div")({
 
 const ChatPage = () => {
   const { currentUser } = useAuth();
+  const { dispatch } = useChat();
   const [viewMode, setViewMode] = useState("messages"); // "messages" or "clubs"
   const [selectedChat, setSelectedChat] = useState(null);
   const [selectedClub, setSelectedClub] = useState(null);
   const [selectedChannel, setSelectedChannel] = useState(null);
-  const [conversations, setConversations] = useState([]);
+  const [chats, setChats] = useState([]);
 
-  // useEffect(() => {
-  //   const getChats = () => {
-  //     const unsubscribe = onSnapshot(doc(db, "UserChats", currentUser.uid), (doc) => {
-  //       setConversations(doc.data());
-  //     });
+  // TODO: Get club chats
+  useEffect(() => {
+    const getChats = () => {
+      const unsubscribe = onSnapshot(doc(db, "UserChats", currentUser.uid), (doc) => {
+        setChats(doc.data());
+      });
 
-  //     return () => {
-  //       unsubscribe();
-  //     };
-  //   };
+      return () => {
+        unsubscribe();
+      };
+    };
     
-  //   currentUser.uid && getChats();
-  // }, [currentUser.uid]);
+    currentUser.uid && getChats();
+  }, [currentUser.uid]);
 
   // Mock data for clubs
-  const [clubs, setClubs] = useState([
-    
-  ]);
+  const [clubs, setClubs] = useState([]);
 
   const handleTabChange = (newMode) => {
     setViewMode(newMode);
@@ -56,7 +57,7 @@ const ChatPage = () => {
       )}
 
       <ChatSidebar
-        conversations={conversations}
+        chats={chats}
         selectedChat={selectedChat}
         setSelectedChat={setSelectedChat}
         viewMode={viewMode}
