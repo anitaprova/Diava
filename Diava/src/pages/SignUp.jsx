@@ -50,13 +50,19 @@ const SignUp = () => {
           await sendEmailVerification(user);
           alert("Go to your email and verify your account.");
 
+          // NOTE: Before creating doc username needs to be unique.
+          // This should be done through seperate database
           // Store user in database.
           if (user) {
             await setDoc(doc(db, "Users", user.uid), {
               email: user.email,
               firstName: formData.firstName,
               lastName: formData.lastName,
+              username: formData.username,
+              uid: user.uid,
             });
+
+            await setDoc(doc(db, "UserChats", user.uid), {});
           }
 
           navigate("/login");

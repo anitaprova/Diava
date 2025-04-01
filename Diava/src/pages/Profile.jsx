@@ -11,10 +11,6 @@ import {
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import NotebookCard from "../components/Notebook";
-import { auth } from "../firebase/firebase";
-import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { signOut } from "firebase/auth";
 import axios from "axios"
 
 
@@ -27,18 +23,6 @@ export default function Profile() {
 
   const [editIndex, setEditIndex] = useState(null);
   const [text, setText] = useState("");
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      navigate("/login", {replace: true});
-      console.log("Signed out successfully.");
-    }
-    catch (error) {
-      console.log(error);
-    }
-  }
   
   const getGoals = async () => {
     try {

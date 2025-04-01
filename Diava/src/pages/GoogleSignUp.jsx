@@ -49,13 +49,19 @@ const GoogleSignUp = () => {
         const userRef = doc(db, "Users", result.user.uid);
         const userDoc = await getDoc(userRef);
     
+        // NOTE: Before creating doc username needs to be unique.
+        // This should be done through seperate database
         // Store user in database
         if (!userDoc.exists()) {
           await setDoc(doc(db, "Users", result.user.uid), {
             email: result.user.email,
             firstName: formData.firstName,
             lastName: formData.lastName,
+            username: formData.username,
+            uid: result.user.uid,
           });
+
+          await setDoc(doc(db, "UserChats", result.user.uid), {});
         }
     
           navigate(mainpage);
