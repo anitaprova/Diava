@@ -318,7 +318,7 @@ const ChatSidebar = ({
         {viewMode === "messages" ? (
           // Show conversations for Messages tab
           chats? (
-            Object.entries(chats)?.map((chat) => (
+            Object.entries(chats)?.sort((a, b) => b[1].date - a[1].date).map((chat) => (
               <ChatConversation
                 key={chat[0]}
                 chat={chat[1]}
