@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { Link, useNavigate } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
 import { FaBook, FaGamepad, FaUsers, FaGoogle } from "react-icons/fa";
 import "../styles/Auth.css";
@@ -13,14 +15,21 @@ const SignUp = () => {
   const { currentUser } = useAuth();
   const mainpage = "/profile";
 
+
   // Check if user is logged in
+  useEffect(() => {
+      if (currentUser && currentUser.emailVerified) {
+        navigate(mainpage, { replace: true });
+      }
+    }, [currentUser, navigate]);
+
   useEffect(() => {
     if (currentUser && currentUser.emailVerified) {
       navigate(mainpage, { replace: true });
     }
   }, [currentUser, navigate]);
 
-  // State to manage form input values
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -30,29 +39,66 @@ const SignUp = () => {
     confirmPassword: "",
   });
 
-  // Handle input changes
-  const handleChange = (e) => {
+  const [error, setError] = useState("");
+  const [usernameMessage, setUsernameMessage] = useState("");
+
+  const handleChange = async (e) => {
     const { name, value } = e.target;
     setFormData((prevState) => ({
       ...prevState,
       [name]: value,
     }));
+
+    if (name === "username") {
+      const exists = await checkUsernameExists(value);
+      setUsernameMessage(exists ? "Username already taken. Please choose another." : "Username available.");
+    }
   };
 
   // Handle form submission
+
+  const checkUsernameExists = async (username) => {
+    if (!username) {
+      console.error("Username cannot be empty.");
+      return false; 
+    }
+    try {
+      const response = await axios.get(`http://localhost:5001/users?name=${username}`);
+      if(response.data == null) {
+        return false;
+      } else {
+        return true;
+      }
+    } catch (error) {
+      console.error("Error checking username:", error);
+      return false;
+    }
+  };
+  const createUser = async (userData) => {
+    try {
+      await axios.post("http://localhost:5001/allusers", userData);
+    } catch (error) {
+      console.error("Error creating user:", error);
+    }
+  };
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
+      const usernameAvailabe = await checkUsernameExists(formData.username);
+      if(usernameAvailabe){
+        alert("Username is already taken. Please pick another one.");
+        return;
+      }
       await createUserWithEmailAndPassword(auth, formData.email, formData.password)
         .then( async (userCredentials) => {
           const user = userCredentials.user;
           await sendEmailVerification(user);
           alert("Go to your email and verify your account.");
-
-          // NOTE: Before creating doc username needs to be unique.
-          // This should be done through seperate database
-          // Store user in database.
+          
+        // Store user in database.
           if (user) {
             await setDoc(doc(db, "Users", user.uid), {
               email: user.email,
@@ -63,6 +109,11 @@ const SignUp = () => {
             });
 
             await setDoc(doc(db, "UserChats", user.uid), {});
+            
+            // Store username in postgres
+            const newUser = {name:formData.username};
+            createUser(newUser);
+            console.log("New user created");
           }
 
           navigate("/login");
@@ -74,12 +125,14 @@ const SignUp = () => {
     }
 
     console.log("Form submitted:", formData);
+    // Navigate to home page after successful signup
+    navigate("/");
   };
-
   // Handle Google Sign Up
   const handleGoogleSignUp = () => {
+    // Google authentication will be implemented here
+    // Seperate page will be needed
     console.log("Google sign up clicked");
-    navigate("/googlesignup");
   };
 
   return (
