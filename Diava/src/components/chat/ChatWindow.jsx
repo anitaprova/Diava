@@ -5,6 +5,11 @@ import SendIcon from "@mui/icons-material/Send";
 import UserAvatar from "./UserAvatar";
 import ChatMessage from "./ChatMessage";
 import { FaHashtag } from "react-icons/fa";
+import { useChat } from "../../context/ChatContext";
+import { arrayUnion, doc, onSnapshot, updateDoc, Timestamp, serverTimestamp } from "firebase/firestore";
+import { db } from "../../firebase/firebase";
+import { useAuth } from "../../context/AuthContext";
+import { v4 as uuidv4 } from "uuid"
 
 const WindowContainer = styled(Box)({
   flex: 1,
@@ -44,237 +49,69 @@ const MessageInput = styled(InputBase)({
   marginRight: "8px",
 });
 
-// Mock conversation data - in a real app, this would come from Firebase
-const mockConversations = {
-  1: [
-    {
-      id: "1-1",
-      sender: "Daryl",
-      initial: "D",
-      content: "Hey how are you?",
-      timestamp: "10:30 AM",
-    },
-    {
-      id: "1-2",
-      sender: "You",
-      initial: "Y",
-      content:
-        "Not yet, I'm still finishing the one you recommended last week.",
-      timestamp: "10:32 AM",
-      isUser: true,
-    },
-    {
-      id: "1-3",
-      sender: "Daryl",
-      initial: "D",
-      content: "Oh, how are you liking it so far?",
-      timestamp: "10:33 AM",
-    },
-    {
-      id: "1-4",
-      sender: "You",
-      initial: "Y",
-      content: "It's amazing! The character development is really well done.",
-      timestamp: "10:35 AM",
-      isUser: true,
-    },
-  ],
-  2: [
-    {
-      id: "2-1",
-      sender: "Arielle",
-      initial: "A",
-      content: "Have you read that new book??",
-      timestamp: "Yesterday",
-    },
-    {
-      id: "2-2",
-      sender: "You",
-      initial: "Y",
-      content: "No, is it good?",
-      timestamp: "Yesterday",
-      isUser: true,
-    },
-    {
-      id: "2-3",
-      sender: "Arielle",
-      initial: "A",
-      content: "It's fantastic! I think you'd really enjoy it.",
-      timestamp: "Yesterday",
-    },
-  ],
-  3: [
-    {
-      id: "3-1",
-      sender: "Anita",
-      initial: "A",
-      content: "Meeting tomorrow at 5pm!",
-      timestamp: "3 hrs ago",
-    },
-    {
-      id: "3-2",
-      sender: "Anita",
-      initial: "A",
-      content: "I'll be there. Should we finish chapter 12?",
-      timestamp: "2 hrs ago",
-    },
-    {
-      id: "3-3",
-      sender: "You",
-      initial: "Y",
-      content: "I'll try to finish it tonight.",
-      timestamp: "1 hr ago",
-      isUser: true,
-    },
-  ],
-  4: [
-    {
-      id: "4-1",
-      sender: "Nathan",
-      initial: "N",
-      content: "I finished the chapter you recommended",
-      timestamp: "1 day ago",
-    },
-    {
-      id: "4-2",
-      sender: "You",
-      initial: "Y",
-      content: "What did you think?",
-      timestamp: "1 day ago",
-      isUser: true,
-    },
-    {
-      id: "4-3",
-      sender: "Nathan",
-      initial: "N",
-      content: "It was mind-blowing! That plot twist at the end...",
-      timestamp: "1 day ago",
-    },
-  ],
-  5: [
-    {
-      id: "5-1",
-      sender: "Jayson",
-      initial: "J",
-      content: "What did everyone think of the ending?",
-      timestamp: "2 days ago",
-    },
-    {
-      id: "5-2",
-      sender: "Jayson",
-      initial: "J",
-      content: "I didn't see it coming at all!",
-      timestamp: "2 days ago",
-    },
-    {
-      id: "5-3",
-      sender: "You",
-      initial: "Y",
-      content: "I had a feeling the protagonist would make that choice.",
-      timestamp: "2 days ago",
-      isUser: true,
-    },
-  ],
-};
-
 // Mock channel data
-const mockChannelMessages = {
-  "1-1": [
-    {
-      id: "c1-1",
-      sender: "Daryl",
-      initial: "D",
-      content: "Welcome to the General channel!",
-      timestamp: "2 days ago",
-    },
-    {
-      id: "c1-2",
-      sender: "Arielle",
-      initial: "A",
-      content: "Has anyone read '1984' recently?",
-      timestamp: "1 day ago",
-    },
-    {
-      id: "c1-3",
-      sender: "You",
-      initial: "Y",
-      content: "I read it last month. It's still so relevant.",
-      timestamp: "1 day ago",
-      isUser: true,
-    },
-  ],
-  "1-2": [
-    {
-      id: "c2-1",
-      sender: "Nathan",
-      initial: "N",
-      content: "I recommend 'Fahrenheit 451' if you haven't read it yet.",
-      timestamp: "3 days ago",
-    },
-    {
-      id: "c2-2",
-      sender: "You",
-      initial: "Y",
-      content: "Great recommendation! I'd also suggest 'Brave New World'.",
-      timestamp: "2 days ago",
-      isUser: true,
-    },
-  ],
-  "1-3": [
-    {
-      id: "c3-1",
-      sender: "Anita",
-      initial: "A",
-      content: "This month we're reading 'To Kill a Mockingbird'",
-      timestamp: "1 week ago",
-    },
-    {
-      id: "c3-2",
-      sender: "Jayson",
-      initial: "J",
-      content: "I'm halfway through. The character development is amazing.",
-      timestamp: "5 days ago",
-    },
-  ],
-};
+const mockChannelMessages = {};
 
 const ChatWindow = ({ selectedChat, isClubChannel = false, clubName = "" }) => {
+  const { currentUser } = useAuth();
+  const { data } = useChat();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
 
   // Update messages when selected chat changes
   useEffect(() => {
-    if (selectedChat) {
-      // Get messages for the selected conversation or channel
-      const chatMessages = isClubChannel
-        ? mockChannelMessages[selectedChat.id] || []
-        : mockConversations[selectedChat.id] || [];
-      setMessages(chatMessages);
-    }
-  }, [selectedChat, isClubChannel]);
+    const unsubscribe = onSnapshot(doc(db, "Chats", data.chatId), (doc) => {
+      doc.exists() && setMessages(doc.data().messages);
+    });
 
-  const handleSendMessage = () => {
-    if (message.trim() && selectedChat) {
-      const newMessage = {
-        id: Date.now().toString(),
-        sender: "You",
-        initial: "Y",
-        content: message,
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
+    return () => {
+      unsubscribe();
+    };
+  }, [data.chatId]);
+
+  const handleSendMessage = async () => {
+    try {
+      await updateDoc(doc(db, "Chats", data.chatId), {
+        messages: arrayUnion({
+          uid: uuidv4(),
+          message,
+          senderUid:currentUser.uid,
+          date: Timestamp.now()
         }),
-        isUser: true,
-      };
+      });
 
-      setMessages([...messages, newMessage]);
-      setMessage("");
+      updateSideBar();
+    }
+    catch (error) {
+      console.log(error);
     }
   };
+
+  const updateSideBar = async () => {
+    try {
+      await updateDoc(doc(db, "UserChats", currentUser.uid), {
+        [data.chatId + ".lastMessage"]: {
+          message
+        },
+        [data.chatId + ".date"]: serverTimestamp(),
+      });
+
+      await updateDoc(doc(db, "UserChats", data.user.uid), {
+        [data.chatId + ".lastMessage"]: {
+          message
+        },
+        [data.chatId + ".date"]: serverTimestamp(),
+      });
+    }
+    catch (error) {
+      console.log(error);
+    }
+  }
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
       handleSendMessage();
+      setMessage("");
     }
   };
 
@@ -310,9 +147,9 @@ const ChatWindow = ({ selectedChat, isClubChannel = false, clubName = "" }) => {
           </Box>
         ) : (
           <>
-            <UserAvatar initial={selectedChat.initial} />
+            <UserAvatar initial={(data.user.username[0]).toUpperCase()} />
             <Typography variant="h6" sx={{ marginLeft: 2 }}>
-              {selectedChat.name}
+              {data.user.username}
             </Typography>
           </>
         )}
@@ -320,7 +157,7 @@ const ChatWindow = ({ selectedChat, isClubChannel = false, clubName = "" }) => {
 
       <MessagesContainer>
         {messages.map((msg) => (
-          <ChatMessage key={msg.id} message={msg} />
+          <ChatMessage key={msg.senderUid} message={msg} />
         ))}
       </MessagesContainer>
 
@@ -329,7 +166,7 @@ const ChatWindow = ({ selectedChat, isClubChannel = false, clubName = "" }) => {
           placeholder="Type into chat"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyPress}
           fullWidth
         />
         <IconButton

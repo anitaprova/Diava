@@ -111,7 +111,12 @@ export default function CurrentlyReading() {
                     </Box>
                   </div>
 
-                  <Button variant="dark">Update Progress</Button>
+                  <Button
+                    variant="dark"
+                    onClick={() => navigate(`/update/${book.id}`)}
+                  >
+                    Update Progress
+                  </Button>
                 </div>
               </div>
             </div>

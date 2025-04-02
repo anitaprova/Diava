@@ -34,34 +34,42 @@ export default function ToRead() {
     {
       page: "40",
       comment:
-        '"Really enjoyed today\'s chapter! The pacing is picking up and the characters..."',
+        "Really enjoyed today's chapter! The pacing is picking up and the characters...",
       date: "03/02/2025",
       rating: 5,
     },
     {
       page: "20",
-      comment: '"Wow I can\'t believe that she did that."',
+      comment: "Wow I can't believe that she did that.",
       date: "02/25/2025",
       rating: 4,
     },
     {
       page: "10",
       comment:
-        '"I\'m loving the book so far, interested to see where the story heads and I love the characters...."',
+        "Im loving the book so far, interested to see where the story heads and I love the characters....",
       date: "02/23/2025",
       rating: 3,
     },
   ]);
-	const [open, setOpen] = useState(false);
+  const [selectedLog, setSelectedLog] = useState(null);
+  const [open, setOpen] = useState(false);
 
-	const handleOpen = () => {
+  const handleOpen = () => {
+    setSelectedLog(null);
     setOpen(true);
   };
 
-	const handleClose = () => {
-    setOpen(false);
+  const handleEditOpen = (log) => {
+    setSelectedLog(log);
+    setOpen(true);
   };
 
+  const handleClose = () => {
+    setSelectedLog(null);
+    setOpen(false);
+  };
+  
   return (
     <div className="font-merriweather ml-50 mr-50 mt-10 mb-10">
       {book && book.volumeInfo.imageLinks ? (
@@ -118,26 +126,31 @@ export default function ToRead() {
                     event.preventDefault();
                     const formData = new FormData(event.currentTarget);
                     const formJson = Object.fromEntries(formData.entries());
-                    const date = formJson.date;
-                    const notes = formJson.notes;
-                    const rating = formJson.rating;
-										const page = formJson.page;
-                    setLogs((prevState) => [
-                      {
-                        page: page,
-												date: date,
-                        comment: notes,
-                        rating: rating,
-                      },
-                      ...prevState,
-                    ]);
+                    const newLog = {
+                      page: formJson.page,
+                      date: formJson.date,
+                      comment: formJson.notes,
+                      rating: formJson.rating,
+                    };
+
+                    if (selectedLog) {
+                      setLogs((prevLogs) =>
+                        prevLogs.map((log) =>
+                          log === selectedLog ? newLog : log
+                        )
+                      );
+                    } else {
+                      setLogs((prevState) => [newLog, ...prevState]);
+                    }
 
                     handleClose();
                   },
                 },
               }}
             >
-              <DialogTitle>Add a New Log</DialogTitle>
+              <DialogTitle>
+                {selectedLog ? "Edit Log" : "Add a New Log"}
+              </DialogTitle>
               <DialogContent className="space-y-5">
                 <div className="gap-x-5">
                   <Typography>On Page</Typography>
@@ -146,13 +159,14 @@ export default function ToRead() {
                     variant="outlined"
                     type="number"
                     name="page"
+                    value={selectedLog?.page || ""}
                   />
                 </div>
 
                 <div className="gap-x-5">
                   <Typography>Session Rating</Typography>
                   <Rating
-                    defaultValue={0.0}
+                    value={selectedLog?.rating || ""}
                     precision={0.5}
                     name="rating"
                     size="large"
@@ -164,7 +178,19 @@ export default function ToRead() {
                     <Typography>
                       <CalendarMonthIcon /> Date
                     </Typography>
-                    <TextField fullWidth size="small" name="date" type="date" />
+                    <TextField
+                      fullWidth
+                      size="small"
+                      name="date"
+                      type="date"
+                      value={
+                        selectedLog?.date
+                          ? new Date(selectedLog.date)
+                              .toISOString()
+                              .split("T")[0]
+                          : ""
+                      }
+                    />
                   </span>
                 </div>
 
@@ -177,6 +203,7 @@ export default function ToRead() {
                     minRows={8}
                     multiline
                     fullWidth
+                    value={selectedLog?.comment || ""}
                   />
                 </div>
               </DialogContent>
@@ -192,7 +219,7 @@ export default function ToRead() {
         <p>Loading</p>
       )}
 
-      <Box className="flex flex-col gap-y-5 mt-10 ">
+      <Box className="flex flex-col gap-y-10 mt-10 ">
         {logs.map((entry, index) => (
           <Box
             key={index}
@@ -216,7 +243,11 @@ export default function ToRead() {
                 {entry.date}
               </Typography>
               <Box className="flex items-center space-x-2">
-                <Button size="small" variant="coffee">
+                <Button
+                  size="small"
+                  variant="coffee"
+                  onClick={() => handleEditOpen(entry)}
+                >
                   Edit
                 </Button>
               </Box>
