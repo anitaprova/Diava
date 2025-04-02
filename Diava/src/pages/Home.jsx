@@ -1,8 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Typography, Box, Button } from "@mui/material";
+import { Typography, Box, Button, TextField } from "@mui/material";
 import LinearProgress from "@mui/material/LinearProgress";
+import Add from "@mui/icons-material/Add";
 import ArrowCircleRightIcon from "@mui/icons-material/ArrowCircleRight";
+import axios from "axios";
+import CustomList from "../components/CustomList";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import { auth } from "../firebase/firebase";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -61,7 +70,35 @@ export default function Home() {
   ]);
   const [currentlyReading, setCurrentlyReading] = useState([""]);
   const [recommendation, setRecommendation] = useState([""]);
-  console.log(toRead);
+  const [userLists, setUserLists] = useState([]);
+  const [open, setOpen] = useState(false);
+  const handleOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  const createList = async (listData) => {
+    try {
+      const response = await axios.post("http://localhost:5000/list", listData);
+      console.log(response);
+      setUserLists([...userLists, response.data]);
+    } catch (error) {
+      console.error("Error creating list:", error.response.data);
+    }
+  };
+
+  useEffect(() => {
+    axios
+      .get(`http://localhost:5000/list`, {
+        params: { user_id: auth.currentUser.uid }
+      })
+      .then((response) => setUserLists(response.data || []))
+      .catch((error) => console.error("Error fetching books:", error));
+  }, []);
+
   return (
     <div className="ml-50 mr-50 mt-10 mb-25 font-merriweather text-darkbrown">
       <div className="grid grid-flow-col grid-rows-4 gap-x-20">
@@ -189,6 +226,56 @@ export default function Home() {
               onClick={() => navigate(`/recommendations`)}
             />
           </Box>
+        </div>
+      </div>
+
+      <div className="mt-30">
+        <Typography variant="h4" className="flex justify-between">
+          Your Lists{" "}
+          <Add className="bg-vanilla rounded-sm mr-4" onClick={handleOpen} />
+        </Typography>
+        <Dialog
+          open={open}
+          onClose={handleClose}
+          fullWidth
+          slotProps={{
+            paper: {
+              component: "form",
+              onSubmit: (event) => {
+                event.preventDefault();
+                const formData = new FormData(event.currentTarget);
+                const formJson = Object.fromEntries(formData.entries());
+                const name = formJson.name;
+                createList({
+                  user_id: auth.currentUser.uid,
+                  name: name,
+                });
+                handleClose();
+              },
+            },
+          }}
+        >
+          <DialogTitle>Add a New List</DialogTitle>
+          <DialogContent className="space-y-5">
+            <div className="gap-x-5">
+              <Typography>Name</Typography>
+              <TextField size="small" variant="outlined" name="name" />
+            </div>
+          </DialogContent>
+          <DialogActions>
+            <Button type="submit" variant="coffee">
+              Add
+            </Button>
+          </DialogActions>
+        </Dialog>
+        <div>
+          {userLists.length > 0 ? (
+            userLists.map((list) => (
+              <CustomList id={list.id} name={list.name} list_id={list.list_id} />
+            ))
+          ) : (
+            <p>Nothing added yet!</p>
+          )}
         </div>
       </div>
     </div>

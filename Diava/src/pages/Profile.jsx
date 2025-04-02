@@ -32,6 +32,7 @@ export default function Profile() {
       console.error("Error creating goal:", error)
     }
   };
+  
   const createGoal = async (goalData) => {
     try {
       const response = await axios.post("http://localhost:5000/goals", goalData);

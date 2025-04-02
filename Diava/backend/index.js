@@ -1,10 +1,10 @@
-const express = require('express');
-const cors = require('cors');
+const express = require("express");
+const cors = require("cors");
 const app = express();
 const { Pool } = require('pg');
 const port = 5001;
 
-const Diava_model = require('./models');
+const DiavaModel = require("./models");
 
 app.use(express.json());
 
@@ -61,7 +61,7 @@ app.post("/allusers", async (req, res) => {
 
 app.get("/goals", async (req, res) => {
   try {
-    const response = await Diava_model.getGoals();
+    const response = await DiavaModel.getGoals();
     res.status(200).json(response);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -80,7 +80,46 @@ app.post("/goals", async (req, res) => {
 app.put("/goals/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const response = await Diava_model.updateGoal(id, req.body);
+    const response = await DiavaModel.updateGoal(id, req.body);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/list", async (req, res) => {
+  try {
+    const { user_id } = req.query; 
+    const response = await DiavaModel.getLists(user_id);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/list", async (req, res) => {
+  try {
+    const response = await DiavaModel.addList(req.body);
+    res.status(201).json(response); // 201 for created
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put("/list/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const response = await DiavaModel.updateList(id, req.body);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/list/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const response = await DiavaModel.deleteList(id);
     res.status(200).json(response);
   } catch (error) {
     res.status(500).json({ error: error.message });

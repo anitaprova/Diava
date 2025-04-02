@@ -16,6 +16,7 @@ import Recommendations from "./pages/Recommendations.jsx";
 import Update from "./pages/Update.jsx";
 import Profile from "./pages/Profile.jsx";
 import GoogleSignUp from "./pages/GoogleSignUp.jsx";
+import CustomList from "./components/CustomList.jsx";
 import "./index.css";
 
 function App() {
@@ -117,6 +118,14 @@ function App() {
               </ProtectedRoute>
             }
           />
+            <Route
+              path="/list/:name"
+              element={
+                <ProtectedRoute>
+                  <CustomList />
+                </ProtectedRoute>
+              }
+            />
         </Routes>
       </ThemeProvider>
     </>
