@@ -8,21 +8,6 @@ const pool = new Pool({
   port: 5432,
 });
 
-// const { Client } = require("pg");
-
-// const client = new Client({
-//   host: "67.86.153.101",
-//   user: "postgres",
-//   database: "Diava",
-//   password: "Capstone2025!",
-//   port: 5432, // Default PostgreSQL port
-// });
-
-// client
-//   .connect()
-//   .then(() => console.log("Connected to PostgreSQL"))
-//   .catch((err) => console.error("Connection error", err));
-
 // Get all goals
 const getGoals = async () => {
   try {
