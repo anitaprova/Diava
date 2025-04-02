@@ -16,6 +16,10 @@ import ChatConversation from "./ChatConversation";
 import { FaHashtag } from "react-icons/fa";
 import { MdBarChart } from "react-icons/md";
 import { GiTrophyCup } from "react-icons/gi";
+import { collection, query, where, getDocs, getDoc, setDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "../../firebase/firebase";
+import { useAuth } from "../../context/AuthContext";
+import { useChat } from "../../context/ChatContext";
 
 const SidebarContainer = styled(Box)(({ theme }) => ({
   width: 300,
@@ -72,7 +76,7 @@ const ChannelText = styled(ListItemText)(({ theme }) => ({
 }));
 
 const ChatSidebar = ({
-  conversations,
+  chats,
   selectedChat,
   setSelectedChat,
   viewMode,
@@ -83,6 +87,12 @@ const ChatSidebar = ({
 }) => {
   // Set tab value based on viewMode
   const [tabValue, setTabValue] = useState(viewMode === "clubs" ? 0 : 1);
+  const [showInput, setShowInput] = useState(false);
+  const [inputText, setInputText] = useState("");
+  const [user, setUser] = useState(null);
+  const [club, setClub] = useState(null);
+  const { currentUser } = useAuth();
+  const { dispatch } = useChat();
 
   // Update tab value when viewMode changes
   useEffect(() => {
@@ -92,6 +102,114 @@ const ChatSidebar = ({
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
     onTabChange(newValue === 0 ? "clubs" : "messages");
+  };
+
+  const handleAddClick = () => {
+    setShowInput(true);
+  };
+
+  const handleInputChange = (e) => {
+    setInputText(e.target.value);
+  };
+
+  const handleSelectedChat = (c) => {
+    setSelectedChat(c);
+    dispatch({type:"CHANGE_USER", payload: c.userInfo});
+  }
+
+  const handleInputSubmit = (e) => {
+    if (e.key === "Enter") {
+      console.log("User entered:", inputText);
+
+      if (viewMode === "clubs") handleClubSearch();
+      else handleUserSearch();
+
+      setShowInput(false);
+      setInputText("");
+      setUser(null);
+      setClub(null);
+    }
+  };
+
+  // TODO: Implement CLub Search
+  const handleClubSearch = async () => {
+    console.log("Club search is not implemented yet.")
+  };
+
+  const handleUserSearch = async () => {
+    if (inputText == "") return;
+    
+    const q = query(
+      collection(db, "Users"),
+      where("uid", "==", inputText) // In the future "uid" should be replaced with "username"
+    );
+
+    try {
+      const querySnapshot = await getDocs(q);
+
+      // Check if user exists
+      if (querySnapshot.empty) {
+        alert("User does not exist");
+        return;
+      }
+
+      querySnapshot.forEach((doc) => {
+        setUser(doc.data());
+        createPrivateChat();
+      });
+
+      console.log("Successfully found user.");
+    }
+    catch (error) {
+      console.log(error);
+    }
+  };
+
+  const createPrivateChat = async () => {
+    if (!currentUser || !user) {
+      console.log("A user was null");
+      return;
+    }
+
+    const combinedUID = currentUser.uid > user.uid 
+      ? currentUser.uid + user.uid 
+      : user.uid + currentUser.uid;
+
+    console.log(combinedUID);
+
+    try {
+      const res = await getDoc(doc(db, "Chats", combinedUID));
+
+      if (!res.exists()) {
+        await updateDoc(doc(db, "UserChats", currentUser.uid), {
+          [combinedUID+".userInfo"]: {
+            uid:user.uid,
+            username:user.username
+          },
+          [combinedUID+".date"]: serverTimestamp()
+        });
+
+        // Get current user's username
+        const userRef = doc(db, "Users", currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        const currentUserInfo = userDoc.data();
+
+        await updateDoc(doc(db, "UserChats", user.uid), {
+          [combinedUID + ".userInfo"]: {
+            uid:currentUser.uid,
+            username:currentUserInfo.username
+          },
+          [combinedUID + ".date"]: serverTimestamp()
+        });
+
+        await setDoc(doc(db, "Chats", combinedUID), { messages: [] });
+
+        console.log("Created private chat.");
+      }
+    }
+    catch (error) {
+      console.log(error);
+    }
   };
 
   const renderChannels = () => {
@@ -173,24 +291,48 @@ const ChatSidebar = ({
           <Tab label="Clubs" />
           <Tab label="Messages" />
         </Tabs>
-        <IconButton sx={{ marginLeft: "auto" }} color="inherit">
+        <IconButton sx={{ marginLeft: "auto" }} color="inherit" onClick={handleAddClick}>
           <AddIcon />
         </IconButton>
       </TabsContainer>
 
+      {showInput && (
+        <Box sx={{ padding: "8px", display: "flex", alignItems: "center" }}>
+          <input
+            type="text"
+            placeholder={viewMode === "clubs" ? "Enter Club" : "Enter User"}
+            value={inputText}
+            onChange={handleInputChange}
+            onKeyDown={handleInputSubmit}
+            style={{
+              width: "100%",
+              padding: "8px",
+              borderRadius: "4px",
+              border: "1px solid #ccc",
+            }}
+          />
+        </Box>
+      )}
+
       <ContentContainer>
-        {viewMode === "messages"
-          ? // Show conversations for Messages tab
-            conversations.map((conversation) => (
+        {viewMode === "messages" ? (
+          // Show conversations for Messages tab
+          chats? (
+            Object.entries(chats)?.sort((a, b) => b[1].date - a[1].date).map((chat) => (
               <ChatConversation
-                key={conversation.id}
-                conversation={conversation}
-                isSelected={selectedChat?.id === conversation.id}
-                onClick={() => setSelectedChat(conversation)}
+                key={chat[0]}
+                chat={chat[1]}
+                isSelected={selectedChat?.id === chat[0]}
+                onClick={() => handleSelectedChat(chat[1])}
               />
             ))
-          : // Show channels for the selected club
-            renderChannels()}
+          ) : (
+            <Typography variant="body2">No conversations available</Typography> // Default view if chats are empty
+          )
+        ) : (
+          // Show channels for the selected club
+          renderChannels()
+        )}
       </ContentContainer>
     </SidebarContainer>
   );

@@ -2,6 +2,8 @@ import React from "react";
 import { styled } from "@mui/material/styles";
 import { Box, Typography, Paper } from "@mui/material";
 import UserAvatar from "./UserAvatar";
+import { useAuth } from "../../context/AuthContext";
+import { useChat } from "../../context/ChatContext";
 
 const MessageContainer = styled(Box)(({ isUser }) => ({
   display: "flex",
@@ -32,8 +34,19 @@ const MessageTime = styled(Typography)({
 });
 
 const ChatMessage = ({ message }) => {
-  const { content, timestamp, initial, isUser } = message;
+  console.log(message);
 
+  const { currentUser } = useAuth();
+  const { data } = useChat();
+  const content = message.message;
+  const timestamp = message.date 
+  ? new Date(message.date.seconds * 1000).toLocaleDateString()
+  : "Unknown Time";
+  const isUser = message.senderUid === currentUser.uid;
+  console.log(isUser);
+  const initial = isUser
+    ? ""
+    : data.user.username[0].toUpperCase();
   const isShortMessage = content && content.length < 30;
 
   return (

@@ -97,19 +97,19 @@ const SignUp = () => {
           const user = userCredentials.user;
           await sendEmailVerification(user);
           alert("Go to your email and verify your account.");
-           /* 
-          NOTE: this is done BEFORE user verifies account due to potential issues
-          of having the first and last names persist if they wait or refresh the page.
-          Accounts not verified can be removed after a set time or a better solution
-          can be made to ensure fields are filled even if user doesn't make the account there.
-          */
-          // Store user in database.
+          
+        // Store user in database.
           if (user) {
             await setDoc(doc(db, "Users", user.uid), {
               email: user.email,
               firstName: formData.firstName,
               lastName: formData.lastName,
+              username: formData.username,
+              uid: user.uid,
             });
+
+            await setDoc(doc(db, "UserChats", user.uid), {});
+            
             // Store username in postgres
             const newUser = {name:formData.username};
             createUser(newUser);
