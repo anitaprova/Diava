@@ -74,7 +74,11 @@ export default function Navbar() {
   return (
     <AppBar position="static">
       <Toolbar className="flex justify-between">
-        <Typography variant="h4" onClick={() => navigate(`/home`)}  sx={{cursor: "pointer"}}>
+        <Typography
+          variant="h4"
+          onClick={() => navigate(`/home`)}
+          sx={{ cursor: "pointer" }}
+        >
           DIAVA
         </Typography>
 
@@ -146,7 +150,7 @@ export default function Navbar() {
         </div>
 
         <div className="flex gap-x-6">
-          <IconButton color="inherit">
+          <IconButton color="inherit" onClick={() => navigate(`/chats`)}>
             <ChatBubbleIcon fontSize="large" />
           </IconButton>
 
