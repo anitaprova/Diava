@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { Box, Button, Typography, Chip, Paper } from "@mui/material";
 import {
@@ -8,9 +8,13 @@ import {
   WorkspacePremium as Medal,
   Add as Add,
 } from "@mui/icons-material";
+import CloseIcon from "@mui/icons-material/Close";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import NotebookCard from "../components/Notebook";
+import { auth } from "../firebase/firebase";
+import { useNavigate } from "react-router-dom";
+import { signOut } from "firebase/auth";
 import axios from "axios"
 
 
@@ -66,10 +70,14 @@ export default function Profile() {
     console.log();
   };
 
-  const handleEnter = (event) => {
-    if (event.key === "Enter") {
+  const handleEnter = async (event) => {
+    if (event.key === "Enter" && editIndex !== null) {
       const updatedGoals = [...goals];
       updatedGoals[editIndex] = text;
+      const user_id = 12345678
+      const new_goal = {id: 26, user_id, goal: text, is_completed: false};
+      await createGoal(new_goal);
+      console.log('New goal added: ', createGoal.goalData);
       setGoals(updatedGoals);
       setEditIndex(null);
       setText("");
@@ -240,12 +248,20 @@ export default function Profile() {
                 />
               ) : (
                 <div
-                  className="w-full ml-10"
+                  className="flex w-full ml-10 justify-between"
                   onDoubleClick={() => {
                     setEditIndex(index), setText(goal);
                   }}
                 >
-                  🎯{goal}
+                  <Typography>🎯{goal}</Typography>
+                  <CloseIcon
+                    onClick={() => {
+                      setGoals(goals.filter((arg) => arg !== goal));
+                    }}
+                    sx={{
+                      cursor: "pointer",
+                    }}
+                  />
                 </div>
               )
             )}
