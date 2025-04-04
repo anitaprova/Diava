@@ -27,27 +27,16 @@ export default function Profile() {
 
   const [editIndex, setEditIndex] = useState(null);
   const [text, setText] = useState("");
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      navigate("/login", {replace: true});
-      console.log("Signed out successfully.");
-    }
-    catch (error) {
-      console.log(error);
-    }
-  }
   
   const getGoals = async () => {
     try {
       const response  = await axios.get('http://localhost:5000/goals')
 
-    } catch (err) {
+    } catch (error) {
       console.error("Error creating goal:", error)
     }
   };
+  
   const createGoal = async (goalData) => {
     try {
       const response = await axios.post("http://localhost:5000/goals", goalData);

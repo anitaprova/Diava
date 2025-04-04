@@ -33,16 +33,16 @@ const TimeStamp = styled(Typography)({
   marginTop: 4,
 });
 
-const ChatConversation = ({ conversation, isSelected, onClick }) => {
+const ChatConversation = ({ chat, isSelected, onClick }) => {
   return (
     <ConversationContainer isSelected={isSelected} onClick={onClick}>
-      <UserAvatar initial={conversation.initial} />
+      <UserAvatar initial={(chat.userInfo.username[0]).toUpperCase()} />
       <MessageInfo>
         <Typography variant="subtitle2" fontWeight={500}>
-          {conversation.name}
+          {chat.userInfo.username}
         </Typography>
-        <LastMessage>{conversation.lastMessage}</LastMessage>
-        <TimeStamp>{conversation.time}</TimeStamp>
+        <LastMessage>{chat.lastMessage ? chat.lastMessage.message : ""}</LastMessage>
+        <TimeStamp>{chat.date? new Date(chat.date.seconds * 1000).toLocaleString(): ""}</TimeStamp>
       </MessageInfo>
     </ConversationContainer>
   );
