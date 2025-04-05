@@ -43,12 +43,31 @@ export default function Navbar() {
     searchDelayed(query);
   }, [query]);
 
+  // Navigation handlers
+  const handleLogoClick = () => {
+    navigate("/home");
+  };
+
+  const handleChatClick = () => {
+    navigate("/chat");
+  };
+
+  const handleProfileClick = () => {
+    navigate("/profile");
+  };
+
   console.log(results);
 
   return (
     <AppBar position="static">
       <Toolbar className="flex justify-between">
-        <Typography variant="h4">DIAVA</Typography>
+        <Typography
+          variant="h4"
+          onClick={handleLogoClick}
+          sx={{ cursor: "pointer" }}
+        >
+          DIAVA
+        </Typography>
 
         <div className="bg-sand flex items-center flex-grow mx-30 rounded-2xl px-3">
           <SearchIcon className="mr-2" />
@@ -118,11 +137,11 @@ export default function Navbar() {
         </div>
 
         <div className="flex gap-x-6">
-          <IconButton color="inherit">
+          <IconButton color="inherit" onClick={handleChatClick}>
             <ChatBubbleIcon fontSize="large" />
           </IconButton>
 
-          <IconButton color="inherit">
+          <IconButton color="inherit" onClick={handleProfileClick}>
             <AccountCircleIcon fontSize="large" />
           </IconButton>
         </div>

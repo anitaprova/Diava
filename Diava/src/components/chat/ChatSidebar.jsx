@@ -10,12 +10,23 @@ import {
   ListItem,
   ListItemText,
   Divider,
+  Menu,
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  TextField,
+  Button,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ChatConversation from "./ChatConversation";
 import { FaHashtag } from "react-icons/fa";
 import { MdBarChart } from "react-icons/md";
 import { GiTrophyCup } from "react-icons/gi";
+import { useNavigate } from "react-router-dom";
 
 const SidebarContainer = styled(Box)(({ theme }) => ({
   width: 300,
@@ -42,6 +53,9 @@ const ContentContainer = styled(Box)({
 const ClubHeader = styled(Box)(({ theme }) => ({
   padding: "16px",
   borderBottom: "1px solid #ddd",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
 }));
 
 const SectionHeader = styled(Typography)(({ theme }) => ({
@@ -80,9 +94,18 @@ const ChatSidebar = ({
   selectedClub,
   selectedChannel,
   setSelectedChannel,
+  isAdmin = false,
+  onCreateClub,
 }) => {
+  const navigate = useNavigate();
   // Set tab value based on viewMode
   const [tabValue, setTabValue] = useState(viewMode === "clubs" ? 0 : 1);
+  const [clubMenuAnchor, setClubMenuAnchor] = useState(null);
+
+  // Create Club Dialog state
+  const [createClubOpen, setCreateClubOpen] = useState(false);
+  const [newClubName, setNewClubName] = useState("");
+  const [newClubDescription, setNewClubDescription] = useState("");
 
   // Update tab value when viewMode changes
   useEffect(() => {
@@ -92,6 +115,67 @@ const ChatSidebar = ({
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
     onTabChange(newValue === 0 ? "clubs" : "messages");
+  };
+
+  const handleClubMenuOpen = (event) => {
+    setClubMenuAnchor(event.currentTarget);
+  };
+
+  const handleClubMenuClose = () => {
+    setClubMenuAnchor(null);
+  };
+
+  const handleEditSettings = () => {
+    handleClubMenuClose();
+    navigate(`/club-settings/${selectedClub.id}`);
+  };
+
+  const handleLeaveClub = () => {
+    handleClubMenuClose();
+    // Here you would add logic to leave the club
+    // This would typically involve an API call to your backend
+    alert("You have left the club"); // Placeholder
+  };
+
+  const handleAddButtonClick = () => {
+    if (viewMode === "clubs") {
+      // Show the simple dialog for quick club creation
+      setCreateClubOpen(true);
+    } else {
+      // Handle adding a new direct message
+      // This would be implemented separately
+      alert("Add new message functionality coming soon");
+    }
+  };
+
+  const handleCreateClub = () => {
+    if (!newClubName.trim()) return;
+
+    // Create a new club object
+    const newClub = {
+      id: `club-${Date.now()}`, // Generate a temporary ID
+      name: newClubName,
+      description: newClubDescription,
+      initial: newClubName.charAt(0).toUpperCase(),
+      channels: [{ id: `channel-${Date.now()}`, name: "general" }],
+      members: [
+        { id: "m1", name: "Current User", role: "admin", initial: "C" },
+      ],
+      features: [
+        { id: `f-${Date.now()}-1`, name: "Book Voting", icon: "chart" },
+        { id: `f-${Date.now()}-2`, name: "Challenges", icon: "trophy" },
+      ],
+    };
+
+    // Call the parent component's handler
+    if (onCreateClub) {
+      onCreateClub(newClub);
+    }
+
+    // Reset form and close dialog
+    setNewClubName("");
+    setNewClubDescription("");
+    setCreateClubOpen(false);
   };
 
   const renderChannels = () => {
@@ -111,6 +195,20 @@ const ChatSidebar = ({
           <Typography variant="h6" fontWeight={600}>
             {selectedClub.name}
           </Typography>
+          <IconButton size="small" onClick={handleClubMenuOpen}>
+            <MoreVertIcon />
+          </IconButton>
+          <Menu
+            anchorEl={clubMenuAnchor}
+            open={Boolean(clubMenuAnchor)}
+            onClose={handleClubMenuClose}
+          >
+            {isAdmin ? (
+              <MenuItem onClick={handleEditSettings}>Edit Settings</MenuItem>
+            ) : (
+              <MenuItem onClick={handleLeaveClub}>Leave Club</MenuItem>
+            )}
+          </Menu>
         </ClubHeader>
 
         {/* Text Channels */}
@@ -173,7 +271,11 @@ const ChatSidebar = ({
           <Tab label="Clubs" />
           <Tab label="Messages" />
         </Tabs>
-        <IconButton sx={{ marginLeft: "auto" }} color="inherit">
+        <IconButton
+          sx={{ marginLeft: "auto" }}
+          color="inherit"
+          onClick={handleAddButtonClick}
+        >
           <AddIcon />
         </IconButton>
       </TabsContainer>
@@ -192,6 +294,63 @@ const ChatSidebar = ({
           : // Show channels for the selected club
             renderChannels()}
       </ContentContainer>
+
+      {/* Create Club Dialog */}
+      <Dialog open={createClubOpen} onClose={() => setCreateClubOpen(false)}>
+        <DialogTitle>Create New Club</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Create a new book club to discuss your favorite books with others.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Club Name"
+            fullWidth
+            variant="outlined"
+            value={newClubName}
+            onChange={(e) => {
+              // Limit club name to 16 characters
+              if (e.target.value.length <= 16) {
+                setNewClubName(e.target.value);
+              }
+            }}
+            inputProps={{ maxLength: 16 }}
+            helperText={`${newClubName.length}/16 characters`}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            label="Club Description"
+            fullWidth
+            multiline
+            rows={3}
+            variant="outlined"
+            value={newClubDescription}
+            onChange={(e) => setNewClubDescription(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setCreateClubOpen(false)}
+            sx={{ color: "#5d4b3d" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleCreateClub}
+            variant="contained"
+            sx={{
+              bgcolor: "#5d4b3d",
+              color: "white",
+              "&:hover": { bgcolor: "#433422" },
+            }}
+            disabled={!newClubName.trim()}
+          >
+            Create
+          </Button>
+        </DialogActions>
+      </Dialog>
     </SidebarContainer>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { styled } from "@mui/material/styles";
 import ChatSidebar from "../components/chat/ChatSidebar";
 import ChatWindow from "../components/chat/ChatWindow";
@@ -16,6 +16,7 @@ const ChatPage = () => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [selectedClub, setSelectedClub] = useState(null);
   const [selectedChannel, setSelectedChannel] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(true); // Set to true to see admin view by default
 
   // Mock data for conversations - this would come from Firebase in the real app
   const [conversations, setConversations] = useState([
@@ -71,6 +72,11 @@ const ChatPage = () => {
         { id: "f1-1", name: "Book Voting", icon: "chart" },
         { id: "f1-2", name: "Challenges", icon: "trophy" },
       ],
+      members: [
+        { id: "m1", name: "Current User", role: "admin", initial: "C" },
+        { id: "m2", name: "Arielle Smith", role: "moderator", initial: "A" },
+        { id: "m3", name: "Nathan Lee", role: "member", initial: "N" },
+      ],
     },
     {
       id: "2",
@@ -84,6 +90,11 @@ const ChatPage = () => {
       features: [
         { id: "f2-1", name: "Book Voting", icon: "chart" },
         { id: "f2-2", name: "Challenges", icon: "trophy" },
+      ],
+      members: [
+        { id: "m1", name: "Current User", role: "member", initial: "C" },
+        { id: "m4", name: "Jayson Brown", role: "admin", initial: "J" },
+        { id: "m5", name: "Anita Garcia", role: "member", initial: "A" },
       ],
     },
     {
@@ -99,6 +110,10 @@ const ChatPage = () => {
         { id: "f3-1", name: "Book Voting", icon: "chart" },
         { id: "f3-2", name: "Challenges", icon: "trophy" },
       ],
+      members: [
+        { id: "m1", name: "Current User", role: "moderator", initial: "C" },
+        { id: "m6", name: "Emma Wilson", role: "admin", initial: "E" },
+      ],
     },
     {
       id: "4",
@@ -113,11 +128,56 @@ const ChatPage = () => {
         { id: "f4-1", name: "Book Voting", icon: "chart" },
         { id: "f4-2", name: "Challenges", icon: "trophy" },
       ],
+      members: [
+        { id: "m1", name: "Current User", role: "member", initial: "C" },
+        { id: "m7", name: "David Chen", role: "admin", initial: "D" },
+      ],
     },
   ]);
 
+  useEffect(() => {
+    // Check if there are clubs in localStorage
+    const storedClubs = localStorage.getItem("clubs");
+    if (storedClubs) {
+      setClubs(JSON.parse(storedClubs));
+    } else {
+      // If not, store the initial clubs
+      localStorage.setItem("clubs", JSON.stringify(clubs));
+    }
+  }, []);
+
   const handleTabChange = (newMode) => {
     setViewMode(newMode);
+  };
+
+  const handleSelectClub = (club) => {
+    setSelectedClub(club);
+
+    // Check if the current user is an admin of this club
+    const currentUserId = "m1"; // This would come from your auth context
+    const isUserAdmin = club.members.some(
+      (member) => member.id === currentUserId && member.role === "admin"
+    );
+
+    setIsAdmin(isUserAdmin);
+  };
+
+  const handleCreateClub = (newClub) => {
+    // Add the new club to the clubs array
+    setClubs([...clubs, newClub]);
+
+    // Select the newly created club
+    setSelectedClub(newClub);
+
+    // Set the user as admin of this club
+    setIsAdmin(true);
+
+    // Switch to clubs view if not already there
+    if (viewMode !== "clubs") {
+      setViewMode("clubs");
+    }
+
+    // Note for backend: Need API endpoint to create a new club
   };
 
   return (
@@ -126,7 +186,7 @@ const ChatPage = () => {
         <ClubSidebar
           clubs={clubs}
           selectedClub={selectedClub}
-          setSelectedClub={setSelectedClub}
+          setSelectedClub={handleSelectClub}
         />
       )}
 
@@ -139,6 +199,8 @@ const ChatPage = () => {
         selectedClub={selectedClub}
         selectedChannel={selectedChannel}
         setSelectedChannel={setSelectedChannel}
+        isAdmin={isAdmin}
+        onCreateClub={handleCreateClub}
       />
 
       <ChatWindow

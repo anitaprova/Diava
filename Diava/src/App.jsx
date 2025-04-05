@@ -7,6 +7,7 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import theme from "./theme";
 import Home from "./pages/Home.jsx";
 import Navbar from "./components/Navbar.jsx";
+import ChatPage from "./pages/ChatPage.jsx";
 import Login from "./pages/Login.jsx";
 import SignUp from "./pages/SignUp.jsx";
 import Review from "./pages/Review.jsx";
@@ -16,6 +17,8 @@ import Recommendations from "./pages/Recommendations.jsx";
 import Update from "./pages/Update.jsx";
 import Profile from "./pages/Profile.jsx";
 import GoogleSignUp from "./pages/GoogleSignUp.jsx";
+import ClubSettings from "./pages/ClubSettings.jsx";
+import CreateClubPage from "./pages/CreateClubPage.jsx";
 import "./index.css";
 
 function App() {
@@ -35,8 +38,33 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/googlesignup" element={<GoogleSignUp />} />
+            <Route path="/chat" element={<ChatPage />} />
 
             {/* Private Routes */}
+            <Route
+              path="/chat"
+              element={
+                <ProtectedRoute>
+                  <ChatPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/club-settings/:clubId"
+              element={
+                <ProtectedRoute>
+                  <ClubSettings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/create-club"
+              element={
+                <ProtectedRoute>
+                  <CreateClubPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/review/:id"
               element={
