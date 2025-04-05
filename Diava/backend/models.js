@@ -183,10 +183,29 @@ const getReview = async (user_id, book_id) => {
 // add a review for a book
 const addReview = async (body) => {
   try {
-    const { user_id, book_id, rating, review_text } = body;
+    const {
+      user_id,
+      book_id,
+      rating,
+      review_text,
+      start_date,
+      end_date,
+      format,
+      tags,
+    } = body;
+
     const results = await pool.query(
-      "INSERT INTO reviews (user_id, book_id, rating, review_text) VALUES ($1, $2, $3, $4) RETURNING *",
-      [user_id, book_id, rating, review_text]
+      "INSERT INTO reviews (user_id, book_id, rating, review_text, start_date, end_date, format, tags) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
+      [
+        user_id,
+        book_id,
+        rating,
+        review_text,
+        start_date,
+        end_date,
+        format,
+        tags,
+      ]
     );
 
     if (results.rowCount === 0) {

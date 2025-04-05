@@ -36,6 +36,7 @@ export default function BookDetail() {
   const [open, setOpen] = React.useState(false);
   const anchorRef = React.useRef(null);
   const [selectedIndex, setSelectedIndex] = React.useState(1);
+  const [review, setReview] = useState();
 
   const handleClick = () => {
     console.info(`You clicked ${options[selectedIndex]}`);
@@ -75,13 +76,21 @@ export default function BookDetail() {
         .catch((error) => console.error("Error fetching books:", error));
     }, []);
 
-    console.log(auth.currentUser.uid);
-    console.log(id);
+    useEffect(() =>{
+      axios
+        .get(`http://localhost:5001/review`, {
+          params: { user_id: auth.currentUser.uid, book_id: id },
+        })
+        .then((response) => setReview(response.data || []))
+        .catch((error) => console.error("Error fetching books:", error));
+    }, []);
+
+    console.log(review);
 
   return (
     <div className="font-merriweather mr-25 ml-25 mt-15 mb-15">
       {book && book.volumeInfo.imageLinks ? (
-        <div className="grid grid-cols-5 gap-x-8">
+        <div className="grid grid-cols-5 gap-x-8 mb-15">
           <div className="flex flex-col gap-y-5">
             <img
               src={book.volumeInfo.imageLinks.thumbnail}
@@ -90,7 +99,7 @@ export default function BookDetail() {
             <ul className="flex flex-wrap text-sm gap-3">
               {genres &&
                 genres.map((genre) => (
-                  <li className="bg-sand p-1 text-center rounded-sm w-fit">
+                  <li className="bg-sand p-1 text-center rounded-sm w-fit pr-4">
                     <LocalOfferIcon color="secondary" /> {genre}
                   </li>
                 ))}
@@ -256,12 +265,47 @@ export default function BookDetail() {
       )}
 
       <Divider />
-      <div className="mt-5">
+
+      <div className="mt-15">
         <Typography variant="h4">Ratings and Reviews</Typography>
-        <Typography variant="body">Add your thoughts </Typography>
-        <Button variant="dark" onClick={() => navigate(`/review/${book.id}`)}>
-          Add Review
-        </Button>
+        {review ? (
+          <div className="bg-vanilla rounded-md p-5 space-y-5">
+            <Typography variant="h5">Your Review</Typography>
+            <span className="flex justify-between">
+              <Rating value={review[0]?.rating} precision={0.5} readOnly />
+              <Typography>{review[0]?.format}</Typography>
+            </span>
+
+            <Typography>{review[0]?.review_text}</Typography>
+            <span className="flex justify-between">
+              <Typography>
+                Start: {review[0]?.start_date?.split("T")[0]}
+              </Typography>
+              <Typography>
+                End: {review[0]?.end_date?.split("T")[0]}
+              </Typography>
+            </span>
+
+            <ul className="flex flex-wrap text-sm gap-3">
+              {review[0]?.tags &&
+                review[0]?.tags.map((tag) => (
+                  <li className="bg-sand p-1 text-center rounded-sm w-fit pr-4">
+                    <LocalOfferIcon color="secondary" /> {tag}
+                  </li>
+                ))}
+            </ul>
+          </div>
+        ) : (
+          <div>
+            <Typography variant="body">Add your thoughts </Typography>
+            <Button
+              variant="dark"
+              onClick={() => navigate(`/review/${book.id}`)}
+            >
+              Add Review
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
