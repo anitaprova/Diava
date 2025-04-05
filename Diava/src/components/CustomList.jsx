@@ -44,7 +44,7 @@ export default function CustomList({ id, name, list_id }) {
   const updateList = async (listData) => {
     try {
       const response = await axios.put(
-        `http://localhost:5000/list/${id}`,
+        `http://localhost:5001/list/${id}`,
         listData
       );
       setCurrName(response.data.name);
@@ -57,7 +57,7 @@ export default function CustomList({ id, name, list_id }) {
   const deleteList = async (listData) => {
     try {
       const response = await axios.delete(
-        `http://localhost:5000/list/${id}`,
+        `http://localhost:5001/list/${id}`,
         listData
       );
       console.log(response);

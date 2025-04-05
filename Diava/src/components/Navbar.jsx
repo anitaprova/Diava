@@ -54,18 +54,29 @@ export default function Navbar() {
     }
   };
 
+  const search = () => {
+    axios
+      .get(
+        `https://www.googleapis.com/books/v1/volumes?q=${query}&key=${API_KEY}`
+      )
+      .then((response) => setResults(response.data.items || []))
+      .catch((error) => {
+        // service unavailable / too many requests
+        if (error.status === 503 || error.status === 429) {
+          const waitInSeconds = error.response.headers["retry-after"] ?? 3;
+          setTimeout(search, waitInSeconds * 1000);
+        }
+        console.error("Error fetching books:", error);
+      });
+  };
+
   const searchDelayed = debounce((query) => {
     if (query.trim()) {
-      axios
-        .get(
-          `https://www.googleapis.com/books/v1/volumes?q=${query}&key=${API_KEY}`
-        )
-        .then((response) => setResults(response.data.items || []))
-        .catch((error) => console.error("Error fetching books:", error));
+      search();
     } else {
       setResults([]);
     }
-  }, 1000);
+  }, 2000);
 
   useEffect(() => {
     searchDelayed(query);
@@ -100,18 +111,26 @@ export default function Navbar() {
                 },
               }}
               freeSolo
-              getOptionLabel={(result) => `${result.volumeInfo?.title}`}
+              getOptionLabel={(result) => result.volumeInfo?.title || ""}
               options={results}
-              onInputChange={(event, newValue) => setQuery(newValue)}
-              onKeyDown={searchBook}
+              onInputChange={(event, newValue) => {
+                // console.log("Input change:", newValue);
+                setQuery(newValue || ""); // Update query state correctly
+              }}
+              onKeyDown={searchBook} // Handle Enter key to navigate
               onChange={(event, selectedBook) => {
-                if (selectedBook) {
+                console.log("Selected book:", selectedBook);
+                if (selectedBook && selectedBook.id) {
                   navigate(`/book/${selectedBook.id}`);
+                } else {
+                  console.warn("No book ID found:", selectedBook); // Handle no selection case
                 }
               }}
               renderInput={(params) => (
                 <TextField
                   {...params}
+                  // value={query || ""} // Controlled value from query state
+                  onKeyDown={searchBook}
                   sx={{
                     "& .MuiOutlinedInput-notchedOutline": {
                       border: "none",
@@ -126,14 +145,10 @@ export default function Navbar() {
                 />
               )}
               renderOption={(props, result) => (
-                <Box
-                  component="li"
-                  onChange={() => navigate(`/book/${result.id}`)}
-                  {...props}
-                >
+                <Box component="li" {...props}>
                   <img
                     className="w-10 mr-5"
-                    src={result.volumeInfo?.imageLinks.smallThumbnail}
+                    src={result.volumeInfo?.imageLinks?.smallThumbnail}
                   />
                   <div className="flex items-center gap-2">
                     <span className="font-medium bold">
