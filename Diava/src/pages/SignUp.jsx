@@ -57,7 +57,7 @@ const SignUp = () => {
     }
   };
 
-  // Handle form submission
+  // Handle form submissiona
   const checkUsernameExists = async (username) => {
     if (!username) {
       console.error("Username cannot be empty.");
