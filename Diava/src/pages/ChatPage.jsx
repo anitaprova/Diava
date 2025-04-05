@@ -4,6 +4,10 @@ import ChatSidebar from "../components/chat/ChatSidebar";
 import ChatWindow from "../components/chat/ChatWindow";
 import ClubSidebar from "../components/chat/ClubSidebar";
 import "../styles/Chat.css";
+import { onSnapshot, doc } from "firebase/firestore";
+import { db } from "../firebase/firebase";
+import { useAuth } from "../context/AuthContext";
+import { useChat } from "../context/ChatContext";
 
 const ChatContainer = styled("div")({
   display: "flex",
@@ -12,50 +16,32 @@ const ChatContainer = styled("div")({
 });
 
 const ChatPage = () => {
+  const { currentUser } = useAuth();
+  const { dispatch } = useChat();
   const [viewMode, setViewMode] = useState("messages"); // "messages" or "clubs"
   const [selectedChat, setSelectedChat] = useState(null);
   const [selectedClub, setSelectedClub] = useState(null);
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [isAdmin, setIsAdmin] = useState(true); // Set to true to see admin view by default
+  const [chats, setChats] = useState([]);
 
-  // Mock data for conversations - this would come from Firebase in the real app
-  const [conversations, setConversations] = useState([
-    {
-      id: "1",
-      name: "Daryl",
-      lastMessage: "Hey, how are you?",
-      time: "20 min",
-      initial: "D",
-    },
-    {
-      id: "2",
-      name: "Arielle",
-      lastMessage: "Have you read that new book?",
-      time: "1 hr",
-      initial: "A",
-    },
-    {
-      id: "3",
-      name: "Anita",
-      lastMessage: "Meeting tomorrow at 5pm",
-      time: "3 hrs",
-      initial: "A",
-    },
-    {
-      id: "4",
-      name: "Nathan",
-      lastMessage: "I finished the chapter you recommended",
-      time: "1 day",
-      initial: "N",
-    },
-    {
-      id: "5",
-      name: "Jayson",
-      lastMessage: "What did everyone think of the ending?",
-      time: "2 days",
-      initial: "J",
-    },
-  ]);
+  // TODO: Get club chats
+  useEffect(() => {
+    const getChats = () => {
+      const unsubscribe = onSnapshot(
+        doc(db, "UserChats", currentUser.uid),
+        (doc) => {
+          setChats(doc.data());
+        }
+      );
+
+      return () => {
+        unsubscribe();
+      };
+    };
+
+    currentUser.uid && getChats();
+  }, [currentUser.uid]);
 
   // Mock data for clubs
   const [clubs, setClubs] = useState([
@@ -74,8 +60,8 @@ const ChatPage = () => {
       ],
       members: [
         { id: "m1", name: "Current User", role: "admin", initial: "C" },
-        { id: "m2", name: "Arielle Smith", role: "moderator", initial: "A" },
-        { id: "m3", name: "Nathan Lee", role: "member", initial: "N" },
+        { id: "m2", name: "Arielle S", role: "moderator", initial: "A" },
+        { id: "m3", name: "Nathan B", role: "member", initial: "N" },
       ],
     },
     {
@@ -93,8 +79,8 @@ const ChatPage = () => {
       ],
       members: [
         { id: "m1", name: "Current User", role: "member", initial: "C" },
-        { id: "m4", name: "Jayson Brown", role: "admin", initial: "J" },
-        { id: "m5", name: "Anita Garcia", role: "member", initial: "A" },
+        { id: "m4", name: "Jayson M", role: "admin", initial: "J" },
+        { id: "m5", name: "Anita P", role: "member", initial: "A" },
       ],
     },
     {
@@ -112,7 +98,7 @@ const ChatPage = () => {
       ],
       members: [
         { id: "m1", name: "Current User", role: "moderator", initial: "C" },
-        { id: "m6", name: "Emma Wilson", role: "admin", initial: "E" },
+        { id: "m6", name: "Emma W", role: "admin", initial: "E" },
       ],
     },
     {
@@ -130,7 +116,7 @@ const ChatPage = () => {
       ],
       members: [
         { id: "m1", name: "Current User", role: "member", initial: "C" },
-        { id: "m7", name: "David Chen", role: "admin", initial: "D" },
+        { id: "m7", name: "David C", role: "admin", initial: "D" },
       ],
     },
   ]);
@@ -191,7 +177,7 @@ const ChatPage = () => {
       )}
 
       <ChatSidebar
-        conversations={conversations}
+        chats={chats}
         selectedChat={selectedChat}
         setSelectedChat={setSelectedChat}
         viewMode={viewMode}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { Box, Button, Typography, Chip, Paper } from "@mui/material";
 import {
@@ -8,11 +8,11 @@ import {
   WorkspacePremium as Medal,
   Add as Add,
 } from "@mui/icons-material";
+import CloseIcon from "@mui/icons-material/Close";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import NotebookCard from "../components/Notebook";
 import { auth } from "../firebase/firebase";
-import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import axios from "axios"
@@ -27,30 +27,19 @@ export default function Profile() {
 
   const [editIndex, setEditIndex] = useState(null);
   const [text, setText] = useState("");
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      navigate("/login", {replace: true});
-      console.log("Signed out successfully.");
-    }
-    catch (error) {
-      console.log(error);
-    }
-  }
   
   const getGoals = async () => {
     try {
-      const response  = await axios.get('http://localhost:5000/goals')
+      const response  = await axios.get('http://localhost:5001/goals')
 
-    } catch (err) {
+    } catch (error) {
       console.error("Error creating goal:", error)
     }
   };
+  
   const createGoal = async (goalData) => {
     try {
-      const response = await axios.post("http://localhost:5000/goals", goalData);
+      const response = await axios.post("http://localhost:5001/goals", goalData);
       setGoals([...goals, response.data]); 
     } catch (error) {
       console.error("Error creating goal:", error);
@@ -81,10 +70,14 @@ export default function Profile() {
     console.log();
   };
 
-  const handleEnter = (event) => {
-    if (event.key === "Enter") {
+  const handleEnter = async (event) => {
+    if (event.key === "Enter" && editIndex !== null) {
       const updatedGoals = [...goals];
       updatedGoals[editIndex] = text;
+      const user_id = 12345678
+      const new_goal = {id: 26, user_id, goal: text, is_completed: false};
+      await createGoal(new_goal);
+      console.log('New goal added: ', createGoal.goalData);
       setGoals(updatedGoals);
       setEditIndex(null);
       setText("");
@@ -255,30 +248,26 @@ export default function Profile() {
                 />
               ) : (
                 <div
-                  className="w-full ml-10"
+                  className="flex w-full ml-10 justify-between"
                   onDoubleClick={() => {
                     setEditIndex(index), setText(goal);
                   }}
                 >
-                  🎯{goal}
+                  <Typography>🎯{goal}</Typography>
+                  <CloseIcon
+                    onClick={() => {
+                      setGoals(goals.filter((arg) => arg !== goal));
+                    }}
+                    sx={{
+                      cursor: "pointer",
+                    }}
+                  />
                 </div>
               )
             )}
           />
         </div>
       </div>
-
-      {/* Log out button here. Needs to be formatted correctly */}
-      <Button
-        variant="contained"
-        color="secondary"
-        onClick={handleLogout}
-        style={{ marginTop: "20px", marginLeft: "20px" }}
-      >
-        Logout
-      </Button>
-
-
     </Box>
   );
 }

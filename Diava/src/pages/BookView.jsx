@@ -14,10 +14,11 @@ import MenuList from "@mui/material/MenuList";
 import AutoStoriesIcon from "@mui/icons-material/AutoStories";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import Rating from "@mui/material/Rating";
-import { CircularProgress } from "@mui/material";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
+import Divider from "@mui/material/Divider";
+import { auth } from "../firebase/firebase";
 
 export default function BookDetail() {
   const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
@@ -25,6 +26,7 @@ export default function BookDetail() {
   const navigate = useNavigate();
   const [book, setBook] = useState(null);
   const [seeMore, setSeeMore] = useState(false);
+  const [userLists, setUserLists] = useState([]);
   const genresRaw = book?.volumeInfo?.categories || [];
   const genres = [
     ...new Set(genresRaw.flatMap((category) => category.split("/"))),
@@ -63,6 +65,17 @@ export default function BookDetail() {
         .catch((error) => console.error("Error fetching books:", error));
     }
   }, [id]);
+
+  useEffect(() => {
+      axios
+        .get(`http://localhost:5001/list`, {
+          params: { user_id: auth.currentUser.uid }
+        })
+        .then((response) => setUserLists(response.data || []))
+        .catch((error) => console.error("Error fetching books:", error));
+    }, []);
+
+    console.log(userLists);
 
   return (
     <div className="font-merriweather mr-25 ml-25 mt-15 ">
@@ -190,6 +203,20 @@ export default function BookDetail() {
                             }
                           >
                             {option}
+                          </MenuItem>
+                        ))}
+
+                        <Divider middle />
+
+                        {userLists?.map((option, index) => (
+                          <MenuItem
+                            key={option.list_id}
+                            selected={index === selectedIndex}
+                            onClick={(event) =>
+                              handleMenuItemClick(event, index)
+                            }
+                          >
+                            {option.name}
                           </MenuItem>
                         ))}
                       </MenuList>

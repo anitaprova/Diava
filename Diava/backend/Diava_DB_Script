@@ -1,0 +1,305 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 17.4
+-- Dumped by pg_dump version 17.4
+
+-- Started on 2025-03-27 20:58:24
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- TOC entry 217 (class 1259 OID 24785)
+-- Name: books; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.books (
+    book_id integer NOT NULL,
+    title character varying(255) NOT NULL,
+    author character varying(255) NOT NULL,
+    average_rating numeric(3,2),
+    genre_tags character varying(255)[],
+    url "char"[] NOT NULL,
+    CONSTRAINT books_average_rating_check CHECK (((average_rating >= (0)::numeric) AND (average_rating <= (5)::numeric)))
+);
+
+
+ALTER TABLE public.books OWNER TO postgres;
+
+--
+-- TOC entry 218 (class 1259 OID 24791)
+-- Name: books_book_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.books_book_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.books_book_id_seq OWNER TO postgres;
+
+--
+-- TOC entry 4877 (class 0 OID 0)
+-- Dependencies: 218
+-- Name: books_book_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.books_book_id_seq OWNED BY public.books.book_id;
+
+
+--
+-- TOC entry 219 (class 1259 OID 24792)
+-- Name: goals; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.goals (
+    user_id integer NOT NULL,
+    goal text NOT NULL,
+    is_completed boolean,
+    id bigint NOT NULL
+);
+
+
+ALTER TABLE public.goals OWNER TO postgres;
+
+--
+-- TOC entry 220 (class 1259 OID 24797)
+-- Name: goals_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.goals_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.goals_id_seq OWNER TO postgres;
+
+--
+-- TOC entry 4878 (class 0 OID 0)
+-- Dependencies: 220
+-- Name: goals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.goals_id_seq OWNED BY public.goals.id;
+
+
+--
+-- TOC entry 221 (class 1259 OID 24798)
+-- Name: reading_statistics; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.reading_statistics (
+    statistics_id integer NOT NULL,
+    user_id integer NOT NULL,
+    books_read integer DEFAULT 0,
+    pages_read integer DEFAULT 0,
+    number_of_reviews integer DEFAULT 0,
+    number_of_badges integer DEFAULT 0,
+    CONSTRAINT reading_statistics_books_read_check CHECK ((books_read >= 0)),
+    CONSTRAINT reading_statistics_number_of_badges_check CHECK ((number_of_badges >= 0)),
+    CONSTRAINT reading_statistics_number_of_reviews_check CHECK ((number_of_reviews >= 0)),
+    CONSTRAINT reading_statistics_pages_read_check CHECK ((pages_read >= 0))
+);
+
+
+ALTER TABLE public.reading_statistics OWNER TO postgres;
+
+--
+-- TOC entry 222 (class 1259 OID 24809)
+-- Name: reading_statistics_statistics_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.reading_statistics_statistics_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.reading_statistics_statistics_id_seq OWNER TO postgres;
+
+--
+-- TOC entry 4879 (class 0 OID 0)
+-- Dependencies: 222
+-- Name: reading_statistics_statistics_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.reading_statistics_statistics_id_seq OWNED BY public.reading_statistics.statistics_id;
+
+
+--
+-- TOC entry 223 (class 1259 OID 24810)
+-- Name: users; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.users (
+    user_id bigint NOT NULL,
+    name character varying(255) NOT NULL
+);
+
+
+ALTER TABLE public.users OWNER TO postgres;
+
+--
+-- TOC entry 224 (class 1259 OID 24813)
+-- Name: users_user_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.users_user_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.users_user_id_seq OWNER TO postgres;
+
+--
+-- TOC entry 4880 (class 0 OID 0)
+-- Dependencies: 224
+-- Name: users_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.users_user_id_seq OWNED BY public.users.user_id;
+
+
+--
+-- TOC entry 4706 (class 2604 OID 24814)
+-- Name: books book_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.books ALTER COLUMN book_id SET DEFAULT nextval('public.books_book_id_seq'::regclass);
+
+
+--
+-- TOC entry 4707 (class 2604 OID 24815)
+-- Name: goals id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.goals ALTER COLUMN id SET DEFAULT nextval('public.goals_id_seq'::regclass);
+
+
+--
+-- TOC entry 4708 (class 2604 OID 24816)
+-- Name: reading_statistics statistics_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reading_statistics ALTER COLUMN statistics_id SET DEFAULT nextval('public.reading_statistics_statistics_id_seq'::regclass);
+
+
+--
+-- TOC entry 4713 (class 2604 OID 24817)
+-- Name: users user_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users ALTER COLUMN user_id SET DEFAULT nextval('public.users_user_id_seq'::regclass);
+
+
+--
+-- TOC entry 4864 (class 0 OID 24785)
+-- Dependencies: 217
+-- Data for Name: books; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.books (book_id, title, author, average_rating, genre_tags, url) FROM stdin;
+\.
+
+
+--
+-- TOC entry 4866 (class 0 OID 24792)
+-- Dependencies: 219
+-- Data for Name: goals; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.goals (user_id, goal, is_completed, id) FROM stdin;
+\.
+
+
+--
+-- TOC entry 4868 (class 0 OID 24798)
+-- Dependencies: 221
+-- Data for Name: reading_statistics; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.reading_statistics (statistics_id, user_id, books_read, pages_read, number_of_reviews, number_of_badges) FROM stdin;
+\.
+
+
+--
+-- TOC entry 4870 (class 0 OID 24810)
+-- Dependencies: 223
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.users (user_id, name) FROM stdin;
+\.
+
+
+--
+-- TOC entry 4881 (class 0 OID 0)
+-- Dependencies: 218
+-- Name: books_book_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.books_book_id_seq', 1, false);
+
+
+--
+-- TOC entry 4882 (class 0 OID 0)
+-- Dependencies: 220
+-- Name: goals_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.goals_id_seq', 1, false);
+
+
+--
+-- TOC entry 4883 (class 0 OID 0)
+-- Dependencies: 222
+-- Name: reading_statistics_statistics_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.reading_statistics_statistics_id_seq', 1, false);
+
+
+--
+-- TOC entry 4884 (class 0 OID 0)
+-- Dependencies: 224
+-- Name: users_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.users_user_id_seq', 1, false);
+
+
+-- Completed on 2025-03-27 20:58:25
+
+--
+-- PostgreSQL database dump complete
+--
+

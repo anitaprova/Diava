@@ -67,7 +67,7 @@ export default function SearchResults() {
                 >
                   <CardMedia
                     component="img"
-                    image={book.volumeInfo.imageLinks.thumbnail}
+                    image={book.volumeInfo?.imageLinks?.thumbnail}
                     sx={{
                       height: 250,
                       width: "100%",
@@ -79,7 +79,7 @@ export default function SearchResults() {
                       {book.volumeInfo.title}
                     </Typography>
                     <Typography variant="body" noWrap>
-                      by {book.volumeInfo.authors.map((author) => author)}
+                      by {book.volumeInfo.authors?.map((author) => author)}
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
                       {book.volumeInfo.description?.substring(0, 50)}

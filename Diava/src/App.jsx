@@ -2,7 +2,6 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import Book from "./pages/BookView.jsx";
 import SearchResults from "./components/SearchResults.jsx";
 import { ThemeProvider } from "@mui/material/styles";
-import { AuthProvider } from "./context/AuthContext.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import theme from "./theme";
 import Home from "./pages/Home.jsx";
@@ -19,6 +18,8 @@ import Profile from "./pages/Profile.jsx";
 import GoogleSignUp from "./pages/GoogleSignUp.jsx";
 import ClubSettings from "./pages/ClubSettings.jsx";
 import CreateClubPage from "./pages/CreateClubPage.jsx";
+import CustomList from "./components/CustomList.jsx";
+import { AuthProvider } from "./context/AuthContext.jsx";
 import "./index.css";
 
 function App() {
@@ -38,7 +39,6 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/googlesignup" element={<GoogleSignUp />} />
-            <Route path="/chat" element={<ChatPage />} />
 
             {/* Private Routes */}
             <Route
@@ -135,6 +135,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Update />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/list/:name"
+              element={
+                <ProtectedRoute>
+                  <CustomList />
                 </ProtectedRoute>
               }
             />
