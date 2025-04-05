@@ -75,10 +75,11 @@ export default function BookDetail() {
         .catch((error) => console.error("Error fetching books:", error));
     }, []);
 
-    console.log(userLists);
+    console.log(auth.currentUser.uid);
+    console.log(id);
 
   return (
-    <div className="font-merriweather mr-25 ml-25 mt-15 ">
+    <div className="font-merriweather mr-25 ml-25 mt-15 mb-15">
       {book && book.volumeInfo.imageLinks ? (
         <div className="grid grid-cols-5 gap-x-8">
           <div className="flex flex-col gap-y-5">
@@ -253,6 +254,15 @@ export default function BookDetail() {
           </div>
         </Stack>
       )}
+
+      <Divider />
+      <div className="mt-5">
+        <Typography variant="h4">Ratings and Reviews</Typography>
+        <Typography variant="body">Add your thoughts </Typography>
+        <Button variant="dark" onClick={() => navigate(`/review/${book.id}`)}>
+          Add Review
+        </Button>
+      </div>
     </div>
   );
 }

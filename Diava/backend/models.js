@@ -166,6 +166,40 @@ const deleteList = async (id) => {
   }
 };
 
+// Get review
+const getReview = async (user_id, book_id) => {
+  try {
+    const results = await pool.query(
+      "SELECT * FROM reviews WHERE user_id = $1 AND book_id = $2",
+      [user_id, book_id]
+    );
+    return results.rows;
+  } catch (error) {
+    console.error("Error fetching review:", error);
+    throw new Error("Internal server error", error.message);
+  }
+};
+
+// add a review for a book
+const addReview = async (body) => {
+  try {
+    const { user_id, book_id, rating, review_text } = body;
+    const results = await pool.query(
+      "INSERT INTO reviews (user_id, book_id, rating, review_text) VALUES ($1, $2, $3, $4) RETURNING *",
+      [user_id, book_id, rating, review_text]
+    );
+
+    if (results.rowCount === 0) {
+      throw new Error("Review not found");
+    }
+
+    return results.rows[0];
+  } catch (error) {
+    console.error("Error creating review:", error);
+    throw new Error("Database error:", error);
+  }
+};
+
 module.exports = {
   getGoals,
   createGoal,
@@ -177,4 +211,6 @@ module.exports = {
   addList,
   updateList,
   deleteList,
+  getReview,
+  addReview,
 };
