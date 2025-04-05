@@ -17,7 +17,6 @@ import Update from "./pages/Update.jsx";
 import Profile from "./pages/Profile.jsx";
 import GoogleSignUp from "./pages/GoogleSignUp.jsx";
 import ClubSettings from "./pages/ClubSettings.jsx";
-import CreateClubPage from "./pages/CreateClubPage.jsx";
 import CustomList from "./components/CustomList.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import "./index.css";
@@ -30,125 +29,115 @@ function App() {
 
   return (
     <>
-      <AuthProvider>
-        <ThemeProvider theme={theme}>
-          {!isAuthPage && <Navbar />}
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Login />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/googlesignup" element={<GoogleSignUp />} />
+      <ThemeProvider theme={theme}>
+        {!isAuthPage && <Navbar />}
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Login />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route path="/googlesignup" element={<GoogleSignUp />} />
 
-            {/* Private Routes */}
-            <Route
-              path="/chat"
-              element={
-                <ProtectedRoute>
-                  <ChatPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/club-settings/:clubId"
-              element={
-                <ProtectedRoute>
-                  <ClubSettings />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/create-club"
-              element={
-                <ProtectedRoute>
-                  <CreateClubPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/review/:id"
-              element={
-                <ProtectedRoute>
-                  <Review />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/home"
-              element={
-                <ProtectedRoute>
-                  <Home />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/book/:id"
-              element={
-                <ProtectedRoute>
-                  <Book />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/search"
-              element={
-                <ProtectedRoute>
-                  <SearchResults />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/currentlyreading"
-              element={
-                <ProtectedRoute>
-                  {" "}
-                  <CurrentlyReading />{" "}
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/recommendations"
-              element={
-                <ProtectedRoute>
-                  <Recommendations />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/toread"
-              element={
-                <ProtectedRoute>
-                  <ToRead />{" "}
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/update/:id"
-              element={
-                <ProtectedRoute>
-                  <Update />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/list/:name"
-              element={
-                <ProtectedRoute>
-                  <CustomList />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </ThemeProvider>
-      </AuthProvider>
+          {/* Private Routes */}
+          <Route
+            path="/chats"
+            element={
+              <ProtectedRoute>
+                <ChatPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/club-settings/:clubId"
+            element={
+              <ProtectedRoute>
+                <ClubSettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/review/:id"
+            element={
+              <ProtectedRoute>
+                <Review />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/home"
+            element={
+              <ProtectedRoute>
+                <Home />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/book/:id"
+            element={
+              <ProtectedRoute>
+                <Book />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/search"
+            element={
+              <ProtectedRoute>
+                <SearchResults />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/currentlyreading"
+            element={
+              <ProtectedRoute>
+                {" "}
+                <CurrentlyReading />{" "}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/recommendations"
+            element={
+              <ProtectedRoute>
+                <Recommendations />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/toread"
+            element={
+              <ProtectedRoute>
+                <ToRead />{" "}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/update/:id"
+            element={
+              <ProtectedRoute>
+                <Update />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/list/:name"
+            element={
+              <ProtectedRoute>
+                <CustomList />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </ThemeProvider>
     </>
   );
 }

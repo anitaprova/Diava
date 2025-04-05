@@ -1,11 +1,13 @@
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
 import { FaBook, FaGamepad, FaUsers, FaGoogle } from "react-icons/fa";
 import "../styles/Auth.css";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+} from "firebase/auth";
 import { auth, db } from "../firebase/firebase";
 import { setDoc, doc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
@@ -15,20 +17,18 @@ const SignUp = () => {
   const { currentUser } = useAuth();
   const mainpage = "/profile";
 
-
   // Check if user is logged in
-  useEffect(() => {
-      if (currentUser && currentUser.emailVerified) {
-        navigate(mainpage, { replace: true });
-      }
-    }, [currentUser, navigate]);
-
   useEffect(() => {
     if (currentUser && currentUser.emailVerified) {
       navigate(mainpage, { replace: true });
     }
   }, [currentUser, navigate]);
 
+  useEffect(() => {
+    if (currentUser && currentUser.emailVerified) {
+      navigate(mainpage, { replace: true });
+    }
+  }, [currentUser, navigate]);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -51,7 +51,11 @@ const SignUp = () => {
 
     if (name === "username") {
       const exists = await checkUsernameExists(value);
-      setUsernameMessage(exists ? "Username already taken. Please choose another." : "Username available.");
+      setUsernameMessage(
+        exists
+          ? "Username already taken. Please choose another."
+          : "Username available."
+      );
     }
   };
 
@@ -60,11 +64,13 @@ const SignUp = () => {
   const checkUsernameExists = async (username) => {
     if (!username) {
       console.error("Username cannot be empty.");
-      return false; 
+      return false;
     }
     try {
-      const response = await axios.get(`http://localhost:5001/users?name=${username}`);
-      if(response.data == null) {
+      const response = await axios.get(
+        `http://localhost:5001/users?name=${username}`
+      );
+      if (response.data == null) {
         return false;
       } else {
         return true;
@@ -82,45 +88,48 @@ const SignUp = () => {
     }
   };
 
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
       const usernameAvailabe = await checkUsernameExists(formData.username);
-      if(usernameAvailabe){
+      if (usernameAvailabe) {
         alert("Username is already taken. Please pick another one.");
         return;
       }
-      await createUserWithEmailAndPassword(auth, formData.email, formData.password)
-        .then( async (userCredentials) => {
-          const user = userCredentials.user;
-          await sendEmailVerification(user);
-          alert("Go to your email and verify your account.");
-          
+      await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      ).then(async (userCredentials) => {
+        const user = userCredentials.user;
+        await sendEmailVerification(user);
+        alert("Go to your email and verify your account.");
+
+        // NOTE: Before creating doc username needs to be unique.
+        // This should be done through seperate database
         // Store user in database.
-          if (user) {
-            await setDoc(doc(db, "Users", user.uid), {
-              email: user.email,
-              firstName: formData.firstName,
-              lastName: formData.lastName,
-              username: formData.username,
-              uid: user.uid,
-            });
+        if (user) {
+          await setDoc(doc(db, "Users", user.uid), {
+            email: user.email,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            username: formData.username,
+            uid: user.uid,
+          });
 
-            await setDoc(doc(db, "UserChats", user.uid), {});
-            
-            // Store username in postgres
-            const newUser = {name:formData.username};
-            createUser(newUser);
-            console.log("New user created");
-          }
+          await setDoc(doc(db, "UserChats", user.uid), {});
 
-          navigate("/login");
-          console.log("User signed up successfully.");
-        });
-    }
-    catch (error) {
+          // Store username in postgres
+          const newUser = { name: formData.username };
+          createUser(newUser);
+          console.log("New user created");
+        }
+
+        navigate("/login");
+        console.log("User signed up successfully.");
+      });
+    } catch (error) {
       console.log(error.message);
     }
 

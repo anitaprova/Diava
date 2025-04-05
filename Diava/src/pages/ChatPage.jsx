@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { styled } from "@mui/material/styles";
 import ChatSidebar from "../components/chat/ChatSidebar";
 import ChatWindow from "../components/chat/ChatWindow";
@@ -24,6 +24,22 @@ const ChatPage = () => {
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [isAdmin, setIsAdmin] = useState(true); // Set to true to see admin view by default
   const [chats, setChats] = useState([]);
+  const [conversations, setConversations] = useState([]);
+  const chatSidebarRef = useRef(null);
+
+  // useEffect(() => {
+  //   const getChats = () => {
+  //     const unsubscribe = onSnapshot(doc(db, "UserChats", currentUser.uid), (doc) => {
+  //       setConversations(doc.data());
+  //     });
+
+  //     return () => {
+  //       unsubscribe();
+  //     };
+  //   };
+
+  //   currentUser.uid && getChats();
+  // }, [currentUser.uid]);
 
   // TODO: Get club chats
   useEffect(() => {
@@ -44,82 +60,7 @@ const ChatPage = () => {
   }, [currentUser.uid]);
 
   // Mock data for clubs
-  const [clubs, setClubs] = useState([
-    {
-      id: "1",
-      name: "Banned Books",
-      initial: "B",
-      channels: [
-        { id: "1-1", name: "General" },
-        { id: "1-2", name: "Recs" },
-        { id: "1-3", name: "BOTM" },
-      ],
-      features: [
-        { id: "f1-1", name: "Book Voting", icon: "chart" },
-        { id: "f1-2", name: "Challenges", icon: "trophy" },
-      ],
-      members: [
-        { id: "m1", name: "Current User", role: "admin", initial: "C" },
-        { id: "m2", name: "Arielle S", role: "moderator", initial: "A" },
-        { id: "m3", name: "Nathan B", role: "member", initial: "N" },
-      ],
-    },
-    {
-      id: "2",
-      name: "Fantasy Readers",
-      initial: "F",
-      channels: [
-        { id: "2-1", name: "General" },
-        { id: "2-2", name: "New Releases" },
-        { id: "2-3", name: "Book of the Month" },
-      ],
-      features: [
-        { id: "f2-1", name: "Book Voting", icon: "chart" },
-        { id: "f2-2", name: "Challenges", icon: "trophy" },
-      ],
-      members: [
-        { id: "m1", name: "Current User", role: "member", initial: "C" },
-        { id: "m4", name: "Jayson M", role: "admin", initial: "J" },
-        { id: "m5", name: "Anita P", role: "member", initial: "A" },
-      ],
-    },
-    {
-      id: "3",
-      name: "Mystery Club",
-      initial: "M",
-      channels: [
-        { id: "3-1", name: "General" },
-        { id: "3-2", name: "Thriller" },
-        { id: "3-3", name: "True Crime" },
-      ],
-      features: [
-        { id: "f3-1", name: "Book Voting", icon: "chart" },
-        { id: "f3-2", name: "Challenges", icon: "trophy" },
-      ],
-      members: [
-        { id: "m1", name: "Current User", role: "moderator", initial: "C" },
-        { id: "m6", name: "Emma W", role: "admin", initial: "E" },
-      ],
-    },
-    {
-      id: "4",
-      name: "Science Fiction",
-      initial: "S",
-      channels: [
-        { id: "4-1", name: "General" },
-        { id: "4-2", name: "Space Opera" },
-        { id: "4-3", name: "Cyberpunk" },
-      ],
-      features: [
-        { id: "f4-1", name: "Book Voting", icon: "chart" },
-        { id: "f4-2", name: "Challenges", icon: "trophy" },
-      ],
-      members: [
-        { id: "m1", name: "Current User", role: "member", initial: "C" },
-        { id: "m7", name: "David C", role: "admin", initial: "D" },
-      ],
-    },
-  ]);
+  const [clubs, setClubs] = useState([]);
 
   useEffect(() => {
     // Check if there are clubs in localStorage
@@ -166,6 +107,12 @@ const ChatPage = () => {
     // Note for backend: Need API endpoint to create a new club
   };
 
+  const handleShowCreateClubDialog = () => {
+    if (chatSidebarRef.current) {
+      chatSidebarRef.current.setCreateClubOpen(true);
+    }
+  };
+
   return (
     <ChatContainer>
       {viewMode === "clubs" && (
@@ -173,10 +120,12 @@ const ChatPage = () => {
           clubs={clubs}
           selectedClub={selectedClub}
           setSelectedClub={handleSelectClub}
+          onCreateClub={handleShowCreateClubDialog}
         />
       )}
 
       <ChatSidebar
+        ref={chatSidebarRef}
         chats={chats}
         selectedChat={selectedChat}
         setSelectedChat={setSelectedChat}
