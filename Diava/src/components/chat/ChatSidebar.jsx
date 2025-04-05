@@ -30,8 +30,6 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import SearchIcon from "@mui/icons-material/Search";
 import ChatConversation from "./ChatConversation";
 import { FaHashtag } from "react-icons/fa";
-import { MdBarChart } from "react-icons/md";
-import { GiTrophyCup } from "react-icons/gi";
 import { useNavigate } from "react-router-dom";
 import {
   collection,
@@ -191,10 +189,6 @@ const ChatSidebar = forwardRef(
         channels: [{ id: `channel-${Date.now()}`, name: "general" }],
         members: [
           { id: "m1", name: "Current User", role: "admin", initial: "C" },
-        ],
-        features: [
-          { id: `f-${Date.now()}-1`, name: "Book Voting", icon: "chart" },
-          { id: `f-${Date.now()}-2`, name: "Challenges", icon: "trophy" },
         ],
       };
 
@@ -369,30 +363,6 @@ const ChatSidebar = forwardRef(
               </ChannelItem>
             ))}
           </List>
-
-          {/* Features Section */}
-          <Box sx={{ marginTop: "auto" }}>
-            <Divider />
-            <SectionHeader>Features</SectionHeader>
-            <List disablePadding>
-              {selectedClub.features?.map((feature) => (
-                <ChannelItem key={feature.id}>
-                  <ChannelText
-                    primary={
-                      <>
-                        {feature.icon === "chart" ? (
-                          <MdBarChart size={16} />
-                        ) : (
-                          <GiTrophyCup size={16} />
-                        )}
-                        {feature.name}
-                      </>
-                    }
-                  />
-                </ChannelItem>
-              ))}
-            </List>
-          </Box>
         </>
       );
     };

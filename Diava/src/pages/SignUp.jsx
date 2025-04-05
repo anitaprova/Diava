@@ -13,6 +13,16 @@ import { setDoc, doc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 
 const SignUp = () => {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [error, setError] = useState("");
+  const [usernameMessage, setUsernameMessage] = useState("");
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const mainpage = "/profile";
@@ -23,24 +33,6 @@ const SignUp = () => {
       navigate(mainpage, { replace: true });
     }
   }, [currentUser, navigate]);
-
-  useEffect(() => {
-    if (currentUser && currentUser.emailVerified) {
-      navigate(mainpage, { replace: true });
-    }
-  }, [currentUser, navigate]);
-
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    username: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-
-  const [error, setError] = useState("");
-  const [usernameMessage, setUsernameMessage] = useState("");
 
   const handleChange = async (e) => {
     const { name, value } = e.target;
@@ -60,7 +52,6 @@ const SignUp = () => {
   };
 
   // Handle form submission
-
   const checkUsernameExists = async (username) => {
     if (!username) {
       console.error("Username cannot be empty.");
@@ -80,6 +71,7 @@ const SignUp = () => {
       return false;
     }
   };
+
   const createUser = async (userData) => {
     try {
       await axios.post("http://localhost:5001/allusers", userData);
@@ -137,11 +129,11 @@ const SignUp = () => {
     // Navigate to home page after successful signup
     navigate("/");
   };
+
   // Handle Google Sign Up
   const handleGoogleSignUp = () => {
-    // Google authentication will be implemented here
-    // Seperate page will be needed
     console.log("Google sign up clicked");
+    navigate("/googlesignup");
   };
 
   return (

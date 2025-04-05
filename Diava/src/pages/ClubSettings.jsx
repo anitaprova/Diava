@@ -130,8 +130,12 @@ export default function ClubSettings() {
   const handleDeleteClub = () => {
     // In a real app, you would send this to your backend
     alert("Club deleted successfully!");
-    navigate("/chat");
+    navigate("/chats");
     // Note for backend: Need API endpoint to delete a club
+  };
+
+  const handleBack = () => {
+    navigate(-1);
   };
 
   if (loading) {
@@ -141,7 +145,7 @@ export default function ClubSettings() {
   return (
     <Box sx={{ p: 4, maxWidth: 1200, mx: "auto" }}>
       <Box sx={{ display: "flex", alignItems: "center", mb: 4 }}>
-        <IconButton onClick={() => navigate("/chat")} sx={{ mr: 2 }}>
+        <IconButton onClick={handleBack} sx={{ mr: 2 }}>
           <ArrowBackIcon />
         </IconButton>
         <Typography variant="h4" component="h1">
