@@ -68,7 +68,7 @@ export default function BookDetail() {
 
   useEffect(() => {
       axios
-        .get(`http://localhost:5000/list`, {
+        .get(`http://localhost:5001/list`, {
           params: { user_id: auth.currentUser.uid }
         })
         .then((response) => setUserLists(response.data || []))

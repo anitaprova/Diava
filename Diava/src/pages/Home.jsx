@@ -82,7 +82,7 @@ export default function Home() {
 
   const createList = async (listData) => {
     try {
-      const response = await axios.post("http://localhost:5000/list", listData);
+      const response = await axios.post("http://localhost:5001/list", listData);
       console.log(response);
       setUserLists([...userLists, response.data]);
     } catch (error) {
@@ -92,7 +92,7 @@ export default function Home() {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:5000/list`, {
+      .get(`http://localhost:5001/list`, {
         params: { user_id: auth.currentUser.uid }
       })
       .then((response) => setUserLists(response.data || []))

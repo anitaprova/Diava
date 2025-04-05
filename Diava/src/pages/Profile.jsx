@@ -30,7 +30,7 @@ export default function Profile() {
   
   const getGoals = async () => {
     try {
-      const response  = await axios.get('http://localhost:5000/goals')
+      const response  = await axios.get('http://localhost:5001/goals')
 
     } catch (error) {
       console.error("Error creating goal:", error)
@@ -39,7 +39,7 @@ export default function Profile() {
   
   const createGoal = async (goalData) => {
     try {
-      const response = await axios.post("http://localhost:5000/goals", goalData);
+      const response = await axios.post("http://localhost:5001/goals", goalData);
       setGoals([...goals, response.data]); 
     } catch (error) {
       console.error("Error creating goal:", error);
