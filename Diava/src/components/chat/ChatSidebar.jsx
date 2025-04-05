@@ -216,7 +216,7 @@ const ChatSidebar = forwardRef(
       dispatch({ type: "CHANGE_USER", payload: c.userInfo });
     };
 
-    const handleInputSubmit = (e) => {
+    const handleInputSubmit = async (e) => {
       if (e.key === "Enter") {
         console.log("User entered:", inputText);
 
@@ -230,9 +230,29 @@ const ChatSidebar = forwardRef(
       }
     };
 
-    // TODO: Implement CLub Search
     const handleClubSearch = async () => {
-      console.log("Club search is not implemented yet.");
+      if (inputText == "") return;
+  
+      const q = query(
+        collection(db, "Clubs"),
+        where("clubUid", "==", inputText) // In the future "clubUid" should be replaced with "clubname"
+      );
+  
+      try {
+        const querySnapshot = await getDocs(q);
+  
+        // Check if club exists
+        if (querySnapshot.empty) {
+          alert("Club does not exist");
+          return;
+        }
+  
+        // Have user join club
+  
+        console.log("Successfully found club.");
+      } catch (error) {
+        console.log(error);
+      }
     };
 
     const handleUserSearch = async () => {
@@ -273,8 +293,6 @@ const ChatSidebar = forwardRef(
         currentUser.uid > user.uid
           ? currentUser.uid + user.uid
           : user.uid + currentUser.uid;
-
-      console.log(combinedUID);
 
       try {
         const res = await getDoc(doc(db, "Chats", combinedUID));
