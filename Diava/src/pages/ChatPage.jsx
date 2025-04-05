@@ -22,28 +22,148 @@ const ChatPage = () => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [selectedClub, setSelectedClub] = useState(null);
   const [selectedChannel, setSelectedChannel] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(true); // Set to true to see admin view by default
   const [chats, setChats] = useState([]);
 
   // TODO: Get club chats
   useEffect(() => {
     const getChats = () => {
-      const unsubscribe = onSnapshot(doc(db, "UserChats", currentUser.uid), (doc) => {
-        setChats(doc.data());
-      });
+      const unsubscribe = onSnapshot(
+        doc(db, "UserChats", currentUser.uid),
+        (doc) => {
+          setChats(doc.data());
+        }
+      );
 
       return () => {
         unsubscribe();
       };
     };
-    
+
     currentUser.uid && getChats();
   }, [currentUser.uid]);
 
   // Mock data for clubs
-  const [clubs, setClubs] = useState([]);
+  const [clubs, setClubs] = useState([
+    {
+      id: "1",
+      name: "Banned Books",
+      initial: "B",
+      channels: [
+        { id: "1-1", name: "General" },
+        { id: "1-2", name: "Recs" },
+        { id: "1-3", name: "BOTM" },
+      ],
+      features: [
+        { id: "f1-1", name: "Book Voting", icon: "chart" },
+        { id: "f1-2", name: "Challenges", icon: "trophy" },
+      ],
+      members: [
+        { id: "m1", name: "Current User", role: "admin", initial: "C" },
+        { id: "m2", name: "Arielle S", role: "moderator", initial: "A" },
+        { id: "m3", name: "Nathan B", role: "member", initial: "N" },
+      ],
+    },
+    {
+      id: "2",
+      name: "Fantasy Readers",
+      initial: "F",
+      channels: [
+        { id: "2-1", name: "General" },
+        { id: "2-2", name: "New Releases" },
+        { id: "2-3", name: "Book of the Month" },
+      ],
+      features: [
+        { id: "f2-1", name: "Book Voting", icon: "chart" },
+        { id: "f2-2", name: "Challenges", icon: "trophy" },
+      ],
+      members: [
+        { id: "m1", name: "Current User", role: "member", initial: "C" },
+        { id: "m4", name: "Jayson M", role: "admin", initial: "J" },
+        { id: "m5", name: "Anita P", role: "member", initial: "A" },
+      ],
+    },
+    {
+      id: "3",
+      name: "Mystery Club",
+      initial: "M",
+      channels: [
+        { id: "3-1", name: "General" },
+        { id: "3-2", name: "Thriller" },
+        { id: "3-3", name: "True Crime" },
+      ],
+      features: [
+        { id: "f3-1", name: "Book Voting", icon: "chart" },
+        { id: "f3-2", name: "Challenges", icon: "trophy" },
+      ],
+      members: [
+        { id: "m1", name: "Current User", role: "moderator", initial: "C" },
+        { id: "m6", name: "Emma W", role: "admin", initial: "E" },
+      ],
+    },
+    {
+      id: "4",
+      name: "Science Fiction",
+      initial: "S",
+      channels: [
+        { id: "4-1", name: "General" },
+        { id: "4-2", name: "Space Opera" },
+        { id: "4-3", name: "Cyberpunk" },
+      ],
+      features: [
+        { id: "f4-1", name: "Book Voting", icon: "chart" },
+        { id: "f4-2", name: "Challenges", icon: "trophy" },
+      ],
+      members: [
+        { id: "m1", name: "Current User", role: "member", initial: "C" },
+        { id: "m7", name: "David C", role: "admin", initial: "D" },
+      ],
+    },
+  ]);
+
+  useEffect(() => {
+    // Check if there are clubs in localStorage
+    const storedClubs = localStorage.getItem("clubs");
+    if (storedClubs) {
+      setClubs(JSON.parse(storedClubs));
+    } else {
+      // If not, store the initial clubs
+      localStorage.setItem("clubs", JSON.stringify(clubs));
+    }
+  }, []);
 
   const handleTabChange = (newMode) => {
     setViewMode(newMode);
+  };
+
+  const handleSelectClub = (club) => {
+    setSelectedClub(club);
+
+    // Check if the current user is an admin of this club
+    const currentUserId = "m1"; // This would come from your auth context
+    const isUserAdmin = club.members.some(
+      (member) => member.id === currentUserId && member.role === "admin"
+    );
+
+    setIsAdmin(isUserAdmin);
+  };
+
+  const handleCreateClub = (newClub) => {
+    // Add the new club to the clubs array
+    setClubs([...clubs, newClub]);
+
+    // Select the newly created club
+    setSelectedClub(newClub);
+
+    // Set the user as admin of this club
+    setIsAdmin(true);
+
+    // Switch to clubs view if not already there
+    if (viewMode !== "clubs") {
+      setViewMode("clubs");
+    }
+
+    // Note for backend: Need API endpoint to create a new club
   };
 
   return (
@@ -52,7 +172,7 @@ const ChatPage = () => {
         <ClubSidebar
           clubs={clubs}
           selectedClub={selectedClub}
-          setSelectedClub={setSelectedClub}
+          setSelectedClub={handleSelectClub}
         />
       )}
 
@@ -65,6 +185,8 @@ const ChatPage = () => {
         selectedClub={selectedClub}
         selectedChannel={selectedChannel}
         setSelectedChannel={setSelectedChannel}
+        isAdmin={isAdmin}
+        onCreateClub={handleCreateClub}
       />
 
       <ChatWindow
