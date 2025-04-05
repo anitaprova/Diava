@@ -34,6 +34,12 @@ const SignUp = () => {
     }
   }, [currentUser, navigate]);
 
+  useEffect(() => {
+    if (currentUser && currentUser.emailVerified) {
+      navigate(mainpage, { replace: true });
+    }
+  }, [currentUser, navigate]);
+
   const handleChange = async (e) => {
     const { name, value } = e.target;
     setFormData((prevState) => ({
@@ -98,8 +104,6 @@ const SignUp = () => {
         await sendEmailVerification(user);
         alert("Go to your email and verify your account.");
 
-        // NOTE: Before creating doc username needs to be unique.
-        // This should be done through seperate database
         // Store user in database.
         if (user) {
           await setDoc(doc(db, "Users", user.uid), {
