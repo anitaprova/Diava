@@ -271,7 +271,7 @@ export default function Home() {
         <div>
           {userLists.length > 0 ? (
             userLists.map((list) => (
-              <CustomList id={list.id} name={list.name} list_id={list.list_id} />
+              <CustomList id={list.id} name={list.name} />
             ))
           ) : (
             <p>Nothing added yet!</p>
