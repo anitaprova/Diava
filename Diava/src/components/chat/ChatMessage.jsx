@@ -42,10 +42,16 @@ const ChatMessage = ({ message }) => {
     ? new Date(message.date.seconds * 1000).toLocaleDateString()
     : "Unknown Time";
   const isUser = message.senderUid === currentUser.uid;
-  const initial = isUser
-    ? ""
-    : data.user.username[0].toUpperCase();
   const isShortMessage = content && content.length < 30;
+  let initial = null;
+  
+  if (data && data.user && data.user.username) {
+    initial = isUser
+      ? ""
+      : data.user.username[0].toUpperCase();
+  } else {
+    initial = "1";
+  }
 
   return (
     <MessageContainer isUser={isUser}>

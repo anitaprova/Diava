@@ -6,7 +6,7 @@ import UserAvatar from "./UserAvatar";
 import ChatMessage from "./ChatMessage";
 import { FaHashtag } from "react-icons/fa";
 import { useChat } from "../../context/ChatContext";
-import { arrayUnion, doc, onSnapshot, updateDoc, Timestamp, serverTimestamp } from "firebase/firestore";
+import { arrayUnion, doc, onSnapshot, updateDoc, Timestamp, serverTimestamp, collection } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { v4 as uuidv4 } from "uuid"
@@ -49,9 +49,6 @@ const MessageInput = styled(InputBase)({
   marginRight: "8px",
 });
 
-// Mock channel data
-const mockChannelMessages = {};
-
 const ChatWindow = ({ selectedChat, isClubChannel = false, clubName = "" }) => {
   const { currentUser } = useAuth();
   const { data } = useChat();
@@ -60,9 +57,20 @@ const ChatWindow = ({ selectedChat, isClubChannel = false, clubName = "" }) => {
 
   // Update messages when selected chat changes
   useEffect(() => {
-    const unsubscribe = onSnapshot(doc(db, "Chats", data.chatId), (doc) => {
-      doc.exists() && setMessages(doc.data().messages);
-    });
+    setMessages([]);
+    let unsubscribe;
+
+    if (isClubChannel) {
+      unsubscribe = onSnapshot(doc(db, "ClubChats", data.chatId), (doc) => {
+        doc.exists() && setMessages(doc.data().messages);
+      });
+    }
+    else {
+      unsubscribe = onSnapshot(doc(db, "Chats", data.chatId), (doc) => {
+        doc.exists() && setMessages(doc.data().messages);
+      });
+    }
+    
 
     return () => {
       unsubscribe();
@@ -71,16 +79,24 @@ const ChatWindow = ({ selectedChat, isClubChannel = false, clubName = "" }) => {
 
   const handleSendMessage = async () => {
     try {
-      await updateDoc(doc(db, "Chats", data.chatId), {
-        messages: arrayUnion({
-          uid: uuidv4(),
-          message,
-          senderUid:currentUser.uid,
-          date: Timestamp.now()
-        }),
+      const msgObj = {
+        uid: uuidv4(),
+        message,
+        senderUid: currentUser.uid,
+        date: Timestamp.now(),
+      };
+
+      const msgRef = isClubChannel
+        ? doc(db, "ClubChats", data.chatId)
+        : doc(db, "Chats", data.chatId)
+
+      await updateDoc(msgRef, {
+        messages: arrayUnion(msgObj)
       });
 
-      updateSideBar();
+      if (!isClubChannel) {
+        updateSideBar();
+      }
     }
     catch (error) {
       console.log(error);
@@ -147,9 +163,9 @@ const ChatWindow = ({ selectedChat, isClubChannel = false, clubName = "" }) => {
           </Box>
         ) : (
           <>
-            <UserAvatar initial={(data.user.username[0]).toUpperCase()} />
+            <UserAvatar initial={ data.user? (data.user.username[0]).toUpperCase() : ""} />
             <Typography variant="h6" sx={{ marginLeft: 2 }}>
-              {data.user.username}
+              {data.user? data.user.username : ""}
             </Typography>
           </>
         )}

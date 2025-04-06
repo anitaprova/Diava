@@ -18,7 +18,6 @@ const ChatContainer = styled("div")({
 
 const ChatPage = () => {
   const { currentUser } = useAuth();
-  const { dispatch } = useChat();
   const { setCurrentClub } = useClub();
   const [viewMode, setViewMode] = useState("messages"); // "messages" or "clubs"
   const [selectedChat, setSelectedChat] = useState(null);
@@ -27,7 +26,6 @@ const ChatPage = () => {
   const [isAdmin, setIsAdmin] = useState(true); // Set to true to see admin view by default
   const [chats, setChats] = useState([]);
   const [clubs, setClubs] = useState([]);
-  const [conversations, setConversations] = useState([]);
   const chatSidebarRef = useRef(null);
 
   useEffect(() => {

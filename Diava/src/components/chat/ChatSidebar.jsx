@@ -133,7 +133,7 @@ const ChatSidebar = forwardRef(
     const [user, setUser] = useState(null);
     const { currentUser } = useAuth();
     const { dispatch } = useChat();
-    const { currentClub } = useClub();
+    const { currentClub, setCurrentChannel } = useClub();
 
     // Create Club Dialog state
     const [createClubOpen, setCreateClubOpen] = useState(false);
@@ -204,9 +204,27 @@ const ChatSidebar = forwardRef(
       setInputText(e.target.value);
     };
 
+    const handleSelectChannel = async (c) => {
+      setSelectedChannel(c);
+      setCurrentChannel(c);
+
+      // // Get channel chat
+      // try {
+      //   const clubChatRef = doc(db, "ClubChats", c.id);
+      //   const clubChatDoc = await getDoc(clubChatRef);
+
+      //   setSelectedChat(clubChatDoc.data());
+      // }
+      // catch (error) {
+      //   console.log(error);
+      // }
+
+      dispatch({ type: "CHANGE_CHANNEL_CHAT", payload: c })
+    }
+
     const handleSelectedChat = (c) => {
-      // setSelectedChat(c);
-      dispatch({ type: "CHANGE_USER", payload: c.userInfo });
+      setSelectedChat(c);
+      dispatch({ type: "CHANGE_USER_CHAT", payload: c.userInfo });
     };
 
     const handleInputSubmit = async (e) => {
@@ -455,7 +473,7 @@ const ChatSidebar = forwardRef(
                   <ChannelItem
                     key={channel[0]}
                     isSelected={selectedChannel?.id === channel[0]}
-                    onClick={() => setSelectedChannel(channel[1])}
+                    onClick={() => handleSelectChannel(channel[1])}
                   >
                     <ChannelText
                       primary={
@@ -522,7 +540,7 @@ const ChatSidebar = forwardRef(
                   <ChatConversation
                     key={chat[0]}
                     chat={chat[1]}
-                    isSelected={selectedChat?.id === chat[0]}
+                    isSelected={selectedChat?.uid === chat[0]}
                     onClick={() => handleSelectedChat(chat[1])}
                   />
                 ))
