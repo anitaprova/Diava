@@ -4,7 +4,7 @@ import SearchResults from "./components/SearchResults.jsx";
 import { ThemeProvider } from "@mui/material/styles";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import theme from "./theme";
-import ChatPage from "./pages/ChatPage.jsx"
+import ChatPage from "./pages/ChatPage.jsx";
 import Home from "./pages/Home.jsx";
 import Navbar from "./components/Navbar.jsx";
 import Login from "./pages/Login.jsx";
@@ -118,14 +118,14 @@ function App() {
               </ProtectedRoute>
             }
           />
-            <Route
-              path="/list/:name"
-              element={
-                <ProtectedRoute>
-                  <CustomList />
-                </ProtectedRoute>
-              }
-            />
+          <Route
+            path="/list/:name"
+            element={
+              <ProtectedRoute>
+                <CustomList />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </ThemeProvider>
     </>
