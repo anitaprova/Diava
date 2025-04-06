@@ -143,6 +143,25 @@ app.get("/list_books/:user_id/:name", async(req,res) => {
   res.status(500).json({error: error.message});
   }
 });
+app.get("/review", async (req, res) => {
+  try {
+    const { user_id, book_id } = req.query;
+    const response = await DiavaModel.getReview(user_id, book_id);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/review", async (req, res) => {
+  try {
+    const response = await DiavaModel.addReview(req.body);
+    res.status(201).json(response); // 201 for created
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);
 });
