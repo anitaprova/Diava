@@ -19,16 +19,20 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
+import { auth } from "../firebase/firebase";
 
 export default function Review() {
   const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
   const [book, setBook] = useState(null);
   const { id } = useParams();
   const navigate = useNavigate();
-
+  const [rating, setRating] = useState(0);
+  const [format, setFormat] = useState();
+  const [startDate, setStartDate] = useState();
+  const [endDate, setEndDate] = useState();
   const [tagsText, setTagsText] = useState("");
   const [tags, setTags] = useState([]);
+  const [notes, setNotes] = useState("");
 
   const handleTags = (event) => {
     if (event.key === "Enter") {
@@ -41,6 +45,19 @@ export default function Review() {
     }
   };
 
+  const saveReview = async (listData) => {
+    try {
+      const response = await axios.post(
+        "http://localhost:5001/review",
+        listData
+      );
+      console.log(response);
+    } catch (error) {
+      console.error("Error creating review:", error.response.data);
+    }
+    navigate(`/book/${book.id}`);
+  };
+
   useEffect(() => {
     if (id) {
       axios
@@ -49,6 +66,9 @@ export default function Review() {
         .catch((error) => console.error("Error fetching books:", error));
     }
   }, [id]);
+
+  console.log(tags);
+
   return (
     <div className="flex bg-vanilla justify-center  font-merriweather h-full w-full bg-[linear-gradient(transparent_0px,transparent_38px,#C5AD91_40px),linear-gradient(90deg,transparent_0px,transparent_38px,#C5AD91_40px)] bg-[size:40px_40px]">
       {book ? (
@@ -72,10 +92,20 @@ export default function Review() {
                     <span>
                       <StarsIcon /> Rating
                     </span>
-                    <Rating defaultValue={0.0} precision={0.5} size="large" />
+                    <Rating
+                      defaultValue={0.0}
+                      precision={0.5}
+                      size="large"
+                      onChange={(event, newValue) => {
+                        setRating(newValue);
+                      }}
+                    />
                   </div>
                   <FormControl>
-                    <RadioGroup row>
+                    <RadioGroup
+                      row
+                      onChange={(event, newValue) => setFormat(newValue)}
+                    >
                       <FormControlLabel
                         value="ebook"
                         control={<Radio />}
@@ -107,7 +137,12 @@ export default function Review() {
                 <p>
                   <CalendarMonthIcon /> Start Date
                 </p>
-                <TextField fullWidth size="small" type="date" />
+                <TextField
+                  fullWidth
+                  size="small"
+                  type="date"
+                  onChange={(event) => setStartDate(event.target.value)}
+                />
               </span>
 
               <span className="w-full">
@@ -119,6 +154,7 @@ export default function Review() {
                   size="small"
                   variant="outlined"
                   type="date"
+                  onChange={(event) => setEndDate(event.target.value)}
                 />
               </span>
             </div>
@@ -163,7 +199,13 @@ export default function Review() {
             <div>
               <CoffeeIcon /> Notes and Thoughts
             </div>
-            <TextField size="large" variant="outlined" minRows={8} multiline />
+            <TextField
+              size="large"
+              variant="outlined"
+              minRows={8}
+              multiline
+              onChange={(event) => setNotes(event.target.value)}
+            />
             <div className="flex gap-x-2 mt-2">
               <Rating
                 icon={<FavoriteIcon fontSize="inherit" />}
@@ -176,7 +218,21 @@ export default function Review() {
           </div>
 
           <div className="flex justify-center">
-            <Button variant="dark" onClick={() => navigate(`/book/${book.id}`)}>
+            <Button
+              variant="dark"
+              onClick={() =>
+                saveReview({
+                  user_id: auth.currentUser.uid,
+                  book_id: id,
+                  rating: rating,
+                  review_text: notes,
+                  start_date: startDate,
+                  end_date: endDate,
+                  format: format, 
+                  tags: tags,
+                })
+              }
+            >
               Save Review
             </Button>
           </div>
