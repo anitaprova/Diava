@@ -448,7 +448,7 @@ const ChatSidebar = forwardRef(
           {/* Text Channels */}
           <SectionHeader>Channels</SectionHeader>
           <List disablePadding>
-            {currentClub?.channels && currentClub.channels.length > 0 ? (
+            {currentClub?.channels && Object.values(currentClub.channels).length > 0 ? (
               Object.entries(currentClub.channels)
                 .sort((a, b) => a[1].createdAt - b[1].createdAt)
                 .map((channel) => (

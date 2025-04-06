@@ -165,6 +165,7 @@ export default function ClubSettings() {
     }
   };
 
+  // === TODO ===
   const handleDeleteClub = () => {
     // In a real app, you would send this to your backend
     alert("Club deleted successfully!");
