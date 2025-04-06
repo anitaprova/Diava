@@ -531,13 +531,13 @@ const ChatSidebar = forwardRef(
               variant="outlined"
               value={newClubName}
               onChange={(e) => {
-                // Limit club name to 16 characters
-                if (e.target.value.length <= 16) {
+                // Limit club name to 36 characters
+                if (e.target.value.length <= 36) {
                   setNewClubName(e.target.value);
                 }
               }}
-              inputProps={{ maxLength: 16 }}
-              helperText={`${newClubName.length}/16 characters`}
+              inputProps={{ maxLength: 36 }}
+              helperText={`${newClubName.length}/36 characters`}
               sx={{ mb: 2 }}
             />
             <TextField

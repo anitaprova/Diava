@@ -26,9 +26,6 @@ import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { FaHashtag } from "react-icons/fa";
 
-// Mock data - in a real app, you would fetch this from your backend
-const mockClub = {};
-
 export default function ClubSettings() {
   const { clubId } = useParams();
   const navigate = useNavigate();

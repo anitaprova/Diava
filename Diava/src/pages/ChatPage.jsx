@@ -24,40 +24,33 @@ const ChatPage = () => {
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [isAdmin, setIsAdmin] = useState(true); // Set to true to see admin view by default
   const [chats, setChats] = useState([]);
+  const [clubs, setClubs] = useState([]);
   const [conversations, setConversations] = useState([]);
   const chatSidebarRef = useRef(null);
 
-  // TODO: Get club chats
-  useEffect(() => {
-    const getChats = () => {
-      const unsubscribe = onSnapshot(
+  useEffect(() => {  
+    let unsubscribe;
+  
+    if (viewMode === "messages") {
+      unsubscribe = onSnapshot(
         doc(db, "UserChats", currentUser.uid),
-        (doc) => {
-          setChats(doc.data());
+        (docSnap) => {
+          setChats(docSnap.data());
         }
       );
-
-      return () => {
-        unsubscribe();
-      };
-    };
-
-    currentUser.uid && getChats();
-  }, [currentUser.uid]);
-
-  // Mock data for clubs
-  const [clubs, setClubs] = useState([]);
-
-  useEffect(() => {
-    // Check if there are clubs in localStorage
-    const storedClubs = localStorage.getItem("clubs");
-    if (storedClubs) {
-      setClubs(JSON.parse(storedClubs));
-    } else {
-      // If not, store the initial clubs
-      localStorage.setItem("clubs", JSON.stringify(clubs));
+    } else if (viewMode === "clubs") {
+      unsubscribe = onSnapshot(
+        doc(db, "UserClubs", currentUser.uid),
+        (docSnap) => {
+          setClubs(docSnap.data());
+        }
+      );
     }
-  }, []);
+  
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [currentUser?.uid, viewMode]);
 
   const handleTabChange = (newMode) => {
     setViewMode(newMode);
@@ -76,21 +69,21 @@ const ChatPage = () => {
   };
 
   const handleCreateClub = (newClub) => {
-    // Add the new club to the clubs array
-    setClubs([...clubs, newClub]);
+    // // Add the new club to the clubs array
+    // setClubs([...clubs, newClub]);
 
-    // Select the newly created club
-    setSelectedClub(newClub);
+    // // Select the newly created club
+    // setSelectedClub(newClub);
 
-    // Set the user as admin of this club
-    setIsAdmin(true);
+    // // Set the user as admin of this club
+    // setIsAdmin(true);
 
-    // Switch to clubs view if not already there
-    if (viewMode !== "clubs") {
-      setViewMode("clubs");
-    }
+    // // Switch to clubs view if not already there
+    // if (viewMode !== "clubs") {
+    //   setViewMode("clubs");
+    // }
 
-    // Note for backend: Need API endpoint to create a new club
+    // // Note for backend: Need API endpoint to create a new club
   };
 
   const handleShowCreateClubDialog = () => {
