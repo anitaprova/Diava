@@ -143,17 +143,28 @@ export default function ClubSettings() {
     }
   };
 
-  const handleDeleteChannel = async (channelId) => {
+  const deleteChannel = async (channelId, removeInClub) => {
     try {
       const clubRef = doc(db, "Clubs", currentClub.uid);
 
       // Remove from clubs channel
-      await updateDoc(clubRef, {
-        [`channels.${channelId}`]: deleteField()
-      });
-      
+      if (removeInClub) {
+        await updateDoc(clubRef, {
+          [`channels.${channelId}`]: deleteField()
+        });        
+      }
+
       // Remove from club chats
       await deleteDoc(doc(db, "ClubChats", channelId));
+    }
+    catch (error) {
+      console.log(error);
+    }
+  }
+
+  const handleDeleteChannel = async (channelId) => {
+    try {
+      await deleteChannel(channelId, true);
       
       // Update club context
       updateClub();
@@ -165,12 +176,43 @@ export default function ClubSettings() {
     }
   };
 
-  // === TODO ===
-  const handleDeleteClub = () => {
-    // In a real app, you would send this to your backend
-    alert("Club deleted successfully!");
-    navigate("/chats");
-    // Note for backend: Need API endpoint to delete a club
+  const handleDeleteClub = async () => {
+    try {
+      const clubRef = doc(db, "Clubs", currentClub.uid);
+      const clubDoc = await getDoc(clubRef);
+
+      if (clubDoc.exists()) {
+        const clubData = clubDoc.data();
+        const membersList = clubData.members;
+        const channelList = clubData.channels;
+        
+        // Delete all club channels in ClubChats
+        for (const channel in channelList) {
+          deleteChannel(channel, false);
+        }
+
+        // Delete club in UserClubs
+        for (const member in membersList) {
+          const userClubRef = doc(db, "UserClubs", member);
+          
+          await updateDoc(userClubRef, {
+            [`${currentClub.uid}`]: deleteField()
+          });
+        }
+
+        // Delete club
+        await deleteDoc(clubRef);
+
+        alert("Club deleted successfully!");
+        navigate("/chats");
+      }
+      else {
+        console.log("There was an error deleting the club.");
+      }
+    }
+    catch (error) {
+      console.log(error);
+    }
   };
 
   const handleBack = () => {

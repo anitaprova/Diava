@@ -30,11 +30,11 @@ const ChatPage = () => {
   const [conversations, setConversations] = useState([]);
   const chatSidebarRef = useRef(null);
 
-  useEffect(() => {  
+  useEffect(() => {
     setChats(null);
     setClubs(null);
     let unsubscribe;
-  
+
     if (viewMode === "messages") {
       unsubscribe = onSnapshot(
         doc(db, "UserChats", currentUser.uid),
@@ -52,7 +52,7 @@ const ChatPage = () => {
     }
   
     return () => {
-      if (unsubscribe) unsubscribe();
+      unsubscribe();
     };
   }, [currentUser?.uid, viewMode]);
 

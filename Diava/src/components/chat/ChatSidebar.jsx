@@ -205,7 +205,7 @@ const ChatSidebar = forwardRef(
     };
 
     const handleSelectedChat = (c) => {
-      setSelectedChat(c);
+      // setSelectedChat(c);
       dispatch({ type: "CHANGE_USER", payload: c.userInfo });
     };
 
