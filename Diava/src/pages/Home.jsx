@@ -1,15 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Typography, Box, Button, TextField } from "@mui/material";
-import LinearProgress from "@mui/material/LinearProgress";
+import {
+  Typography,
+  Box,
+  Button,
+  TextField,
+  LinearProgress,
+  Dialog,
+  DialogTitle,
+  DialogActions,
+  DialogContent,
+} from "@mui/material";
 import Add from "@mui/icons-material/Add";
 import ArrowCircleRightIcon from "@mui/icons-material/ArrowCircleRight";
 import axios from "axios";
 import CustomList from "../components/CustomList";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
 import { auth } from "../firebase/firebase";
 
 export default function Home() {
@@ -26,84 +31,83 @@ export default function Home() {
   const createList = async (listData) => {
     try {
       const response = await axios.post("http://localhost:5001/list", listData);
-      setUserLists([...userLists, response.data]);
+      setUserLists((prev) => [...prev, response.data]);
     } catch (error) {
-      console.error("Error creating list:", error.response?.data);
+      console.error("Error creating list:", error.response?.data || error.message);
     }
   };
-
-  const fetchBooksMetadata = async (listSetter, listName) => {
-    try {
-      const response = await axios.get("http://localhost:5001/list_books", {
-        params: { user_id: auth.currentUser.uid, name: listName },
-      });
-      const books = response.data || [];
-
-      const metadataPromises = books.map(async (book) => {
-        const googleId = book.google_book_id;
-        const metadata = await axios.get(`https://www.googleapis.com/books/v1/volumes/${googleId}`);
-        return {
-          ...book,
-          ...metadata.data.volumeInfo,
-          google_book_id: googleId
-        };
-      });
-
-      const enrichedBooks = await Promise.all(metadataPromises);
-      listSetter(enrichedBooks);
-    } catch (error) {
-      console.error(`Error fetching books for ${listName}:`, error);
-    }
-  };
-
   useEffect(() => {
-    if (!auth.currentUser) return;
-    const user_id = auth.currentUser.uid
-    axios
-      .get(`http://localhost:5001/list/${user_id}`)
-      .then((response) => setUserLists(response.data || []))
-      .catch((error) => console.error("Error fetching lists:", error));
+    const fetchData = async () => {
+      try {
+        const userId = auth.currentUser.uid;
+  
 
-    fetchBooksMetadata(setCurrentlyReading, "Currently Reading");
-    fetchBooksMetadata(setToRead, "To Read");
+        const crResponse = await axios.get(
+          `http://localhost:5001/list_books/${userId}/Currently Reading`
+        );
+        setCurrentlyReading(crResponse.data || []);
+  
+        // 2. Fetch books for "To Read"
+        const trResponse = await axios.get(
+          `http://localhost:5001/list_books/${userId}/Want To Read`
+        );
+        setToRead(trResponse.data || []);
+  
+      } catch (error) {
+        console.error("Error fetching list books:", error.response?.data || error.message);
+      }
+    };
+  
+    fetchData();
   }, []);
-
   return (
     <div className="ml-50 mr-50 mt-10 mb-25 font-merriweather text-darkbrown">
       <div className="grid grid-flow-col grid-rows-4 gap-x-20">
+        {/* Currently Reading */}
         <div className="row-span-4">
           <Typography
             variant="h4"
             className="w-full"
-            onClick={() => navigate("/currentlyreading")}
+            onClick={() => navigate(`/currentlyreading`)}
           >
             Currently Reading
           </Typography>
           <Box className="bg-sand flex flex-col justify-around rounded-lg h-full w-auto shadow-custom">
             {currentlyReading.length > 0 ? (
-              currentlyReading.slice(0, 2).map((book) => (
-                <div className="flex mt-5 ml-5 gap-x-5" key={book.google_book_id}>
+              currentlyReading.slice(0, 2).map((book, index) => (
+                <div className="flex mt-5 ml-5 gap-x-5" key={index}>
                   <img
-                    src={book.imageLinks?.thumbnail}
+                    src={book.thumbnail}
                     onClick={() => navigate(`/book/${book.google_book_id}`)}
-                    className="w-fit"
+                    className="w-fit cursor-pointer"
                   />
                   <div className="space-y-5">
                     <div>
                       <Typography variant="h6">{book.title}</Typography>
-                      <Typography variant="subtitle2">By {book.authors?.join(", ")}</Typography>
+                      <Typography variant="subtitle2">
+                        By {book.authors}
+                      </Typography>
                     </div>
                     <div className="space-y-5">
                       <Typography>Reading Progress:</Typography>
                       <div className="flex align-center">
                         <Box sx={{ width: "100%", mr: 1 }}>
-                          <LinearProgress variant="determinate" value={60} sx={{ height: "100%" }} />
+                          <LinearProgress
+                            variant="determinate"
+                            value={book.progress || 60}
+                            sx={{ height: "100%" }}
+                          />
                         </Box>
                         <Box sx={{ minWidth: 35 }}>
-                          <Typography variant="body2">60%</Typography>
+                          <Typography variant="body2">
+                            {book.progress || 60}%
+                          </Typography>
                         </Box>
                       </div>
-                      <Button variant="dark" onClick={() => navigate(`/update/${book.google_book_id}`)}>
+                      <Button
+                        variant="dark"
+                        onClick={() => navigate(`/update/${book.google_book_id}`)}
+                      >
                         Update Progress
                       </Button>
                     </div>
@@ -111,39 +115,44 @@ export default function Home() {
                 </div>
               ))
             ) : (
-              <p>Nothing added yet!</p>
+              <p className="p-5">Nothing added yet!</p>
             )}
             <Button
               variant="dark"
               className="w-fit self-center"
-              onClick={() => navigate("/currentlyreading")}
+              onClick={() => navigate(`/currentlyreading`)}
             >
               See More
             </Button>
           </Box>
         </div>
 
-        {/* To Read Pile */}
+        {/* To Read */}
         <div className="col-span-1 row-span-2">
           <Typography variant="h4" onClick={() => navigate(`/toread`)}>
             To Read Pile
           </Typography>
           <Box className="bg-sand flex gap-x-2 rounded-lg overflow-x-auto shadow-custom">
             {toRead.length > 0 ? (
-              toRead.slice(0, 3).map((book) => (
+              toRead.slice(0, 3).map((book, index) => (
                 <img
-                  key={book.google_book_id}
-                  src={book.imageLinks?.thumbnail}
+                  key={index}
+                  src={book.thumbnail}
                   onClick={() => navigate(`/book/${book.google_book_id}`)}
-                  className="p-4"
+                  className="p-4 cursor-pointer"
                 />
               ))
             ) : (
-              <p>Nothing added yet!</p>
+              <p className="p-4">Nothing added yet!</p>
             )}
             <ArrowCircleRightIcon
               size="large"
-              sx={{ display: "flex", alignSelf: "center", width: 30, height: 30 }}
+              sx={{
+                display: "flex",
+                alignSelf: "center",
+                width: 30,
+                height: 30,
+              }}
               onClick={() => navigate(`/toread`)}
             />
           </Box>
@@ -156,30 +165,36 @@ export default function Home() {
           </Typography>
           <Box className="bg-sand flex gap-x-2 rounded-lg overflow-x-auto shadow-custom">
             {recommendation.length > 0 ? (
-              recommendation.slice(0, 3).map((book) => (
+              recommendation.slice(0, 3).map((book, index) => (
                 <img
-                  key={book.google_book_id}
+                  key={index}
                   src={book.thumbnail}
                   onClick={() => navigate(`/book/${book.google_book_id}`)}
-                  className="p-4"
+                  className="p-4 cursor-pointer"
                 />
               ))
             ) : (
-              <p>Nothing added yet!</p>
+              <p className="p-4">Nothing added yet!</p>
             )}
             <ArrowCircleRightIcon
               size="large"
-              sx={{ alignSelf: "center", textAlign: "right", width: 30, height: 30 }}
+              sx={{
+                alignSelf: "center",
+                textAlign: "right",
+                width: 30,
+                height: 30,
+              }}
               onClick={() => navigate(`/recommendations`)}
             />
           </Box>
         </div>
       </div>
 
-      {/* Custom Lists */}
+      {/* User Lists */}
       <div className="mt-30">
         <Typography variant="h4" className="flex justify-between">
-          Your Lists <Add className="bg-vanilla rounded-sm mr-4" onClick={handleOpen} />
+          Your Lists{" "}
+          <Add className="bg-vanilla rounded-sm mr-4" onClick={handleOpen} />
         </Typography>
         <Dialog
           open={open}
@@ -192,8 +207,10 @@ export default function Home() {
                 event.preventDefault();
                 const formData = new FormData(event.currentTarget);
                 const formJson = Object.fromEntries(formData.entries());
-                const name = formJson.name;
-                createList({ user_id: auth.currentUser.uid, name });
+                createList({
+                  user_id: auth.currentUser.uid,
+                  name: formJson.name,
+                });
                 handleClose();
               },
             },
@@ -212,10 +229,16 @@ export default function Home() {
             </Button>
           </DialogActions>
         </Dialog>
-
         <div>
           {userLists.length > 0 ? (
-            userLists.map((list) => <CustomList key={list.id} id={list.id} name={list.name} />)
+            userLists.map((list) => (
+              <CustomList
+                key={list.id}
+                id={list.id}
+                name={list.name}
+                list_id={list.id}
+              />
+            ))
           ) : (
             <p>Nothing added yet!</p>
           )}
