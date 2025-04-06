@@ -8,6 +8,7 @@ import { onSnapshot, doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
+import { useClub } from "../context/ClubContext";
 
 const ChatContainer = styled("div")({
   display: "flex",
@@ -18,6 +19,7 @@ const ChatContainer = styled("div")({
 const ChatPage = () => {
   const { currentUser } = useAuth();
   const { dispatch } = useChat();
+  const { setCurrentClub } = useClub();
   const [viewMode, setViewMode] = useState("messages"); // "messages" or "clubs"
   const [selectedChat, setSelectedChat] = useState(null);
   const [selectedClub, setSelectedClub] = useState(null);
@@ -66,6 +68,7 @@ const ChatPage = () => {
       if (clubDoc.exists()) {
         const clubData = clubDoc.data();
 
+        setCurrentClub(clubData);
         setSelectedClub(clubData);
 
         // Check if the current user is an admin of this club

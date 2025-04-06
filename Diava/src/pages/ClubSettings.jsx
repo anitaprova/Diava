@@ -25,6 +25,9 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { FaHashtag } from "react-icons/fa";
+import { useClub } from "../context/ClubContext";
+import { db } from "../firebase/firebase";
+import { updateDoc, doc, getDoc } from "firebase/firestore";
 
 export default function ClubSettings() {
   const { clubId } = useParams();
@@ -32,6 +35,7 @@ export default function ClubSettings() {
   const [club, setClub] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
+  const { currentClub } = useClub();
 
   // Form states
   const [clubName, setClubName] = useState("");
@@ -42,27 +46,59 @@ export default function ClubSettings() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [addChannelDialogOpen, setAddChannelDialogOpen] = useState(false);
 
-  // useEffect(() => {
-  //   setClub(club);
-  //   setClubName(club.clubname);
-  //   setClubDescription(mockClub.description);
-  //   setLoading(false);
-  // }, [clubId]);
+  useEffect(() => {
+    setClub(currentClub);
+    setClubName(currentClub.clubname);
+    setClubDescription(currentClub.description);
+    setLoading(false);
+  }, [currentClub.uid]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
 
-  const handleSaveSettings = () => {
-    // In a real app, you would send this data to your backend
-    setClub({
-      ...club,
-      name: clubName,
-      description: clubDescription,
-    });
+  const handleSaveSettings = async () => {
+    if (clubName.length === 0) {
+      alert("Invalid club name.");
+      return;
+    }
+    if (clubName.length > 36) {
+      alert("Club name is too long.");
+      return;
+    }
 
-    alert("Club settings saved successfully!");
-    // Note for backend: Need API endpoint to update club settings
+    try {
+      // Get the club doccument
+      const clubRef = doc(db, "Clubs", currentClub.uid);
+
+      await updateDoc(clubRef, {
+        clubname: clubName,
+        description: clubDescription
+      });
+
+      // Update the data for all members
+      const clubDoc = await getDoc(clubRef);
+
+      if (clubDoc.exists()) {
+        const membersList = clubDoc.data().members;
+
+        for (const member in membersList) {
+          const userClubRef = doc(db, "UserClubs", member);
+
+          await updateDoc(userClubRef, {
+            [`${currentClub.uid}.clubInfo.clubname`]: clubName
+          });
+        }
+
+        alert("Club settings saved successfully!");
+      }
+      else {
+        console.log("There was an error.");
+      }
+    }
+    catch (error) {
+      console.log(error);
+    }
   };
 
   const handleAddChannel = () => {

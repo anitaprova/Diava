@@ -48,6 +48,7 @@ import {
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useChat } from "../../context/ChatContext";
+import { useClub } from "../../context/ClubContext"
 import { v4 as uuidv4 } from "uuid"
 
 const SidebarContainer = styled(Box)(({ theme }) => ({
@@ -130,7 +131,6 @@ const ChatSidebar = forwardRef(
     const [showInput, setShowInput] = useState(false);
     const [inputText, setInputText] = useState("");
     const [user, setUser] = useState(null);
-    const [club, setClub] = useState(null);
     const { currentUser } = useAuth();
     const { dispatch } = useChat();
   
@@ -218,7 +218,6 @@ const ChatSidebar = forwardRef(
         setShowInput(false);
         setInputText("");
         setUser(null);
-        setClub(null);
       }
     };
 
