@@ -145,7 +145,7 @@ export default function BookDetail() {
                 <div>
                   <p
                     dangerouslySetInnerHTML={{
-                      __html: book.volumeInfo.description,
+                      __html: book?.volumeInfo?.description,
                     }}
                   />
                   <span className="underline" onClick={() => setSeeMore(false)}>
@@ -157,7 +157,7 @@ export default function BookDetail() {
                   <p
                     dangerouslySetInnerHTML={{
                       __html:
-                        book.volumeInfo.description.substr(0, 650) + "...",
+                        book?.volumeInfo?.description?.substr(0, 650) + "...",
                     }}
                   />
                   <span className="underline" onClick={() => setSeeMore(true)}>
@@ -268,7 +268,7 @@ export default function BookDetail() {
 
       <div className="mt-15">
         <Typography variant="h4">Ratings and Reviews</Typography>
-        {review ? (
+        {review && review.length > 0 ? (
           <div className="bg-vanilla rounded-md p-5 space-y-5">
             <Typography variant="h5">Your Review</Typography>
             <span className="flex justify-between">
@@ -281,9 +281,7 @@ export default function BookDetail() {
               <Typography>
                 Start: {review[0]?.start_date?.split("T")[0]}
               </Typography>
-              <Typography>
-                End: {review[0]?.end_date?.split("T")[0]}
-              </Typography>
+              <Typography>End: {review[0]?.end_date?.split("T")[0]}</Typography>
             </span>
 
             <ul className="flex flex-wrap text-sm gap-3">
