@@ -27,25 +27,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { FaHashtag } from "react-icons/fa";
 
 // Mock data - in a real app, you would fetch this from your backend
-const mockClub = {
-  id: "1",
-  name: "Classic Literature Club",
-  initial: "C",
-  description:
-    "A club for discussing classic literature from around the world.",
-  channels: [
-    { id: "1-1", name: "general" },
-    { id: "1-2", name: "recommendations" },
-    { id: "1-3", name: "monthly-read" },
-  ],
-  members: [
-    { id: "m1", name: "Daryl H", role: "admin", initial: "D" },
-    { id: "m2", name: "Arielle S", role: "moderator", initial: "A" },
-    { id: "m3", name: "Nathan B", role: "member", initial: "N" },
-    { id: "m4", name: "Anita P", role: "member", initial: "J" },
-    { id: "m5", name: "Jayson M", role: "member", initial: "A" },
-  ],
-};
+const mockClub = {};
 
 export default function ClubSettings() {
   const { clubId } = useParams();

@@ -41,10 +41,12 @@ import {
   doc,
   updateDoc,
   serverTimestamp,
+  arrayUnion,
 } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useChat } from "../../context/ChatContext";
+import { v4 as uuidv4 } from "uuid"
 
 const SidebarContainer = styled(Box)(({ theme }) => ({
   width: 300,
@@ -128,13 +130,12 @@ const ChatSidebar = forwardRef(
     const [user, setUser] = useState(null);
     const [club, setClub] = useState(null);
     const { currentUser } = useAuth();
-
+    const { dispatch } = useChat();
+  
     // Create Club Dialog state
     const [createClubOpen, setCreateClubOpen] = useState(false);
     const [newClubName, setNewClubName] = useState("");
     const [newClubDescription, setNewClubDescription] = useState("");
-
-    const { dispatch } = useChat();
 
     // Expose methods to parent component via ref
     useImperativeHandle(ref, () => ({
@@ -177,32 +178,6 @@ const ChatSidebar = forwardRef(
       setShowInput(true);
     };
 
-    const handleCreateClub = () => {
-      if (!newClubName.trim()) return;
-
-      // Create a new club object
-      const newClub = {
-        id: `club-${Date.now()}`, // Generate a temporary ID
-        name: newClubName,
-        description: newClubDescription,
-        initial: newClubName.charAt(0).toUpperCase(),
-        channels: [{ id: `channel-${Date.now()}`, name: "general" }],
-        members: [
-          { id: "m1", name: "Current User", role: "admin", initial: "C" },
-        ],
-      };
-
-      // Call the parent component's handler
-      if (onCreateClub) {
-        onCreateClub(newClub);
-      }
-
-      // Reset form and close dialog
-      setNewClubName("");
-      setNewClubDescription("");
-      setCreateClubOpen(false);
-    };
-
     const handleAddClick = () => {
       setShowInput(true);
     };
@@ -230,24 +205,117 @@ const ChatSidebar = forwardRef(
       }
     };
 
+    const handleCreateClub = async () => {
+      if (!newClubName.trim()) return;
+
+      const clubUid = uuidv4();
+
+      // Get current user's username
+      const userRef = doc(db, "Users", currentUser.uid);
+      const userDoc = await getDoc(userRef);
+      const currentUserInfo = userDoc.data();
+      const clubRef = doc(db, "Clubs", clubUid);
+
+      // Create a club
+      await setDoc(clubRef, {
+        uid: clubUid,
+        clubname: newClubName,
+        description: newClubDescription,
+        createdBy: currentUser.uid,
+        createdAt: serverTimestamp(),
+        initial: newClubName[0].toUpperCase(),
+        logo: {},
+        channels: {},
+        members: {
+          [currentUser.uid]: {
+            username: currentUserInfo.username,
+            role: "Admin",
+            joined: serverTimestamp()
+          }
+        }
+      });
+
+      // Add creator to club
+      await updateDoc(doc(db, "UserClubs", currentUser.uid), {
+        [clubUid + ".clubInfo"]: {
+          clubuid: clubUid,
+          clubname: newClubName,
+          joined: serverTimestamp()
+        }
+      })
+
+      // Call the parent component's handler
+      if (onCreateClub) {
+        onCreateClub();
+      }
+
+      // Reset form and close dialog
+      setNewClubName("");
+      setNewClubDescription("");
+      setCreateClubOpen(false);
+    };
+
     const handleClubSearch = async () => {
       if (inputText == "") return;
-  
-      const q = query(
-        collection(db, "Clubs"),
-        where("clubUid", "==", inputText) // In the future "clubUid" should be replaced with "clubname"
-      );
-  
+
       try {
-        const querySnapshot = await getDocs(q);
-  
         // Check if club exists
-        if (querySnapshot.empty) {
+        const clubsQ = query(
+          collection(db, "Clubs"),
+          where("uid", "==", inputText) // In the future "uid" should be replaced with "clubname"
+        );
+  
+        const clubsDoc = await getDocs(clubsQ);
+        if (clubsDoc.empty) {
           alert("Club does not exist");
           return;
         }
   
-        // Have user join club
+        // Check if user is in club
+        const userClubsRef = doc(db, "UserClubs", currentUser.uid);
+        const userClubsDoc = await getDoc(userClubsRef);
+
+        if (userClubsDoc.exists()) {
+          const userClubsData = userClubsDoc.data();
+          const isInClub = inputText in userClubsData;
+        
+          if (isInClub) {
+            alert("You're already in the club.");
+            console.log("User is already in the club!");
+            return;
+          }
+
+          // Add user to club
+
+          // Get current user's username and club's name
+          const userRef = doc(db, "Users", currentUser.uid);
+          const userDoc = await getDoc(userRef);
+          const currentUserInfo = userDoc.data();
+          const clubRef = doc(db, "Clubs", inputText);
+          const clubDoc = await getDoc(clubRef);
+
+          await updateDoc(clubRef, {
+            [`members.${currentUser.uid}`]: {
+              username: currentUserInfo.username,
+              role: "Member",
+              joined: serverTimestamp()
+            }
+          });
+          await updateDoc(doc(db, "UserClubs", currentUser.uid), {
+            [inputText + ".clubInfo"]: {
+              clubuid: inputText,
+              clubname: clubDoc.data().clubname,
+              joined: serverTimestamp()
+            }
+          });
+
+          console.log("Successfully added user to club.");
+        }
+        else {
+          alert("Error finding user's UserClubs reference");
+          console.log("Error adding user to club.");
+          return;
+        }
   
         console.log("Successfully found club.");
       } catch (error) {
@@ -257,16 +325,15 @@ const ChatSidebar = forwardRef(
 
     const handleUserSearch = async () => {
       if (inputText == "") return;
-
-      const q = query(
-        collection(db, "Users"),
-        where("uid", "==", inputText) // In the future "uid" should be replaced with "username"
-      );
-
+      
       try {
-        const querySnapshot = await getDocs(q);
-
         // Check if user exists
+        const q = query(
+          collection(db, "Users"),
+          where("uid", "==", inputText) // In the future "uid" should be replaced with "username"
+        );
+
+        const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) {
           alert("User does not exist");
           return;

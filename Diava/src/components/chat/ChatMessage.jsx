@@ -35,16 +35,13 @@ const MessageTime = styled(Typography)({
 });
 
 const ChatMessage = ({ message }) => {
-  console.log(message);
-
   const { currentUser } = useAuth();
   const { data } = useChat();
   const content = message.message;
   const timestamp = message.date 
-  ? new Date(message.date.seconds * 1000).toLocaleDateString()
-  : "Unknown Time";
+    ? new Date(message.date.seconds * 1000).toLocaleDateString()
+    : "Unknown Time";
   const isUser = message.senderUid === currentUser.uid;
-  console.log(isUser);
   const initial = isUser
     ? ""
     : data.user.username[0].toUpperCase();

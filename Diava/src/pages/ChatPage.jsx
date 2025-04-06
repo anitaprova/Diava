@@ -27,20 +27,6 @@ const ChatPage = () => {
   const [conversations, setConversations] = useState([]);
   const chatSidebarRef = useRef(null);
 
-  // useEffect(() => {
-  //   const getChats = () => {
-  //     const unsubscribe = onSnapshot(doc(db, "UserChats", currentUser.uid), (doc) => {
-  //       setConversations(doc.data());
-  //     });
-
-  //     return () => {
-  //       unsubscribe();
-  //     };
-  //   };
-
-  //   currentUser.uid && getChats();
-  // }, [currentUser.uid]);
-
   // TODO: Get club chats
   useEffect(() => {
     const getChats = () => {
