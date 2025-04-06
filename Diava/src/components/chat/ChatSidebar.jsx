@@ -427,7 +427,7 @@ const ChatSidebar = forwardRef(
         <>
           <ClubHeader>
             <Typography variant="h6" fontWeight={600}>
-              {selectedClub.name}
+              {selectedClub.clubname}
             </Typography>
             <IconButton size="small" onClick={handleClubMenuOpen}>
               <MoreVertIcon />
