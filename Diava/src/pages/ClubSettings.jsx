@@ -27,7 +27,8 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { FaHashtag } from "react-icons/fa";
 import { useClub } from "../context/ClubContext";
 import { db } from "../firebase/firebase";
-import { updateDoc, doc, getDoc } from "firebase/firestore";
+import { updateDoc, doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { v4 as uuidv4 } from 'uuid';
 
 export default function ClubSettings() {
   const { clubId } = useParams();
@@ -35,7 +36,7 @@ export default function ClubSettings() {
   const [club, setClub] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
-  const { currentClub } = useClub();
+  const { currentClub, setCurrentClub } = useClub();
 
   // Form states
   const [clubName, setClubName] = useState("");
@@ -101,34 +102,40 @@ export default function ClubSettings() {
     }
   };
 
-  const handleAddChannel = () => {
+  const handleAddChannel = async () => {
     if (!newChannelName.trim()) return;
 
-    // In a real app, you would send this to your backend
-    const newChannel = {
-      id: `${club.id}-${club.channels.length + 1}`,
-      name: newChannelName.trim().toLowerCase().replace(/\s+/g, "-"),
-    };
+    try {
+      const clubRef = doc(db, "Clubs", currentClub.uid);
+      const channelId = uuidv4();
 
-    const updatedClub = {
-      ...club,
-      channels: [...club.channels, newChannel],
-    };
+      // Add channel to club
+      await updateDoc(clubRef, {
+        [`channels.${channelId}`]: {
+          name: newChannelName,
+          id: channelId,
+          createdAt: serverTimestamp()
+        }
+      });
+      // Add channel to club chats
+      await setDoc(doc(db, "ClubChats", channelId), { messages: [] });
 
-    setClub(updatedClub);
+      // Update current club
+      const clubDoc = await getDoc(clubRef);
 
-    // Store the updated club in localStorage so ChatPage can access it
-    const storedClubs = JSON.parse(localStorage.getItem("clubs") || "[]");
-    const updatedClubs = storedClubs.map((c) =>
-      c.id === updatedClub.id ? updatedClub : c
-    );
-    localStorage.setItem("clubs", JSON.stringify(updatedClubs));
+      if (clubDoc.exists()) {
+        setCurrentClub(clubDoc.data());
+      }
+      else {
+        console.log("Error getting club data");
+        return;
+      }
 
-    setNewChannelName("");
-    setAddChannelDialogOpen(false);
-
-    // Show feedback to the user
-    alert("Channel added successfully!");
+      alert("Channel added successfully!");
+    }
+    catch (error) {
+      console.log(error);
+    }
   };
 
   const handleDeleteChannel = (channelId) => {
@@ -248,29 +255,33 @@ export default function ClubSettings() {
               </Button>
             </Box>
             <List>
-              {club.channels.map((channel) => (
-                <ListItem
-                  key={channel.id}
-                  secondaryAction={
-                    <IconButton
-                      edge="end"
-                      onClick={() => handleDeleteChannel(channel.id)}
-                      sx={{ color: "#5d4b3d" }}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  }
-                >
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <FaHashtag size={14} style={{ marginRight: 8 }} />
-                        {channel.name}
-                      </Box>
+            {currentClub?.channels && Object.values(currentClub.channels).length > 0 ? (
+              Object.entries(currentClub.channels)
+                .sort((a, b) => a[1].createdAt - b[1].createdAt)
+                .map((channel) => (
+                  <ListItem
+                    key={channel[0]}
+                    secondaryAction={
+                      <IconButton
+                        edge="end"
+                        onClick={() => handleDeleteChannel(channel[0])}
+                        sx={{ color: "#5d4b3d" }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
                     }
-                  />
-                </ListItem>
-              ))}
+                  >
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <FaHashtag size={14} style={{ marginRight: 8 }} />
+                          {channel[1].name}
+                        </Box>
+                      }
+                    />
+                  </ListItem>
+                ))
+            ) : null}
             </List>
           </Box>
         )}

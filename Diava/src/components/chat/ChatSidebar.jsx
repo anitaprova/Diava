@@ -133,7 +133,8 @@ const ChatSidebar = forwardRef(
     const [user, setUser] = useState(null);
     const { currentUser } = useAuth();
     const { dispatch } = useChat();
-  
+    const { currentClub } = useClub();
+
     // Create Club Dialog state
     const [createClubOpen, setCreateClubOpen] = useState(false);
     const [newClubName, setNewClubName] = useState("");
@@ -447,24 +448,26 @@ const ChatSidebar = forwardRef(
           {/* Text Channels */}
           <SectionHeader>Channels</SectionHeader>
           <List disablePadding>
-          {selectedClub.channels && selectedClub.channels.length > 0 ? (
-            selectedClub.channels.map((channel) => (
-              <ChannelItem
-                key={channel.id}
-                isSelected={selectedChannel?.id === channel.id}
-                onClick={() => setSelectedChannel(channel)}
-              >
-                <ChannelText
-                  primary={
-                    <>
-                      <FaHashtag size={14} />
-                      {channel.name}
-                    </>
-                  }
-                />
-              </ChannelItem>
-            ))
-          ) : null}
+            {currentClub?.channels && currentClub.channels.length > 0 ? (
+              Object.entries(currentClub.channels)
+                .sort((a, b) => a[1].createdAt - b[1].createdAt)
+                .map((channel) => (
+                  <ChannelItem
+                    key={channel[0]}
+                    isSelected={selectedChannel?.id === channel[0]}
+                    onClick={() => setSelectedChannel(channel[1])}
+                  >
+                    <ChannelText
+                      primary={
+                        <>
+                          <FaHashtag size={14} />
+                          {channel[1].name}
+                        </>
+                      }
+                    />
+                  </ChannelItem>
+                ))
+            ) : null}
           </List>
         </>
       );

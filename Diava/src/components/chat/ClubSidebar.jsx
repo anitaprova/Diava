@@ -74,16 +74,18 @@ const ClubSidebar = ({
   return (
     <SidebarContainer>
       {clubs ? (
-        Object.entries(clubs).map((club) => (
-          <Tooltip key={club[0]} title={club[1].clubInfo.clubname} placement="right">
-            <ClubAvatarWrapper
-              isSelected={selectedClub?.id === club[0]}
-              onClick={() => setSelectedClub(club[1])}
-            >
-              <StyledAvatar initial={club[1].clubInfo.clubname[0].toUpperCase()} />
-            </ClubAvatarWrapper>
-          </Tooltip>
-        ))
+        Object.entries(clubs)
+        .sort((a, b) => a[1].clubInfo.joined - b[1].clubInfo.joined)
+          .map((club) => (
+            <Tooltip key={club[0]} title={club[1].clubInfo.clubname} placement="right">
+              <ClubAvatarWrapper
+                isSelected={selectedClub?.id === club[0]}
+                onClick={() => setSelectedClub(club[1])}
+              >
+                <StyledAvatar initial={club[1].clubInfo.clubname[0].toUpperCase()} />
+              </ClubAvatarWrapper>
+            </Tooltip>
+          ))
       ) : null}
 
       {/* Add Club Button at the bottom */}
