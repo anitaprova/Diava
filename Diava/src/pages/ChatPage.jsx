@@ -4,7 +4,7 @@ import ChatSidebar from "../components/chat/ChatSidebar";
 import ChatWindow from "../components/chat/ChatWindow";
 import ClubSidebar from "../components/chat/ClubSidebar";
 import "../styles/Chat.css";
-import { onSnapshot, doc } from "firebase/firestore";
+import { onSnapshot, doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
@@ -29,6 +29,8 @@ const ChatPage = () => {
   const chatSidebarRef = useRef(null);
 
   useEffect(() => {  
+    setChats(null);
+    setClubs(null);
     let unsubscribe;
   
     if (viewMode === "messages") {
@@ -56,34 +58,35 @@ const ChatPage = () => {
     setViewMode(newMode);
   };
 
-  const handleSelectClub = (club) => {
-    setSelectedClub(club);
+  const handleSelectClub = async (club) => {
+    try {
+      const clubRef = doc(db, "Clubs", club.clubInfo.clubuid);
+      const clubDoc = await getDoc(clubRef);
+      
+      if (clubDoc.exists()) {
+        const clubData = clubDoc.data();
 
-    // Check if the current user is an admin of this club
-    const currentUserId = "m1"; // This would come from your auth context
-    const isUserAdmin = club.members.some(
-      (member) => member.id === currentUserId && member.role === "admin"
-    );
+        setSelectedClub(clubData);
 
-    setIsAdmin(isUserAdmin);
+        // Check if the current user is an admin of this club
+        const userClubInfo = clubData.members[currentUser.uid];
+        const isUserAdmin = userClubInfo.role === "Admin";
+
+        setIsAdmin(isUserAdmin);
+      }
+      else {
+        console.log("Error finding club.");
+        return;
+      }
+
+    }
+    catch (error) {
+      console.log(error);
+    }
   };
 
   const handleCreateClub = (newClub) => {
-    // // Add the new club to the clubs array
-    // setClubs([...clubs, newClub]);
-
-    // // Select the newly created club
-    // setSelectedClub(newClub);
-
-    // // Set the user as admin of this club
-    // setIsAdmin(true);
-
-    // // Switch to clubs view if not already there
-    // if (viewMode !== "clubs") {
-    //   setViewMode("clubs");
-    // }
-
-    // // Note for backend: Need API endpoint to create a new club
+    // Implemented in ChatSidebar.jsx as 'handleCreateClub'
   };
 
   const handleShowCreateClubDialog = () => {
@@ -120,7 +123,7 @@ const ChatPage = () => {
       <ChatWindow
         selectedChat={viewMode === "messages" ? selectedChat : selectedChannel}
         isClubChannel={viewMode === "clubs"}
-        clubName={selectedClub?.name}
+        clubName={selectedClub?.clubname}
       />
     </ChatContainer>
   );

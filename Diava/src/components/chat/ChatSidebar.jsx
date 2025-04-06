@@ -42,6 +42,8 @@ import {
   updateDoc,
   serverTimestamp,
   arrayUnion,
+  deleteDoc,
+  deleteField,
 } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
@@ -167,11 +169,26 @@ const ChatSidebar = forwardRef(
       navigate(`/club-settings/${selectedClub.id}`);
     };
 
-    const handleLeaveClub = () => {
+    const handleLeaveClub = async () => {
       handleClubMenuClose();
-      // Here you would add logic to leave the club
-      // This would typically involve an API call to your backend
-      alert("You have left the club"); // Placeholder
+      
+      try {
+        const userClubRef = doc(db, "UserClubs", currentUser.uid);
+        const clubRef = doc(db, "Clubs", selectedClub.uid);
+        
+        await updateDoc(userClubRef, {
+          [selectedClub.uid]: deleteField()
+        });
+
+        await updateDoc(clubRef, {
+          [`members.${currentUser.uid}`]: deleteField()
+        });
+
+        console.log("Successfully left Club.");
+      }
+      catch (error) {
+        console.log(error);
+      }
     };
 
     const handleAddButtonClick = () => {
@@ -431,7 +448,8 @@ const ChatSidebar = forwardRef(
           {/* Text Channels */}
           <SectionHeader>Channels</SectionHeader>
           <List disablePadding>
-            {selectedClub.channels.map((channel) => (
+          {selectedClub.channels && selectedClub.channels.length > 0 ? (
+            selectedClub.channels.map((channel) => (
               <ChannelItem
                 key={channel.id}
                 isSelected={selectedChannel?.id === channel.id}
@@ -446,7 +464,8 @@ const ChatSidebar = forwardRef(
                   }
                 />
               </ChannelItem>
-            ))}
+            ))
+          ) : null}
           </List>
         </>
       );

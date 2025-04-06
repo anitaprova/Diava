@@ -42,14 +42,12 @@ export default function ClubSettings() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [addChannelDialogOpen, setAddChannelDialogOpen] = useState(false);
 
-  useEffect(() => {
-    // In a real app, you would fetch the club data from your backend
-    // For now, we'll use mock data
-    setClub(mockClub);
-    setClubName(mockClub.name);
-    setClubDescription(mockClub.description);
-    setLoading(false);
-  }, [clubId]);
+  // useEffect(() => {
+  //   setClub(club);
+  //   setClubName(club.clubname);
+  //   setClubDescription(mockClub.description);
+  //   setLoading(false);
+  // }, [clubId]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
