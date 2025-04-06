@@ -27,7 +27,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { FaHashtag } from "react-icons/fa";
 import { useClub } from "../context/ClubContext";
 import { db } from "../firebase/firebase";
-import { updateDoc, doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { updateDoc, doc, getDoc, setDoc, serverTimestamp, deleteDoc, deleteField } from "firebase/firestore";
 import { v4 as uuidv4 } from 'uuid';
 
 export default function ClubSettings() {
@@ -102,6 +102,19 @@ export default function ClubSettings() {
     }
   };
 
+  const updateClub = async () => {
+    const clubRef = doc(db, "Clubs", currentClub.uid);
+    const clubDoc = await getDoc(clubRef);
+
+    if (clubDoc.exists()) {
+      setCurrentClub(clubDoc.data());
+    }
+    else {
+      console.log("Error getting club data");
+      return;
+    }
+  }
+
   const handleAddChannel = async () => {
     if (!newChannelName.trim()) return;
 
@@ -120,16 +133,8 @@ export default function ClubSettings() {
       // Add channel to club chats
       await setDoc(doc(db, "ClubChats", channelId), { messages: [] });
 
-      // Update current club
-      const clubDoc = await getDoc(clubRef);
-
-      if (clubDoc.exists()) {
-        setCurrentClub(clubDoc.data());
-      }
-      else {
-        console.log("Error getting club data");
-        return;
-      }
+      // Update club context
+      updateClub();
 
       alert("Channel added successfully!");
     }
@@ -138,13 +143,26 @@ export default function ClubSettings() {
     }
   };
 
-  const handleDeleteChannel = (channelId) => {
-    // In a real app, you would send this to your backend
-    setClub({
-      ...club,
-      channels: club.channels.filter((channel) => channel.id !== channelId),
-    });
-    // Note for backend: Need API endpoint to delete a channel
+  const handleDeleteChannel = async (channelId) => {
+    try {
+      const clubRef = doc(db, "Clubs", currentClub.uid);
+
+      // Remove from clubs channel
+      await updateDoc(clubRef, {
+        [`channels.${channelId}`]: deleteField()
+      });
+      
+      // Remove from club chats
+      await deleteDoc(doc(db, "ClubChats", channelId));
+      
+      // Update club context
+      updateClub();
+
+      alert("Successfully deleted channel.");
+    }
+    catch (error) {
+      console.log(error);
+    }
   };
 
   const handleDeleteClub = () => {
