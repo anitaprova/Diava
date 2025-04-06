@@ -282,21 +282,27 @@ export default function ClubSettings() {
               Members
             </Typography>
             <List>
-              {club.members.map((member) => (
-                <ListItem key={member.id}>
-                  <ListItemAvatar>
-                    <Avatar sx={{ bgcolor: "#5d4b3d" }}>
-                      {member.initial}
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={member.name}
-                    secondary={
-                      member.role.charAt(0).toUpperCase() + member.role.slice(1)
-                    }
-                  />
-                </ListItem>
-              ))}
+            {currentClub?.members && Object.values(currentClub.members).length > 0 ? (
+              Object.entries(currentClub.members)
+                .sort((a, b) => a[1].joined - b[1].joined)
+                .map((member) => (
+                  <ListItem key={member[0]}>
+                    <ListItemAvatar>
+                      <Avatar sx={{ bgcolor: "#5d4b3d" }}>
+                        {member[1].username?.[0]?.toUpperCase() || "?"}
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={member[1].username}
+                      secondary={
+                        member[1].role
+                          ? member[1].role.charAt(0).toUpperCase() + member[1].role.slice(1)
+                          : ""
+                      }
+                    />
+                  </ListItem>
+                ))
+              ) : null}
             </List>
           </Box>
         )}
