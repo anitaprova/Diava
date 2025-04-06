@@ -31,20 +31,34 @@ export default function BookDetail() {
   const genres = [
     ...new Set(genresRaw.flatMap((category) => category.split("/"))),
   ];
-  const options = ["Want to Read", "Currently Reading", "Read"];
 
-  const [open, setOpen] = React.useState(false);
+  // Dropdown related states
+  const [open, setOpen] = useState(false);
+  const [selectedListName, setSelectedListName] = useState("");
   const anchorRef = React.useRef(null);
-  const [selectedIndex, setSelectedIndex] = React.useState(1);
-  const [review, setReview] = useState();
 
-  const handleClick = () => {
-    console.info(`You clicked ${options[selectedIndex]}`);
-  };
-
-  const handleMenuItemClick = (event, index) => {
-    setSelectedIndex(index);
+  const handleMenuItemClick = async (event, listName) => {
+    setSelectedListName(listName);
     setOpen(false);
+
+    const selectedList = userLists.find((list) => list.name === listName);
+
+    if (selectedList) {
+      try {
+        const bookData = {
+          list_id: selectedList.id,
+          google_book_id: book.id,
+          title: book.volumeInfo.title,
+          thumbnail: book.volumeInfo.imageLinks.thumbnail,
+          user_id: auth.currentUser.uid,
+          author: book.volumeInfo.authors?.join(", ")
+        };
+        await axios.post("http://localhost:5001/list_books", bookData);
+        console.log(`Book added to ${listName} list`);
+      } catch (error) {
+        console.error("Error adding book to list:", error);
+      }
+    }
   };
 
   const handleToggle = () => {
@@ -68,29 +82,19 @@ export default function BookDetail() {
   }, [id]);
 
   useEffect(() => {
+    const userId = auth.currentUser?.uid;
+    if (userId) {
       axios
-        .get(`http://localhost:5001/list`, {
-          params: { user_id: auth.currentUser.uid }
-        })
+        .get(`http://localhost:5001/list/${userId}`)
         .then((response) => setUserLists(response.data || []))
-        .catch((error) => console.error("Error fetching books:", error));
-    }, []);
-
-    useEffect(() =>{
-      axios
-        .get(`http://localhost:5001/review`, {
-          params: { user_id: auth.currentUser.uid, book_id: id },
-        })
-        .then((response) => setReview(response.data || []))
-        .catch((error) => console.error("Error fetching books:", error));
-    }, []);
-
-    console.log(review);
+        .catch((error) => console.error("Error fetching lists:", error));
+    }
+  }, []);
 
   return (
-    <div className="font-merriweather mr-25 ml-25 mt-15 mb-15">
+    <div className="font-merriweather mr-25 ml-25 mt-15">
       {book && book.volumeInfo.imageLinks ? (
-        <div className="grid grid-cols-5 gap-x-8 mb-15">
+        <div className="grid grid-cols-5 gap-x-8">
           <div className="flex flex-col gap-y-5">
             <img
               src={book.volumeInfo.imageLinks.thumbnail}
@@ -99,7 +103,7 @@ export default function BookDetail() {
             <ul className="flex flex-wrap text-sm gap-3">
               {genres &&
                 genres.map((genre) => (
-                  <li className="bg-sand p-1 text-center rounded-sm w-fit pr-4">
+                  <li className="bg-sand p-1 text-center rounded-sm w-fit">
                     <LocalOfferIcon color="secondary" /> {genre}
                   </li>
                 ))}
@@ -170,8 +174,8 @@ export default function BookDetail() {
 
           <div className="flex flex-col gap-y-5 h-fit w-fit">
             <ButtonGroup>
-              <Button variant="soft" ref={anchorRef} onClick={handleClick}>
-                {options[selectedIndex]}
+              <Button variant="soft" ref={anchorRef} onClick={handleToggle}>
+                {selectedListName || "Select List"}
               </Button>
               <Button
                 size="small"
@@ -204,29 +208,15 @@ export default function BookDetail() {
                   <Paper>
                     <ClickAwayListener onClickAway={handleClose}>
                       <MenuList id="split-button-menu" autoFocusItem>
-                        {options.map((option, index) => (
+                        {userLists.map((list) => (
                           <MenuItem
-                            key={option}
-                            selected={index === selectedIndex}
+                            key={list.id}
+                            selected={list.name === selectedListName}
                             onClick={(event) =>
-                              handleMenuItemClick(event, index)
+                              handleMenuItemClick(event, list.name)
                             }
                           >
-                            {option}
-                          </MenuItem>
-                        ))}
-
-                        <Divider middle />
-
-                        {userLists?.map((option, index) => (
-                          <MenuItem
-                            key={option.list_id}
-                            selected={index === selectedIndex}
-                            onClick={(event) =>
-                              handleMenuItemClick(event, index)
-                            }
-                          >
-                            {option.name}
+                            {list.name}
                           </MenuItem>
                         ))}
                       </MenuList>

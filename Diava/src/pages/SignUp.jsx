@@ -11,6 +11,16 @@ import { setDoc, doc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 
 const SignUp = () => {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [error, setError] = useState("");
+  const [usernameMessage, setUsernameMessage] = useState("");
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const mainpage = "/profile";
@@ -29,19 +39,6 @@ const SignUp = () => {
     }
   }, [currentUser, navigate]);
 
-
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    username: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-
-  const [error, setError] = useState("");
-  const [usernameMessage, setUsernameMessage] = useState("");
-
   const handleChange = async (e) => {
     const { name, value } = e.target;
     setFormData((prevState) => ({
@@ -56,7 +53,6 @@ const SignUp = () => {
   };
 
   // Handle form submission
-
   const checkUsernameExists = async (username) => {
     if (!username) {
       console.error("Username cannot be empty.");
@@ -74,6 +70,7 @@ const SignUp = () => {
       return false;
     }
   };
+
   const createUser = async (userData) => {
     try {
       await axios.post("http://localhost:5001/allusers", userData);
@@ -81,7 +78,6 @@ const SignUp = () => {
       console.error("Error creating user:", error);
     }
   };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -111,7 +107,7 @@ const SignUp = () => {
             await setDoc(doc(db, "UserChats", user.uid), {});
             
             // Store username in postgres
-            const newUser = {name:formData.username};
+            const newUser = {user_id: user.uid, name:formData.username};
             createUser(newUser);
             console.log("New user created");
           }
@@ -128,11 +124,11 @@ const SignUp = () => {
     // Navigate to home page after successful signup
     navigate("/");
   };
+
   // Handle Google Sign Up
   const handleGoogleSignUp = () => {
-    // Google authentication will be implemented here
-    // Seperate page will be needed
     console.log("Google sign up clicked");
+    navigate("/googlesignup");
   };
 
   return (

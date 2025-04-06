@@ -82,12 +82,21 @@ export default function Navbar() {
     searchDelayed(query);
   }, [query]);
 
+  // Navigation handlers
+  const handleLogoClick = () => {
+    navigate("/home");
+  };
+
+  const handleChatClick = () => {
+    navigate("/chat");
+  };
+
   return (
     <AppBar position="static">
       <Toolbar className="flex justify-between">
         <Typography
           variant="h4"
-          onClick={() => navigate(`/home`)}
+          onClick={handleLogoClick}
           sx={{ cursor: "pointer" }}
         >
           DIAVA
@@ -114,22 +123,19 @@ export default function Navbar() {
               getOptionLabel={(result) => result.volumeInfo?.title || ""}
               options={results}
               onInputChange={(event, newValue) => {
-                // console.log("Input change:", newValue);
-                setQuery(newValue || ""); // Update query state correctly
+                setQuery(newValue || "");
               }}
-              onKeyDown={searchBook} // Handle Enter key to navigate
+              onKeyDown={searchBook}
               onChange={(event, selectedBook) => {
-                console.log("Selected book:", selectedBook);
                 if (selectedBook && selectedBook.id) {
                   navigate(`/book/${selectedBook.id}`);
                 } else {
-                  console.warn("No book ID found:", selectedBook); // Handle no selection case
+                  console.warn("No book ID found:", selectedBook);
                 }
               }}
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  // value={query || ""} // Controlled value from query state
                   onKeyDown={searchBook}
                   sx={{
                     "& .MuiOutlinedInput-notchedOutline": {
@@ -165,7 +171,7 @@ export default function Navbar() {
         </div>
 
         <div className="flex gap-x-6">
-          <IconButton color="inherit" onClick={() => navigate(`/chats`)}>
+          <IconButton color="inherit" onClick={handleChatClick}>
             <ChatBubbleIcon fontSize="large" />
           </IconButton>
 
