@@ -6,7 +6,7 @@ import UserAvatar from "./UserAvatar";
 import ChatMessage from "./ChatMessage";
 import { FaHashtag } from "react-icons/fa";
 import { useChat } from "../../context/ChatContext";
-import { arrayUnion, doc, onSnapshot, updateDoc, Timestamp, serverTimestamp, collection } from "firebase/firestore";
+import { arrayUnion, doc, onSnapshot, updateDoc, Timestamp, serverTimestamp, getDoc } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { v4 as uuidv4 } from "uuid"
@@ -79,10 +79,14 @@ const ChatWindow = ({ selectedChat, isClubChannel = false, clubName = "" }) => {
 
   const handleSendMessage = async () => {
     try {
+      const userRef = doc(db, "Users", currentUser.uid);
+      const userDoc = await getDoc(userRef);
+
       const msgObj = {
         uid: uuidv4(),
         message,
         senderUid: currentUser.uid,
+        senderUsername: userDoc.data().username,
         date: Timestamp.now(),
       };
 
@@ -173,7 +177,7 @@ const ChatWindow = ({ selectedChat, isClubChannel = false, clubName = "" }) => {
 
       <MessagesContainer>
         {messages.map((msg) => (
-          <ChatMessage key={msg.senderUid} message={msg} />
+          <ChatMessage key={msg.uid} message={msg} />
         ))}
       </MessagesContainer>
 

@@ -4,6 +4,8 @@ import { Box, Typography, Paper } from "@mui/material";
 import UserAvatar from "./UserAvatar";
 import { useAuth } from "../../context/AuthContext";
 import { useChat } from "../../context/ChatContext";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../firebase/firebase";
 
 //test
 const MessageContainer = styled(Box)(({ isUser }) => ({
@@ -44,13 +46,16 @@ const ChatMessage = ({ message }) => {
   const isUser = message.senderUid === currentUser.uid;
   const isShortMessage = content && content.length < 30;
   let initial = null;
-  
+
   if (data && data.user && data.user.username) {
     initial = isUser
       ? ""
       : data.user.username[0].toUpperCase();
-  } else {
-    initial = "1";
+  } 
+  else {
+    initial = message.senderUsername
+      ? message.senderUsername[0].toUpperCase()
+      : "?";
   }
 
   return (
