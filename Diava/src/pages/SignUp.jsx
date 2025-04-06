@@ -107,7 +107,7 @@ const SignUp = () => {
             await setDoc(doc(db, "UserChats", user.uid), {});
             
             // Store username in postgres
-            const newUser = {name:formData.username};
+            const newUser = {user_id: user.uid, name:formData.username};
             createUser(newUser);
             console.log("New user created");
           }
