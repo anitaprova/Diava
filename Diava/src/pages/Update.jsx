@@ -6,30 +6,13 @@ import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 
 export default function ToRead() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [book, setBook] = useState({
-    id: "3vo0NQbIN2YC",
-    volumeInfo: {
-      title: "A Thousand Splendid Suns",
-      authors: ["Khaled Hosseini"],
-      publishedDate: "2008-09-18",
-      description:
-        "'A Thousand Splendid Suns' is a chronicle of Afghan history, and a deeply moving story of family, friendship, and the salvation to be found in love.",
-      pageCount: 419,
-      categories: ["Fiction / General"],
-      averageRating: 5,
-      imageLinks: {
-        thumbnail:
-          "http://books.google.com/books/content?id=3vo0NQbIN2YC&printsec=frontcover&img=1&zoom=1&edge=curl&imgtk=AFLRE71jVhNuWmSXykiQxuqgjmnYXICqQKU_xGWgCb8bckuuq2JGVGBufunssx_MEON9cwxnZSVZ7X7gf9btSeZttBEqmw5ANGbrJDpjA_PALpf5beNOV5Gm7NKhu6Tr_cbaajc60bIG&source=gbs_api",
-      },
-    },
-  });
 
+  const [book, setBook] = useState(null);
   const [logs, setLogs] = useState([
     {
       page: "40",
@@ -55,6 +38,24 @@ export default function ToRead() {
   const [selectedLog, setSelectedLog] = useState(null);
   const [open, setOpen] = useState(false);
 
+  useEffect(() => {
+    const fetchBook = async () => {
+      try {
+        const res = await fetch(
+          `https://www.googleapis.com/books/v1/volumes/${id}`
+        );
+        const data = await res.json();
+        setBook(data);
+      } catch (error) {
+        console.error("Failed to fetch book:", error);
+      }
+    };
+
+    if (id) {
+      fetchBook();
+    }
+  }, [id]);
+
   const handleOpen = () => {
     setSelectedLog(null);
     setOpen(true);
@@ -69,33 +70,43 @@ export default function ToRead() {
     setSelectedLog(null);
     setOpen(false);
   };
-  
+
   return (
     <div className="font-merriweather ml-50 mr-50 mt-10 mb-10">
-      {book && book.volumeInfo.imageLinks ? (
+      {book && book.volumeInfo ? (
         <div className="grid grid-cols-5 gap-x-8 w-full">
           <div className="col-span-1 flex flex-col gap-y-5">
-            <img
-              src={book.volumeInfo.imageLinks.thumbnail}
-              className="w-75 rounded-lg"
-            />
+            {book.volumeInfo.imageLinks?.thumbnail && (
+              <img
+                src={book.volumeInfo.imageLinks.thumbnail}
+                className="w-75 rounded-lg"
+                alt={book.volumeInfo.title}
+              />
+            )}
           </div>
 
           <Box className="bg-vanilla rounded-lg col-span-3 flex flex-col gap-y-10 col-span-4 shadow-small">
-            <Box className="flex gap-x-5 justify-around text-xl text-center mt-5">
-              <Typography variant="h5">
+            <Box className="text-center mt-5">
+              <Typography variant="h4">{book.volumeInfo.title}</Typography>
+              <Typography variant="subtitle1">
+                by {book.volumeInfo.authors?.join(", ")}
+              </Typography>
+            </Box>
+
+            <Box className="flex gap-x-5 justify-around text-xl text-center">
+              <Typography variant="h6">
                 Start Date
                 <Typography>03/05/2025</Typography>
               </Typography>
-              <Typography variant="h5">
+              <Typography variant="h6">
                 Target End Date
                 <Typography>03/21/2025</Typography>
               </Typography>
             </Box>
 
-            <Box className="justify-items-center">
+            <Box className="text-center">
               <Typography variant="h5">Average Stats</Typography>
-              <Box className="flex gap-x-10 justify-between text-xl text-center mt-5">
+              <Box className="flex gap-x-10 justify-center text-xl mt-5">
                 <Typography>
                   13
                   <Typography>Pages Per Day</Typography>
@@ -166,7 +177,7 @@ export default function ToRead() {
                 <div className="gap-x-5">
                   <Typography>Session Rating</Typography>
                   <Rating
-                    value={selectedLog?.rating || ""}
+                    value={selectedLog?.rating || 0}
                     precision={0.5}
                     name="rating"
                     size="large"
@@ -216,10 +227,10 @@ export default function ToRead() {
           </Box>
         </div>
       ) : (
-        <p>Loading</p>
+        <Typography className="text-center mt-10">Loading book details...</Typography>
       )}
 
-      <Box className="flex flex-col gap-y-10 mt-10 ">
+      <Box className="flex flex-col gap-y-10 mt-10">
         {logs.map((entry, index) => (
           <Box
             key={index}
