@@ -231,8 +231,8 @@ const ChatSidebar = forwardRef(
       if (e.key === "Enter") {
         console.log("User entered:", inputText);
 
-        if (viewMode === "clubs") handleClubSearch();
-        else handleUserSearch();
+        if (viewMode === "clubs") await handleClubSearch();
+        else await handleUserSearch();
 
         setShowInput(false);
         setInputText("");
