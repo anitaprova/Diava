@@ -8,7 +8,9 @@ import {
   ListItemText,
   Divider,
   Tooltip,
+  IconButton,
 } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
 import UserAvatar from "./UserAvatar";
 
 const SidebarContainer = styled(Box)(({ theme }) => ({
@@ -34,24 +36,71 @@ const ClubAvatarWrapper = styled(Box)(({ isSelected }) => ({
   },
 }));
 
+const AddButtonContainer = styled(Box)({
+  marginTop: "auto",
+  marginBottom: "16px",
+  display: "flex",
+  justifyContent: "center",
+  width: "100%",
+});
+
+const AddButtonWrapper = styled(Box)({
+  backgroundColor: "#5d4b3d",
+  borderRadius: "50%",
+  padding: "2px",
+  "&:hover": {
+    backgroundColor: "#433422",
+  },
+});
+
 const StyledAvatar = styled(UserAvatar)({
   width: 48,
   height: 48,
 });
 
-const ClubSidebar = ({ clubs, selectedClub, setSelectedClub }) => {
+const ClubSidebar = ({
+  clubs,
+  selectedClub,
+  setSelectedClub,
+  onCreateClub,
+}) => {
+  const handleCreateClub = async () => {
+    // Call the parent component's handler to show the create club dialog
+    if (onCreateClub) {
+      onCreateClub();
+    }
+  };
+
   return (
     <SidebarContainer>
-      {clubs.map((club) => (
-        <Tooltip key={club.id} title={club.name} placement="right">
-          <ClubAvatarWrapper
-            isSelected={selectedClub?.id === club.id}
-            onClick={() => setSelectedClub(club)}
-          >
-            <StyledAvatar initial={club.initial} />
-          </ClubAvatarWrapper>
+      {clubs ? (
+        Object.entries(clubs)
+        .sort((a, b) => a[1].clubInfo.joined - b[1].clubInfo.joined)
+          .map((club) => (
+            <Tooltip key={club[0]} title={club[1].clubInfo.clubname} placement="right">
+              <ClubAvatarWrapper
+                isSelected={selectedClub?.id === club[0]}
+                onClick={() => setSelectedClub(club[1])}
+              >
+                <StyledAvatar initial={club[1].clubInfo.clubname[0].toUpperCase()} />
+              </ClubAvatarWrapper>
+            </Tooltip>
+          ))
+      ) : null}
+
+      {/* Add Club Button at the bottom */}
+      <AddButtonContainer>
+        <Tooltip title="Create New Club" placement="right">
+          <AddButtonWrapper>
+            <IconButton
+              onClick={handleCreateClub}
+              sx={{ color: "white", padding: "8px" }}
+            >
+              <AddIcon />
+            </IconButton>
+          </AddButtonWrapper>
         </Tooltip>
-      ))}
+      </AddButtonContainer>
     </SidebarContainer>
   );
 };

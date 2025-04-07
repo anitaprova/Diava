@@ -4,6 +4,8 @@ import { Box, Typography, Paper } from "@mui/material";
 import UserAvatar from "./UserAvatar";
 import { useAuth } from "../../context/AuthContext";
 import { useChat } from "../../context/ChatContext";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../firebase/firebase";
 
 //test
 const MessageContainer = styled(Box)(({ isUser }) => ({
@@ -35,20 +37,26 @@ const MessageTime = styled(Typography)({
 });
 
 const ChatMessage = ({ message }) => {
-  console.log(message);
-
   const { currentUser } = useAuth();
   const { data } = useChat();
   const content = message.message;
   const timestamp = message.date 
-  ? new Date(message.date.seconds * 1000).toLocaleDateString()
-  : "Unknown Time";
+    ? new Date(message.date.seconds * 1000).toLocaleDateString()
+    : "Unknown Time";
   const isUser = message.senderUid === currentUser.uid;
-  console.log(isUser);
-  const initial = isUser
-    ? ""
-    : data.user.username[0].toUpperCase();
   const isShortMessage = content && content.length < 30;
+  let initial = null;
+
+  if (data && data.user && data.user.username) {
+    initial = isUser
+      ? ""
+      : data.user.username[0].toUpperCase();
+  } 
+  else {
+    initial = message.senderUsername
+      ? message.senderUsername[0].toUpperCase()
+      : "?";
+  }
 
   return (
     <MessageContainer isUser={isUser}>

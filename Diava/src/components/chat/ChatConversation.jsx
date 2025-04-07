@@ -41,7 +41,7 @@ const ChatConversation = ({ chat, isSelected, onClick }) => {
         <Typography variant="subtitle2" fontWeight={500}>
           {chat.userInfo.username}
         </Typography>
-        <LastMessage>{chat.lastMessage ? chat.lastMessage.message : ""}</LastMessage>
+        <LastMessage>{chat.lastMessage ? chat.lastMessage.message : "Start a converstation!"}</LastMessage>
         <TimeStamp>{chat.date? new Date(chat.date.seconds * 1000).toLocaleString(): ""}</TimeStamp>
       </MessageInfo>
     </ConversationContainer>
