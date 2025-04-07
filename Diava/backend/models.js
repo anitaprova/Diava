@@ -3,7 +3,7 @@ const pool = new Pool({
   user: "postgres",
   host: "localhost",
   database: "Diava",
-  password: "Capstone2025!",
+  password: "Iwtbrinn#03",
   port: 5432,
 });
 
@@ -209,6 +209,59 @@ const getUserBooks = async (user_id, name) => {
   }
 };
 
+// Get review for a specific user and book
+const getReview = async (user_id, book_id) => {
+  try {
+    const { rows } = await pool.query(
+      "SELECT * FROM reviews WHERE user_id = $1 AND book_id = $2",
+      [user_id, book_id]
+    );
+    return rows;
+  } catch (error) {
+    console.error("Error fetching review:", error);
+    throw new Error("Internal server error");
+  }
+};
+
+// Add a review for a book
+const addReview = async (body) => {
+  const {
+    user_id,
+    book_id,
+    rating,
+    review_text,
+    start_date,
+    end_date,
+    format,
+    tags,
+  } = body;
+
+  try {
+    const { rows, rowCount } = await pool.query(
+      "INSERT INTO reviews (user_id, book_id, rating, review_text, start_date, end_date, format, tags) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
+      [
+        user_id,
+        book_id,
+        rating,
+        review_text,
+        start_date,
+        end_date,
+        format,
+        tags,
+      ]
+    );
+
+    if (rowCount === 0) {
+      throw new Error("Review not created");
+    }
+
+    return rows[0];
+  } catch (error) {
+    console.error("Error creating review:", error);
+    throw new Error(`Database error: ${error.message}`);
+  }
+};
+
 module.exports = {
   getGoals,
   createGoal,
@@ -223,4 +276,6 @@ module.exports = {
   addBook,
   getBooks,
   getUserBooks,
+  addReview,
+  getReview
 };

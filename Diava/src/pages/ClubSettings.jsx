@@ -25,27 +25,10 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { FaHashtag } from "react-icons/fa";
-
-// Mock data - in a real app, you would fetch this from your backend
-const mockClub = {
-  id: "1",
-  name: "Classic Literature Club",
-  initial: "C",
-  description:
-    "A club for discussing classic literature from around the world.",
-  channels: [
-    { id: "1-1", name: "general" },
-    { id: "1-2", name: "recommendations" },
-    { id: "1-3", name: "monthly-read" },
-  ],
-  members: [
-    { id: "m1", name: "Daryl H", role: "admin", initial: "D" },
-    { id: "m2", name: "Arielle S", role: "moderator", initial: "A" },
-    { id: "m3", name: "Nathan B", role: "member", initial: "N" },
-    { id: "m4", name: "Anita P", role: "member", initial: "J" },
-    { id: "m5", name: "Jayson M", role: "member", initial: "A" },
-  ],
-};
+import { useClub } from "../context/ClubContext";
+import { db } from "../firebase/firebase";
+import { updateDoc, doc, getDoc, setDoc, serverTimestamp, deleteDoc, deleteField } from "firebase/firestore";
+import { v4 as uuidv4 } from 'uuid';
 
 export default function ClubSettings() {
   const { clubId } = useParams();
@@ -53,6 +36,7 @@ export default function ClubSettings() {
   const [club, setClub] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
+  const { currentClub, setCurrentClub } = useClub();
 
   // Form states
   const [clubName, setClubName] = useState("");
@@ -64,74 +48,175 @@ export default function ClubSettings() {
   const [addChannelDialogOpen, setAddChannelDialogOpen] = useState(false);
 
   useEffect(() => {
-    // In a real app, you would fetch the club data from your backend
-    // For now, we'll use mock data
-    setClub(mockClub);
-    setClubName(mockClub.name);
-    setClubDescription(mockClub.description);
+    setClub(currentClub);
+    setClubName(currentClub.clubname);
+    setClubDescription(currentClub.description);
     setLoading(false);
-  }, [clubId]);
+  }, [currentClub.uid]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
 
-  const handleSaveSettings = () => {
-    // In a real app, you would send this data to your backend
-    setClub({
-      ...club,
-      name: clubName,
-      description: clubDescription,
-    });
+  const handleSaveSettings = async () => {
+    if (clubName.length === 0) {
+      alert("Invalid club name.");
+      return;
+    }
+    if (clubName.length > 36) {
+      alert("Club name is too long.");
+      return;
+    }
 
-    alert("Club settings saved successfully!");
-    // Note for backend: Need API endpoint to update club settings
+    try {
+      // Get the club doccument
+      const clubRef = doc(db, "Clubs", currentClub.uid);
+
+      await updateDoc(clubRef, {
+        clubname: clubName,
+        description: clubDescription
+      });
+
+      // Update the data for all members
+      const clubDoc = await getDoc(clubRef);
+
+      if (clubDoc.exists()) {
+        const membersList = clubDoc.data().members;
+
+        for (const member in membersList) {
+          const userClubRef = doc(db, "UserClubs", member);
+
+          await updateDoc(userClubRef, {
+            [`${currentClub.uid}.clubInfo.clubname`]: clubName
+          });
+        }
+
+        alert("Club settings saved successfully!");
+      }
+      else {
+        console.log("There was an error.");
+      }
+    }
+    catch (error) {
+      console.log(error);
+    }
   };
 
-  const handleAddChannel = () => {
+  const updateClub = async () => {
+    const clubRef = doc(db, "Clubs", currentClub.uid);
+    const clubDoc = await getDoc(clubRef);
+
+    if (clubDoc.exists()) {
+      setCurrentClub(clubDoc.data());
+    }
+    else {
+      console.log("Error getting club data");
+      return;
+    }
+  }
+
+  const handleAddChannel = async () => {
     if (!newChannelName.trim()) return;
 
-    // In a real app, you would send this to your backend
-    const newChannel = {
-      id: `${club.id}-${club.channels.length + 1}`,
-      name: newChannelName.trim().toLowerCase().replace(/\s+/g, "-"),
-    };
+    try {
+      const clubRef = doc(db, "Clubs", currentClub.uid);
+      const channelId = uuidv4();
 
-    const updatedClub = {
-      ...club,
-      channels: [...club.channels, newChannel],
-    };
+      // Add channel to club
+      await updateDoc(clubRef, {
+        [`channels.${channelId}`]: {
+          name: newChannelName,
+          id: channelId,
+          createdAt: serverTimestamp()
+        }
+      });
+      // Add channel to club chats
+      await setDoc(doc(db, "ClubChats", channelId), { messages: [] });
 
-    setClub(updatedClub);
+      // Update club context
+      updateClub();
 
-    // Store the updated club in localStorage so ChatPage can access it
-    const storedClubs = JSON.parse(localStorage.getItem("clubs") || "[]");
-    const updatedClubs = storedClubs.map((c) =>
-      c.id === updatedClub.id ? updatedClub : c
-    );
-    localStorage.setItem("clubs", JSON.stringify(updatedClubs));
-
-    setNewChannelName("");
-    setAddChannelDialogOpen(false);
-
-    // Show feedback to the user
-    alert("Channel added successfully!");
+      alert("Channel added successfully!");
+    }
+    catch (error) {
+      console.log(error);
+    }
   };
 
-  const handleDeleteChannel = (channelId) => {
-    // In a real app, you would send this to your backend
-    setClub({
-      ...club,
-      channels: club.channels.filter((channel) => channel.id !== channelId),
-    });
-    // Note for backend: Need API endpoint to delete a channel
+  const deleteChannel = async (channelId, removeInClub) => {
+    try {
+      const clubRef = doc(db, "Clubs", currentClub.uid);
+
+      // Remove from clubs channel
+      if (removeInClub) {
+        await updateDoc(clubRef, {
+          [`channels.${channelId}`]: deleteField()
+        });        
+      }
+
+      // Remove from club chats
+      await deleteDoc(doc(db, "ClubChats", channelId));
+    }
+    catch (error) {
+      console.log(error);
+    }
+  }
+
+  const handleDeleteChannel = async (channelId) => {
+    try {
+      await deleteChannel(channelId, true);
+      
+      // Update club context
+      updateClub();
+
+      alert("Successfully deleted channel.");
+    }
+    catch (error) {
+      console.log(error);
+    }
   };
 
-  const handleDeleteClub = () => {
-    // In a real app, you would send this to your backend
-    alert("Club deleted successfully!");
-    navigate("/chat");
-    // Note for backend: Need API endpoint to delete a club
+  const handleDeleteClub = async () => {
+    try {
+      const clubRef = doc(db, "Clubs", currentClub.uid);
+      const clubDoc = await getDoc(clubRef);
+
+      if (clubDoc.exists()) {
+        const clubData = clubDoc.data();
+        const membersList = clubData.members;
+        const channelList = clubData.channels;
+        
+        // Delete all club channels in ClubChats
+        for (const channel in channelList) {
+          deleteChannel(channel, false);
+        }
+
+        // Delete club in UserClubs
+        for (const member in membersList) {
+          const userClubRef = doc(db, "UserClubs", member);
+          
+          await updateDoc(userClubRef, {
+            [`${currentClub.uid}`]: deleteField()
+          });
+        }
+
+        // Delete club
+        await deleteDoc(clubRef);
+
+        alert("Club deleted successfully!");
+        navigate("/chats");
+      }
+      else {
+        console.log("There was an error deleting the club.");
+      }
+    }
+    catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleBack = () => {
+    navigate(-1);
   };
 
   if (loading) {
@@ -141,7 +226,7 @@ export default function ClubSettings() {
   return (
     <Box sx={{ p: 4, maxWidth: 1200, mx: "auto" }}>
       <Box sx={{ display: "flex", alignItems: "center", mb: 4 }}>
-        <IconButton onClick={() => navigate("/chat")} sx={{ mr: 2 }}>
+        <IconButton onClick={handleBack} sx={{ mr: 2 }}>
           <ArrowBackIcon />
         </IconButton>
         <Typography variant="h4" component="h1">
@@ -231,29 +316,33 @@ export default function ClubSettings() {
               </Button>
             </Box>
             <List>
-              {club.channels.map((channel) => (
-                <ListItem
-                  key={channel.id}
-                  secondaryAction={
-                    <IconButton
-                      edge="end"
-                      onClick={() => handleDeleteChannel(channel.id)}
-                      sx={{ color: "#5d4b3d" }}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  }
-                >
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <FaHashtag size={14} style={{ marginRight: 8 }} />
-                        {channel.name}
-                      </Box>
+            {currentClub?.channels && Object.values(currentClub.channels).length > 0 ? (
+              Object.entries(currentClub.channels)
+                .sort((a, b) => a[1].createdAt - b[1].createdAt)
+                .map((channel) => (
+                  <ListItem
+                    key={channel[0]}
+                    secondaryAction={
+                      <IconButton
+                        edge="end"
+                        onClick={() => handleDeleteChannel(channel[0])}
+                        sx={{ color: "#5d4b3d" }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
                     }
-                  />
-                </ListItem>
-              ))}
+                  >
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <FaHashtag size={14} style={{ marginRight: 8 }} />
+                          {channel[1].name}
+                        </Box>
+                      }
+                    />
+                  </ListItem>
+                ))
+            ) : null}
             </List>
           </Box>
         )}
@@ -265,21 +354,27 @@ export default function ClubSettings() {
               Members
             </Typography>
             <List>
-              {club.members.map((member) => (
-                <ListItem key={member.id}>
-                  <ListItemAvatar>
-                    <Avatar sx={{ bgcolor: "#5d4b3d" }}>
-                      {member.initial}
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={member.name}
-                    secondary={
-                      member.role.charAt(0).toUpperCase() + member.role.slice(1)
-                    }
-                  />
-                </ListItem>
-              ))}
+            {currentClub?.members && Object.values(currentClub.members).length > 0 ? (
+              Object.entries(currentClub.members)
+                .sort((a, b) => a[1].joined - b[1].joined)
+                .map((member) => (
+                  <ListItem key={member[0]}>
+                    <ListItemAvatar>
+                      <Avatar sx={{ bgcolor: "#5d4b3d" }}>
+                        {member[1].username?.[0]?.toUpperCase() || "?"}
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={member[1].username}
+                      secondary={
+                        member[1].role
+                          ? member[1].role.charAt(0).toUpperCase() + member[1].role.slice(1)
+                          : ""
+                      }
+                    />
+                  </ListItem>
+                ))
+              ) : null}
             </List>
           </Box>
         )}

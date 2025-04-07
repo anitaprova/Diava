@@ -1,4 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, {
+  useState,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import { styled } from "@mui/material/styles";
 import {
   Box,
@@ -22,10 +27,9 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import SearchIcon from "@mui/icons-material/Search";
 import ChatConversation from "./ChatConversation";
 import { FaHashtag } from "react-icons/fa";
-import { MdBarChart } from "react-icons/md";
-import { GiTrophyCup } from "react-icons/gi";
 import { useNavigate } from "react-router-dom";
 import {
   collection,
@@ -37,10 +41,15 @@ import {
   doc,
   updateDoc,
   serverTimestamp,
+  arrayUnion,
+  deleteDoc,
+  deleteField,
 } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useChat } from "../../context/ChatContext";
+import { useClub } from "../../context/ClubContext"
+import { v4 as uuidv4 } from "uuid"
 
 const SidebarContainer = styled(Box)(({ theme }) => ({
   width: 300,
@@ -99,413 +108,511 @@ const ChannelText = styled(ListItemText)(({ theme }) => ({
   },
 }));
 
-const ChatSidebar = ({
-  chats,
-  selectedChat,
-  setSelectedChat,
-  viewMode,
-  onTabChange,
-  selectedClub,
-  selectedChannel,
-  setSelectedChannel,
-  isAdmin = false,
-  onCreateClub,
-}) => {
-  const navigate = useNavigate();
-  // Set tab value based on viewMode
-  const [tabValue, setTabValue] = useState(viewMode === "clubs" ? 0 : 1);
-  const [clubMenuAnchor, setClubMenuAnchor] = useState(null);
+const ChatSidebar = forwardRef(
+  (
+    {
+      chats,
+      selectedChat,
+      setSelectedChat,
+      viewMode,
+      onTabChange,
+      selectedClub,
+      selectedChannel,
+      setSelectedChannel,
+      isAdmin = false,
+      onCreateClub,
+    },
+    ref
+  ) => {
+    const navigate = useNavigate();
+    // Set tab value based on viewMode
+    const [tabValue, setTabValue] = useState(viewMode === "clubs" ? 0 : 1);
+    const [clubMenuAnchor, setClubMenuAnchor] = useState(null);
+    const [showInput, setShowInput] = useState(false);
+    const [inputText, setInputText] = useState("");
+    const [user, setUser] = useState(null);
+    const { currentUser } = useAuth();
+    const { dispatch } = useChat();
+    const { currentClub, setCurrentChannel } = useClub();
 
-  // Create Club Dialog state
-  const [createClubOpen, setCreateClubOpen] = useState(false);
-  const [newClubName, setNewClubName] = useState("");
-  const [newClubDescription, setNewClubDescription] = useState("");
-  const [showInput, setShowInput] = useState(false);
-  const [inputText, setInputText] = useState("");
-  const [user, setUser] = useState(null);
-  const [club, setClub] = useState(null);
-  const { currentUser } = useAuth();
-  const { dispatch } = useChat();
+    // Create Club Dialog state
+    const [createClubOpen, setCreateClubOpen] = useState(false);
+    const [newClubName, setNewClubName] = useState("");
+    const [newClubDescription, setNewClubDescription] = useState("");
 
-  // Update tab value when viewMode changes
-  useEffect(() => {
-    setTabValue(viewMode === "clubs" ? 0 : 1);
-  }, [viewMode]);
+    // Expose methods to parent component via ref
+    useImperativeHandle(ref, () => ({
+      setCreateClubOpen: (open) => {
+        setCreateClubOpen(open);
+      },
+    }));
 
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-    onTabChange(newValue === 0 ? "clubs" : "messages");
-  };
+    // Update tab value when viewMode changes
+    useEffect(() => {
+      setTabValue(viewMode === "clubs" ? 0 : 1);
+    }, [viewMode]);
 
-  const handleClubMenuOpen = (event) => {
-    setClubMenuAnchor(event.currentTarget);
-  };
-
-  const handleClubMenuClose = () => {
-    setClubMenuAnchor(null);
-  };
-
-  const handleEditSettings = () => {
-    handleClubMenuClose();
-    navigate(`/club-settings/${selectedClub.id}`);
-  };
-
-  const handleLeaveClub = () => {
-    handleClubMenuClose();
-    // Here you would add logic to leave the club
-    // This would typically involve an API call to your backend
-    alert("You have left the club"); // Placeholder
-  };
-
-  const handleAddButtonClick = () => {
-    if (viewMode === "clubs") {
-      // Show the simple dialog for quick club creation
-      setCreateClubOpen(true);
-    } else {
-      // Handle adding a new direct message
-      // This would be implemented separately
-      alert("Add new message functionality coming soon");
-    }
-  };
-
-  const handleCreateClub = () => {
-    if (!newClubName.trim()) return;
-
-    // Create a new club object
-    const newClub = {
-      id: `club-${Date.now()}`, // Generate a temporary ID
-      name: newClubName,
-      description: newClubDescription,
-      initial: newClubName.charAt(0).toUpperCase(),
-      channels: [{ id: `channel-${Date.now()}`, name: "general" }],
-      members: [
-        { id: "m1", name: "Current User", role: "admin", initial: "C" },
-      ],
-      features: [
-        { id: `f-${Date.now()}-1`, name: "Book Voting", icon: "chart" },
-        { id: `f-${Date.now()}-2`, name: "Challenges", icon: "trophy" },
-      ],
+    const handleTabChange = (event, newValue) => {
+      setTabValue(newValue);
+      onTabChange(newValue === 0 ? "clubs" : "messages");
     };
 
-    // Call the parent component's handler
-    if (onCreateClub) {
-      onCreateClub(newClub);
+    const handleClubMenuOpen = (event) => {
+      setClubMenuAnchor(event.currentTarget);
+    };
+
+    const handleClubMenuClose = () => {
+      setClubMenuAnchor(null);
+    };
+
+    const handleEditSettings = () => {
+      handleClubMenuClose();
+      navigate(`/club-settings/${selectedClub.id}`);
+    };
+
+    const handleLeaveClub = async () => {
+      handleClubMenuClose();
+      
+      try {
+        const userClubRef = doc(db, "UserClubs", currentUser.uid);
+        const clubRef = doc(db, "Clubs", selectedClub.uid);
+        
+        await updateDoc(userClubRef, {
+          [selectedClub.uid]: deleteField()
+        });
+
+        await updateDoc(clubRef, {
+          [`members.${currentUser.uid}`]: deleteField()
+        });
+
+        console.log("Successfully left Club.");
+      }
+      catch (error) {
+        console.log(error);
+      }
+    };
+
+    const handleAddButtonClick = () => {
+      setShowInput(true);
+    };
+
+    const handleAddClick = () => {
+      setShowInput(true);
+    };
+
+    const handleInputChange = (e) => {
+      setInputText(e.target.value);
+    };
+
+    const handleSelectChannel = async (c) => {
+      setSelectedChannel(c);
+      setCurrentChannel(c);
+
+      // // Get channel chat
+      // try {
+      //   const clubChatRef = doc(db, "ClubChats", c.id);
+      //   const clubChatDoc = await getDoc(clubChatRef);
+
+      //   setSelectedChat(clubChatDoc.data());
+      // }
+      // catch (error) {
+      //   console.log(error);
+      // }
+
+      dispatch({ type: "CHANGE_CHANNEL_CHAT", payload: c })
     }
 
-    // Reset form and close dialog
-    setNewClubName("");
-    setNewClubDescription("");
-    setCreateClubOpen(false);
-  };
+    const handleSelectedChat = (c) => {
+      setSelectedChat(c);
+      dispatch({ type: "CHANGE_USER_CHAT", payload: c.userInfo });
+    };
 
-  const handleAddClick = () => {
-    setShowInput(true);
-  };
+    const handleInputSubmit = async (e) => {
+      if (e.key === "Enter") {
+        console.log("User entered:", inputText);
 
-  const handleInputChange = (e) => {
-    setInputText(e.target.value);
-  };
+        if (viewMode === "clubs") handleClubSearch();
+        else handleUserSearch();
 
-  const handleSelectedChat = (c) => {
-    setSelectedChat(c);
-    dispatch({ type: "CHANGE_USER", payload: c.userInfo });
-  };
+        setShowInput(false);
+        setInputText("");
+      }
+    };
 
-  const handleInputSubmit = (e) => {
-    if (e.key === "Enter") {
-      console.log("User entered:", inputText);
+    const handleCreateClub = async () => {
+      if (!newClubName.trim()) return;
 
-      if (viewMode === "clubs") handleClubSearch();
-      else handleUserSearch();
+      const clubUid = uuidv4();
 
-      setShowInput(false);
-      setInputText("");
-      setUser(null);
-      setClub(null);
-    }
-  };
+      // Get current user's username
+      const userRef = doc(db, "Users", currentUser.uid);
+      const userDoc = await getDoc(userRef);
+      const currentUserInfo = userDoc.data();
+      const clubRef = doc(db, "Clubs", clubUid);
 
-  // TODO: Implement CLub Search
-  const handleClubSearch = async () => {
-    console.log("Club search is not implemented yet.");
-  };
+      // Create a club
+      await setDoc(clubRef, {
+        uid: clubUid,
+        clubname: newClubName,
+        description: newClubDescription,
+        createdBy: currentUser.uid,
+        createdAt: serverTimestamp(),
+        initial: newClubName[0].toUpperCase(),
+        logo: {},
+        channels: {},
+        members: {
+          [currentUser.uid]: {
+            username: currentUserInfo.username,
+            role: "Admin",
+            joined: serverTimestamp()
+          }
+        }
+      });
 
-  const handleUserSearch = async () => {
-    if (inputText == "") return;
+      // Add creator to club
+      await updateDoc(doc(db, "UserClubs", currentUser.uid), {
+        [clubUid + ".clubInfo"]: {
+          clubuid: clubUid,
+          clubname: newClubName,
+          joined: serverTimestamp()
+        }
+      })
 
-    const q = query(
-      collection(db, "Users"),
-      where("uid", "==", inputText) // In the future "uid" should be replaced with "username"
-    );
+      // Call the parent component's handler
+      if (onCreateClub) {
+        onCreateClub();
+      }
 
-    try {
-      const querySnapshot = await getDocs(q);
+      // Reset form and close dialog
+      setNewClubName("");
+      setNewClubDescription("");
+      setCreateClubOpen(false);
+    };
 
-      // Check if user exists
-      if (querySnapshot.empty) {
-        alert("User does not exist");
+    const handleClubSearch = async () => {
+      if (inputText == "") return;
+
+      try {
+        // Check if club exists
+        const clubsQ = query(
+          collection(db, "Clubs"),
+          where("uid", "==", inputText) // In the future "uid" should be replaced with "clubname"
+        );
+  
+        const clubsDoc = await getDocs(clubsQ);
+        if (clubsDoc.empty) {
+          alert("Club does not exist");
+          return;
+        }
+  
+        // Check if user is in club
+        const userClubsRef = doc(db, "UserClubs", currentUser.uid);
+        const userClubsDoc = await getDoc(userClubsRef);
+
+        if (userClubsDoc.exists()) {
+          const userClubsData = userClubsDoc.data();
+          const isInClub = inputText in userClubsData;
+        
+          if (isInClub) {
+            alert("You're already in the club.");
+            console.log("User is already in the club!");
+            return;
+          }
+
+          // Add user to club
+
+          // Get current user's username and club's name
+          const userRef = doc(db, "Users", currentUser.uid);
+          const userDoc = await getDoc(userRef);
+          const currentUserInfo = userDoc.data();
+          const clubRef = doc(db, "Clubs", inputText);
+          const clubDoc = await getDoc(clubRef);
+
+          await updateDoc(clubRef, {
+            [`members.${currentUser.uid}`]: {
+              username: currentUserInfo.username,
+              role: "Member",
+              joined: serverTimestamp()
+            }
+          });
+          await updateDoc(doc(db, "UserClubs", currentUser.uid), {
+            [inputText + ".clubInfo"]: {
+              clubuid: inputText,
+              clubname: clubDoc.data().clubname,
+              joined: serverTimestamp()
+            }
+          });
+
+          console.log("Successfully added user to club.");
+        }
+        else {
+          alert("Error finding user's UserClubs reference");
+          console.log("Error adding user to club.");
+          return;
+        }
+  
+        console.log("Successfully found club.");
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    const handleUserSearch = async () => {
+      if (inputText == "") return;
+      
+      try {
+        // Check if user exists
+        const q = query(
+          collection(db, "Users"),
+          where("uid", "==", inputText) // In the future "uid" should be replaced with "username"
+        );
+
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) {
+          alert("User does not exist");
+          return;
+        }
+
+        querySnapshot.forEach((doc) => {
+          setUser(doc.data());
+          createPrivateChat(doc.data());
+        });
+
+        console.log("Successfully found user.");
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    const createPrivateChat = async (targetUser) => {
+      if (!currentUser || !targetUser) {
+        console.log("A user was null");
         return;
       }
 
-      querySnapshot.forEach((doc) => {
-        setUser(doc.data());
-        createPrivateChat();
-      });
+      const combinedUID =
+        currentUser.uid > targetUser.uid
+          ? currentUser.uid + targetUser.uid
+          : targetUser.uid + currentUser.uid;
 
-      console.log("Successfully found user.");
-    } catch (error) {
-      console.log(error);
-    }
-  };
+      try {
+        const res = await getDoc(doc(db, "Chats", combinedUID));
 
-  const createPrivateChat = async () => {
-    if (!currentUser || !user) {
-      console.log("A user was null");
-      return;
-    }
+        if (!res.exists()) {
+          await setDoc(doc(db, "Chats", combinedUID), { messages: [] });
 
-    const combinedUID =
-      currentUser.uid > user.uid
-        ? currentUser.uid + user.uid
-        : user.uid + currentUser.uid;
+          await updateDoc(doc(db, "UserChats", currentUser.uid), {
+            [combinedUID + ".userInfo"]: {
+              uid: targetUser.uid,
+              username: targetUser.username,
+            },
+            [combinedUID + ".date"]: serverTimestamp(),
+          });
 
-    console.log(combinedUID);
+          // Get current user's username
+          const userRef = doc(db, "Users", currentUser.uid);
+          const userDoc = await getDoc(userRef);
+          const currentUserInfo = userDoc.data();
 
-    try {
-      const res = await getDoc(doc(db, "Chats", combinedUID));
+          await updateDoc(doc(db, "UserChats", targetUser.uid), {
+            [combinedUID + ".userInfo"]: {
+              uid: currentUser.uid,
+              username: currentUserInfo.username,
+            },
+            [combinedUID + ".date"]: serverTimestamp(),
+          });
 
-      if (!res.exists()) {
-        await updateDoc(doc(db, "UserChats", currentUser.uid), {
-          [combinedUID + ".userInfo"]: {
-            uid: user.uid,
-            username: user.username,
-          },
-          [combinedUID + ".date"]: serverTimestamp(),
-        });
-
-        // Get current user's username
-        const userRef = doc(db, "Users", currentUser.uid);
-        const userDoc = await getDoc(userRef);
-        const currentUserInfo = userDoc.data();
-
-        await updateDoc(doc(db, "UserChats", user.uid), {
-          [combinedUID + ".userInfo"]: {
-            uid: currentUser.uid,
-            username: currentUserInfo.username,
-          },
-          [combinedUID + ".date"]: serverTimestamp(),
-        });
-
-        await setDoc(doc(db, "Chats", combinedUID), { messages: [] });
-
-        console.log("Created private chat.");
+          console.log("Created private chat.");
+        }
+      } catch (error) {
+        console.log(error);
       }
-    } catch (error) {
-      console.log(error);
-    }
-  };
+    };
 
-  const renderChannels = () => {
-    if (!selectedClub) {
+    const renderChannels = () => {
+      if (!selectedClub) {
+        return (
+          <Box sx={{ p: 3, textAlign: "center" }}>
+            <Typography variant="body1" color="textSecondary">
+              Select a club to view channels
+            </Typography>
+          </Box>
+        );
+      }
+
       return (
-        <Box sx={{ p: 3, textAlign: "center" }}>
-          <Typography variant="body1" color="textSecondary">
-            Select a club to view channels
-          </Typography>
-        </Box>
+        <>
+          <ClubHeader>
+            <Typography variant="h6" fontWeight={600}>
+              {selectedClub.clubname}
+            </Typography>
+            <IconButton size="small" onClick={handleClubMenuOpen}>
+              <MoreVertIcon />
+            </IconButton>
+            <Menu
+              anchorEl={clubMenuAnchor}
+              open={Boolean(clubMenuAnchor)}
+              onClose={handleClubMenuClose}
+            >
+              {isAdmin ? (
+                <MenuItem onClick={handleEditSettings}>Edit Settings</MenuItem>
+              ) : (
+                <MenuItem onClick={handleLeaveClub}>Leave Club</MenuItem>
+              )}
+            </Menu>
+          </ClubHeader>
+
+          {/* Text Channels */}
+          <SectionHeader>Channels</SectionHeader>
+          <List disablePadding>
+            {currentClub?.channels && Object.values(currentClub.channels).length > 0 ? (
+              Object.entries(currentClub.channels)
+                .sort((a, b) => a[1].createdAt - b[1].createdAt)
+                .map((channel) => (
+                  <ChannelItem
+                    key={channel[0]}
+                    isSelected={selectedChannel?.id === channel[0]}
+                    onClick={() => handleSelectChannel(channel[1])}
+                  >
+                    <ChannelText
+                      primary={
+                        <>
+                          <FaHashtag size={14} />
+                          {channel[1].name}
+                        </>
+                      }
+                    />
+                  </ChannelItem>
+                ))
+            ) : null}
+          </List>
+        </>
       );
-    }
+    };
 
     return (
-      <>
-        <ClubHeader>
-          <Typography variant="h6" fontWeight={600}>
-            {selectedClub.name}
-          </Typography>
-          <IconButton size="small" onClick={handleClubMenuOpen}>
-            <MoreVertIcon />
+      <SidebarContainer>
+        <TabsContainer>
+          <Tabs
+            value={tabValue}
+            onChange={handleTabChange}
+            indicatorColor="secondary"
+            textColor="inherit"
+          >
+            <Tab label="Clubs" />
+            <Tab label="Messages" />
+          </Tabs>
+          <IconButton
+            sx={{ marginLeft: "auto" }}
+            color="inherit"
+            onClick={handleAddButtonClick}
+          >
+            <SearchIcon />
           </IconButton>
-          <Menu
-            anchorEl={clubMenuAnchor}
-            open={Boolean(clubMenuAnchor)}
-            onClose={handleClubMenuClose}
-          >
-            {isAdmin ? (
-              <MenuItem onClick={handleEditSettings}>Edit Settings</MenuItem>
-            ) : (
-              <MenuItem onClick={handleLeaveClub}>Leave Club</MenuItem>
-            )}
-          </Menu>
-        </ClubHeader>
+        </TabsContainer>
 
-        {/* Text Channels */}
-        <SectionHeader>Channels</SectionHeader>
-        <List disablePadding>
-          {selectedClub.channels.map((channel) => (
-            <ChannelItem
-              key={channel.id}
-              isSelected={selectedChannel?.id === channel.id}
-              onClick={() => setSelectedChannel(channel)}
-            >
-              <ChannelText
-                primary={
-                  <>
-                    <FaHashtag size={14} />
-                    {channel.name}
-                  </>
-                }
-              />
-            </ChannelItem>
-          ))}
-        </List>
-
-        {/* Features Section */}
-        <Box sx={{ marginTop: "auto" }}>
-          <Divider />
-          <SectionHeader>Features</SectionHeader>
-          <List disablePadding>
-            {selectedClub.features?.map((feature) => (
-              <ChannelItem key={feature.id}>
-                <ChannelText
-                  primary={
-                    <>
-                      {feature.icon === "chart" ? (
-                        <MdBarChart size={16} />
-                      ) : (
-                        <GiTrophyCup size={16} />
-                      )}
-                      {feature.name}
-                    </>
-                  }
-                />
-              </ChannelItem>
-            ))}
-          </List>
-        </Box>
-      </>
-    );
-  };
-
-  return (
-    <SidebarContainer>
-      <TabsContainer>
-        <Tabs
-          value={tabValue}
-          onChange={handleTabChange}
-          indicatorColor="secondary"
-          textColor="inherit"
-        >
-          <Tab label="Clubs" />
-          <Tab label="Messages" />
-        </Tabs>
-        <IconButton
-          sx={{ marginLeft: "auto" }}
-          color="inherit"
-          onClick={handleAddButtonClick}
-        >
-          <AddIcon />
-        </IconButton>
-      </TabsContainer>
-
-      {showInput && (
-        <Box sx={{ padding: "8px", display: "flex", alignItems: "center" }}>
-          <input
-            type="text"
-            placeholder={viewMode === "clubs" ? "Enter Club" : "Enter User"}
-            value={inputText}
-            onChange={handleInputChange}
-            onKeyDown={handleInputSubmit}
-            style={{
-              width: "100%",
-              padding: "8px",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-            }}
-          />
-        </Box>
-      )}
-
-      <ContentContainer>
-        {viewMode === "messages" ? (
-          // Show conversations for Messages tab
-          chats ? (
-            Object.entries(chats)
-              ?.sort((a, b) => b[1].date - a[1].date)
-              .map((chat) => (
-                <ChatConversation
-                  key={chat[0]}
-                  chat={chat[1]}
-                  isSelected={selectedChat?.id === chat[0]}
-                  onClick={() => handleSelectedChat(chat[1])}
-                />
-              ))
-          ) : (
-            <Typography variant="body2">No conversations available</Typography> // Default view if chats are empty
-          )
-        ) : (
-          // Show channels for the selected club
-          renderChannels()
+        {showInput && (
+          <Box sx={{ padding: "8px", display: "flex", alignItems: "center" }}>
+            <input
+              type="text"
+              placeholder={viewMode === "clubs" ? "Enter Club" : "Enter User"}
+              value={inputText}
+              onChange={handleInputChange}
+              onKeyDown={handleInputSubmit}
+              style={{
+                width: "100%",
+                padding: "8px",
+                borderRadius: "4px",
+                border: "1px solid #ccc",
+              }}
+            />
+          </Box>
         )}
-      </ContentContainer>
 
-      {/* Create Club Dialog */}
-      <Dialog open={createClubOpen} onClose={() => setCreateClubOpen(false)}>
-        <DialogTitle>Create New Club</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Create a new book club to discuss your favorite books with others.
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Club Name"
-            fullWidth
-            variant="outlined"
-            value={newClubName}
-            onChange={(e) => {
-              // Limit club name to 16 characters
-              if (e.target.value.length <= 16) {
-                setNewClubName(e.target.value);
-              }
-            }}
-            inputProps={{ maxLength: 16 }}
-            helperText={`${newClubName.length}/16 characters`}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            label="Club Description"
-            fullWidth
-            multiline
-            rows={3}
-            variant="outlined"
-            value={newClubDescription}
-            onChange={(e) => setNewClubDescription(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => setCreateClubOpen(false)}
-            sx={{ color: "#5d4b3d" }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleCreateClub}
-            variant="contained"
-            sx={{
-              bgcolor: "#5d4b3d",
-              color: "white",
-              "&:hover": { bgcolor: "#433422" },
-            }}
-            disabled={!newClubName.trim()}
-          >
-            Create
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </SidebarContainer>
-  );
-};
+        <ContentContainer>
+          {viewMode === "messages" ? (
+            // Show conversations for Messages tab
+            chats ? (
+              Object.entries(chats)
+                ?.sort((a, b) => b[1].date - a[1].date)
+                .map((chat) => (
+                  <ChatConversation
+                    key={chat[0]}
+                    chat={chat[1]}
+                    isSelected={selectedChat?.uid === chat[0]}
+                    onClick={() => handleSelectedChat(chat[1])}
+                  />
+                ))
+            ) : (
+              <Typography variant="body2">
+                No conversations available
+              </Typography> // Default view if chats are empty
+            )
+          ) : (
+            // Show channels for the selected club
+            renderChannels()
+          )}
+        </ContentContainer>
+
+        {/* Create Club Dialog */}
+        <Dialog open={createClubOpen} onClose={() => setCreateClubOpen(false)}>
+          <DialogTitle>Create New Club</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Create a new book club to discuss your favorite books with others.
+            </DialogContentText>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Club Name"
+              fullWidth
+              variant="outlined"
+              value={newClubName}
+              onChange={(e) => {
+                // Limit club name to 36 characters
+                if (e.target.value.length <= 36) {
+                  setNewClubName(e.target.value);
+                }
+              }}
+              inputProps={{ maxLength: 36 }}
+              helperText={`${newClubName.length}/36 characters`}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              margin="dense"
+              label="Club Description"
+              fullWidth
+              multiline
+              rows={3}
+              variant="outlined"
+              value={newClubDescription}
+              onChange={(e) => setNewClubDescription(e.target.value)}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => setCreateClubOpen(false)}
+              sx={{ color: "#5d4b3d" }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateClub}
+              variant="contained"
+              sx={{
+                bgcolor: "#5d4b3d",
+                color: "white",
+                "&:hover": { bgcolor: "#433422" },
+              }}
+              disabled={!newClubName.trim()}
+            >
+              Create
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </SidebarContainer>
+    );
+  }
+);
 
 export default ChatSidebar;

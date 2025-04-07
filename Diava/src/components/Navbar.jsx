@@ -88,7 +88,7 @@ export default function Navbar() {
   };
 
   const handleChatClick = () => {
-    navigate("/chat");
+    navigate("/chats");
   };
 
   return (

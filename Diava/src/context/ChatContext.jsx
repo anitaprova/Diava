@@ -1,6 +1,4 @@
-import { createContext, useContext, useEffect, useReducer, useState } from "react";
-import { auth } from "../firebase/firebase";
-import { onAuthStateChanged } from "firebase/auth";
+import { createContext, useContext, useReducer } from "react";
 import { useAuth } from "./AuthContext";
 
 const ChatContext = createContext();
@@ -14,13 +12,18 @@ export const ChatProvider = ({ children }) => {
 
     const chatReducer = (state, action) => {
         switch(action.type) {
-            case "CHANGE_USER":
+            case "CHANGE_USER_CHAT":
                 return {
-                    user:action.payload,
+                    user: action.payload,
                     chatId: currentUser.uid > action.payload.uid 
                     ? currentUser.uid + action.payload.uid 
-                    : action.payload.uid + currentUser.uid
+                    : action.payload.uid + currentUser.uid,
                 };
+            case "CHANGE_CHANNEL_CHAT":
+                return {
+                    user: null,
+                    chatId: action.payload.id,
+                }
             default:
                 return state;
         }
