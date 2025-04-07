@@ -414,7 +414,7 @@ const ChatSidebar = forwardRef(
           const userDoc = await getDoc(userRef);
           const currentUserInfo = userDoc.data();
 
-          await updateDoc(doc(db, "UserChats", user.uid), {
+          await updateDoc(doc(db, "UserChats", targetUser.uid), {
             [combinedUID + ".userInfo"]: {
               uid: currentUser.uid,
               username: currentUserInfo.username,
