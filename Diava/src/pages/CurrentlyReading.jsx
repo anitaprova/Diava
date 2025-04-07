@@ -51,7 +51,7 @@ export default function CurrentlyReading() {
               <div className="space-y-4">
                 <div>
                   <Typography variant="h6">{book.title}</Typography>
-                  <Typography variant="subtitle2">By {book.authors}</Typography>
+                  <Typography variant="subtitle2">By: {book.author}</Typography>
                 </div>
 
                 <div className="space-y-5">
