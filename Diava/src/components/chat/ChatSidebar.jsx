@@ -231,12 +231,11 @@ const ChatSidebar = forwardRef(
       if (e.key === "Enter") {
         console.log("User entered:", inputText);
 
-        if (viewMode === "clubs") await handleClubSearch();
-        else await handleUserSearch();
+        if (viewMode === "clubs") handleClubSearch();
+        else handleUserSearch();
 
         setShowInput(false);
         setInputText("");
-        setUser(null);
       }
     };
 
@@ -376,7 +375,7 @@ const ChatSidebar = forwardRef(
 
         querySnapshot.forEach((doc) => {
           setUser(doc.data());
-          createPrivateChat();
+          createPrivateChat(doc.data());
         });
 
         console.log("Successfully found user.");
@@ -385,16 +384,16 @@ const ChatSidebar = forwardRef(
       }
     };
 
-    const createPrivateChat = async () => {
-      if (!currentUser || !user) {
+    const createPrivateChat = async (targetUser) => {
+      if (!currentUser || !targetUser) {
         console.log("A user was null");
         return;
       }
 
       const combinedUID =
-        currentUser.uid > user.uid
-          ? currentUser.uid + user.uid
-          : user.uid + currentUser.uid;
+        currentUser.uid > targetUser.uid
+          ? currentUser.uid + targetUser.uid
+          : targetUser.uid + currentUser.uid;
 
       try {
         const res = await getDoc(doc(db, "Chats", combinedUID));
@@ -404,8 +403,8 @@ const ChatSidebar = forwardRef(
 
           await updateDoc(doc(db, "UserChats", currentUser.uid), {
             [combinedUID + ".userInfo"]: {
-              uid: user.uid,
-              username: user.username,
+              uid: targetUser.uid,
+              username: targetUser.username,
             },
             [combinedUID + ".date"]: serverTimestamp(),
           });
