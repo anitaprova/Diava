@@ -24,35 +24,26 @@ app.use(cors({
 
 app.get("/allusers", async (req, res) => {
   try {
-    const response = await Diava_model.getUsers(req.body);
+    const response = await DiavaModel.getUsers();
     res.status(200).json(response);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-app.get("/users", async (req, res) => {
-  const { name } = req.query;
-  if (!name) {
-    return res.status(400).json({ error: "Username is required" });
-  }
+app.get("/users/:user_id", async (req, res) => {
   try {
-    const query = "SELECT * FROM users WHERE name = $1";
-    const result = await pool.query(query, [name]);
-    if (result.rows.length > 0) {
-      res.json(result.rows); 
-    } else {
-      res.json(null);
-    }
+    const { user_id } = req.params;
+    const response = await DiavaModel.getUniqueUser(user_id);
+    res.status(200).json(response);
   } catch (error) {
-    console.error("Error fetching user:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({error : error.message});
   }
 });
 
 app.post("/allusers", async (req, res) => {
   try {
-    const response = await Diava_model.createUser(req.body);
+    const response = await DiavaModel.createUser(req.body);
     res.status(201).json(response);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -70,7 +61,7 @@ app.get("/goals", async (req, res) => {
 
 app.post("/goals", async (req, res) => {
   try {
-    const response = await Diava_model.createGoal(req.body);
+    const response = await DiavaModel.createGoal(req.body);
     res.status(201).json(response);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -87,16 +78,15 @@ app.put("/goals/:id", async (req, res) => {
   }
 });
 
-app.get("/list", async (req, res) => {
+app.get("/list/:user_id", async (req, res) => {
   try {
-    const { user_id } = req.query; 
+    const { user_id } = req.params;  
     const response = await DiavaModel.getLists(user_id);
     res.status(200).json(response);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 app.post("/list", async (req, res) => {
   try {
     const response = await DiavaModel.addList(req.body);
@@ -121,6 +111,52 @@ app.delete("/list/:id", async (req, res) => {
     const { id } = req.params;
     const response = await DiavaModel.deleteList(id);
     res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/list_books", async(req, res) => {
+  try{
+    const response = await DiavaModel.addBook(req.body);
+    res.status(201).json(response);
+  } catch (error) {
+    res.status(500).json({error: error.message});
+  }
+});
+
+app.get("/list_books",  async(req,res) => {
+  try {
+    const response = await DiavaModel.getBooks();
+    res.status(201).json(response);
+  } catch (error) {
+    res.status(500).json({error: error.message});
+  }
+})
+
+app.get("/list_books/:user_id/:name", async(req,res) => {
+  try{
+    const { user_id,name } = req.params;
+    const response = await DiavaModel.getUserBooks(user_id, name);
+    res.status(200).json(response);
+  } catch (error){
+  res.status(500).json({error: error.message});
+  }
+});
+app.get("/review", async (req, res) => {
+  try {
+    const { user_id, book_id } = req.query;
+    const response = await DiavaModel.getReview(user_id, book_id);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/review", async (req, res) => {
+  try {
+    const response = await DiavaModel.addReview(req.body);
+    res.status(201).json(response); // 201 for created
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

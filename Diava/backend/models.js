@@ -1,9 +1,8 @@
 const { Pool } = require("pg");
-
 const pool = new Pool({
   user: "postgres",
   host: "localhost",
-  database: "diava",
+  database: "Diava",
   password: "Capstone2025!",
   port: 5432,
 });
@@ -11,21 +10,29 @@ const pool = new Pool({
 
 const createUser = async (body) => {
   try {
-    const {name} = body;
+    const {user_id, name} = body;
     const results = await pool.query(
-      "INSERT INTO users (name) VALUES ($1) RETURNING * ",
-      [ name]
+      "INSERT INTO users (user_id, name) VALUES ($1, $2) RETURNING * ",
+      [ user_id, name]
     );
-    return results.rows[0]; // Return the created goal
+    const userId = results.rows[0].user_id;
+    const defaultLists = ["Want to Read", "Currently Reading", "Read"];
+    for (const listName of defaultLists) {
+      await pool.query(
+        "INSERT INTO lists (user_id, name) VALUES ($1, $2)",
+        [userId, listName]
+      );
+    }
+    return results.rows[0]; // Return the created user
   } catch (error) {
     console.error("Error creating user:", error);
     throw new Error("Internal server error");
   }
 };
-const getUniqueUser = async (username) => {
+const getUniqueUser = async (user_id) => {
   try {
-    const query = "SELECT FROM users WHERE name = $1";
-    const result = await pool.query(query, [username]);
+    const query = "SELECT name FROM users WHERE user_id = $1";
+    const result = await pool.query(query, [user_id]);
     if (result.rows.length > 0) {
       return result.rows[0];  
     } else {
@@ -166,6 +173,95 @@ const deleteList = async (id) => {
   }
 };
 
+const addBook = async (body) => {
+  try {
+    const { list_id, google_book_id, title, thumbnail,user_id, author} = body;
+    const results = await pool.query("INSERT INTO list_books (list_id, google_book_id, title, thumbnail,user_id, author) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *", [list_id, google_book_id, title, thumbnail, user_id,author]);
+    return results.rows[0];
+  } catch(error) {
+    console.error("Error adding book to user's list: ", error);
+    throw new Error("Internal database error.");
+  }
+};
+
+const getBooks = async () => {
+  try {
+    const results = await pool.query("SELECT * FROM list_books");
+    return results.rows;
+  } catch (error) {
+    console.error("Error fetching users", error);
+    throw new Error("Internal server error");
+  }
+};
+
+const getUserBooks = async (user_id, name) => {
+  try {
+    console.log("user_id:", user_id);
+    console.log("list name:", name);
+    const result = await pool.query(
+      "SELECT * FROM list_books JOIN lists ON list_books.list_id = lists.id WHERE lists.user_id = $1 AND name = $2",
+      [user_id, name]
+    );
+    return result.rows;
+  } catch (error) {
+    console.error("Error fetching user's books:", error);
+    throw new Error("Internal Database error");
+  }
+};
+
+// Get review for a specific user and book
+const getReview = async (user_id, book_id) => {
+  try {
+    const { rows } = await pool.query(
+      "SELECT * FROM reviews WHERE user_id = $1 AND book_id = $2",
+      [user_id, book_id]
+    );
+    return rows;
+  } catch (error) {
+    console.error("Error fetching review:", error);
+    throw new Error("Internal server error");
+  }
+};
+
+// Add a review for a book
+const addReview = async (body) => {
+  const {
+    user_id,
+    book_id,
+    rating,
+    review_text,
+    start_date,
+    end_date,
+    format,
+    tags,
+  } = body;
+
+  try {
+    const { rows, rowCount } = await pool.query(
+      "INSERT INTO reviews (user_id, book_id, rating, review_text, start_date, end_date, format, tags) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
+      [
+        user_id,
+        book_id,
+        rating,
+        review_text,
+        start_date,
+        end_date,
+        format,
+        tags,
+      ]
+    );
+
+    if (rowCount === 0) {
+      throw new Error("Review not created");
+    }
+
+    return rows[0];
+  } catch (error) {
+    console.error("Error creating review:", error);
+    throw new Error(`Database error: ${error.message}`);
+  }
+};
+
 module.exports = {
   getGoals,
   createGoal,
@@ -177,4 +273,9 @@ module.exports = {
   addList,
   updateList,
   deleteList,
+  addBook,
+  getBooks,
+  getUserBooks,
+  addReview,
+  getReview
 };
