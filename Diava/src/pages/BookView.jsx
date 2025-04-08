@@ -36,6 +36,7 @@ export default function BookDetail() {
   const [open, setOpen] = useState(false);
   const [selectedListName, setSelectedListName] = useState("");
   const anchorRef = React.useRef(null);
+  const [review, setReview] = useState();
 
   const handleMenuItemClick = async (event, listName) => {
     setSelectedListName(listName);
@@ -91,10 +92,19 @@ export default function BookDetail() {
     }
   }, []);
 
+  useEffect(() => {
+    axios
+      .get(`http://localhost:5001/review`, {
+        params: { user_id: auth.currentUser.uid, book_id: id },
+      })
+      .then((response) => setReview(response.data || []))
+      .catch((error) => console.error("Error fetching books:", error));
+  }, []);
+
   return (
-    <div className="font-merriweather mr-25 ml-25 mt-15">
+    <div className="font-merriweather mr-25 ml-25 mt-15 mb-15">
       {book && book.volumeInfo.imageLinks ? (
-        <div className="grid grid-cols-5 gap-x-8">
+        <div className="grid grid-cols-5 gap-x-8 mb-15">
           <div className="flex flex-col gap-y-5">
             <img
               src={book.volumeInfo.imageLinks.thumbnail}
@@ -103,7 +113,7 @@ export default function BookDetail() {
             <ul className="flex flex-wrap text-sm gap-3">
               {genres &&
                 genres.map((genre) => (
-                  <li className="bg-sand p-1 text-center rounded-sm w-fit">
+                  <li className="bg-sand p-1 text-center rounded-sm w-fit pr-4">
                     <LocalOfferIcon color="secondary" /> {genre}
                   </li>
                 ))}
@@ -257,7 +267,7 @@ export default function BookDetail() {
       <Divider />
 
       <div className="mt-15">
-        <Typography variant="h4">Ratings and Reviews</Typography>
+        <Typography variant="h4" sx={{marginBottom: "10px"}}>Ratings and Reviews</Typography>
         {review && review.length > 0 ? (
           <div className="bg-vanilla rounded-md p-5 space-y-5">
             <Typography variant="h5">Your Review</Typography>
@@ -284,11 +294,15 @@ export default function BookDetail() {
             </ul>
           </div>
         ) : (
-          <div>
-            <Typography variant="body">Add your thoughts </Typography>
+          <div className="bg-sand flex flex-col items-center p-5 text-center rounded-sm">
+            <Typography variant="h5">Add your thoughts</Typography>
             <Button
               variant="dark"
               onClick={() => navigate(`/review/${book.id}`)}
+              className="w-fit"
+              sx={{
+                marginTop: "20px"
+              }}
             >
               Add Review
             </Button>
