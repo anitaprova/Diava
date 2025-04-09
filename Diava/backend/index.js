@@ -11,16 +11,18 @@ app.use(express.json());
 const pool = new Pool({
   user: 'postgres',
   host: 'localhost',
-  database: 'Diava',
+  database: 'diava',
   password: 'Capstone2025!',
   port: 5432,
 });
 
-app.use(cors({
-  origin: 'http://localhost:5173',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type'],
-}));
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type"],
+  })
+);
 
 app.get("/allusers", async (req, res) => {
   try {
@@ -143,6 +145,7 @@ app.get("/list_books/:user_id/:name", async(req,res) => {
   res.status(500).json({error: error.message});
   }
 });
+
 app.get("/review", async (req, res) => {
   try {
     const { user_id, book_id } = req.query;

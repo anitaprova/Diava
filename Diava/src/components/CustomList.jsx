@@ -8,6 +8,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import { auth } from "../firebase/firebase";
 import axios from "axios";
+import { supabase } from "../client";
 
 export default function CustomList({ id, name, list_id }) {
   const navigate = useNavigate();
@@ -42,28 +43,27 @@ export default function CustomList({ id, name, list_id }) {
   };
 
   const updateList = async (listData) => {
-    try {
-      const response = await axios.put(
-        `http://localhost:5001/list/${id}`,
-        listData
-      );
-      setCurrName(response.data.name);
-      console.log(response);
-    } catch (error) {
-      console.error("Error updating list:", error.response.data);
+    const { data, error } = await supabase
+      .from("lists")
+      .update(listData)
+      .eq("id", id)
+      .select("*");
+
+    if (error) console.error("Error fetching data:", error);
+    else {
+      setCurrName(data[0].name);
     }
   };
 
-  const deleteList = async (listData) => {
-    try {
-      const response = await axios.delete(
-        `http://localhost:5001/list/${id}`,
-        listData
-      );
-      console.log(response);
+  const deleteList = async () => {
+    const { error } = await supabase
+      .from("lists")
+      .delete()
+      .eq("id", id);
+
+    if (error) console.error("Error fetching data:", error);
+    else {
       window.location.reload();
-    } catch (error) {
-      console.error("Error deleting list:", error.response.data);
     }
   };
 
@@ -87,7 +87,6 @@ export default function CustomList({ id, name, list_id }) {
               updateList({
                 user_id: auth.currentUser.uid,
                 name: newName,
-                list_id: list_id,
                 id: id,
               });
 
@@ -104,10 +103,13 @@ export default function CustomList({ id, name, list_id }) {
           </div>
         </DialogContent>
         <DialogActions>
-          <Button variant="dark" onClick={() => {
-            deleteList();
-            handleClose();
-          }}>
+          <Button
+            variant="dark"
+            onClick={() => {
+              deleteList();
+              handleClose();
+            }}
+          >
             Delete
           </Button>
           <Button type="submit" variant="coffee">
@@ -116,11 +118,11 @@ export default function CustomList({ id, name, list_id }) {
         </DialogActions>
       </Dialog>
       <Box className="bg-vanilla shadow-custom w-full rounded-md">
-        {books.length > 0 ? (
-          books.map((book) => (
+        {books?.length > 0 ? (
+          books?.map((book) => (
             <div className="p-6">
               <img
-                src={book.volumeInfo.imageLinks.thumbnail}
+                src={book?.volumeInfo?.imageLinks?.thumbnail}
                 onClick={() => navigate(`/book/${book.id}`)}
                 className="w-fit"
               />
