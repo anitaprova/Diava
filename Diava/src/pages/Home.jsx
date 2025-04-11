@@ -16,6 +16,7 @@ import ArrowCircleRightIcon from "@mui/icons-material/ArrowCircleRight";
 import axios from "axios";
 import CustomList from "../components/CustomList";
 import { auth } from "../firebase/firebase";
+import { supabase } from "../client";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -29,37 +30,47 @@ export default function Home() {
   const handleClose = () => setOpen(false);
 
   const createList = async (listData) => {
-    try {
-      const response = await axios.post("http://localhost:5001/list", listData);
-      setUserLists((prev) => [...prev, response.data]);
-    } catch (error) {
-      console.error("Error creating list:", error.response?.data || error.message);
-    }
+    const { data, error } = await supabase
+      .from("lists")
+      .insert(listData)
+      .select("*");
+    if (error) console.error("Error fetching data:", error);
+    else setUserLists((prev) => [...prev, data[0]]);
   };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         const userId = auth.currentUser.uid;
-  
+        const { data } = await supabase
+          .from("lists")
+          .select()
+          .eq("user_id", userId);
+
+        setUserLists(data);
+        console.log("supbase test", data);
 
         const crResponse = await axios.get(
           `http://localhost:5001/list_books/${userId}/Currently Reading`
         );
         setCurrentlyReading(crResponse.data || []);
-  
+
         // 2. Fetch books for "To Read"
         const trResponse = await axios.get(
           `http://localhost:5001/list_books/${userId}/Want To Read`
         );
         setToRead(trResponse.data || []);
-  
       } catch (error) {
-        console.error("Error fetching list books:", error.response?.data || error.message);
+        console.error(
+          "Error fetching list books:",
+          error.response?.data || error.message
+        );
       }
     };
-  
+
     fetchData();
   }, []);
+  
   return (
     <div className="ml-50 mr-50 mt-10 mb-25 font-merriweather text-darkbrown">
       <div className="grid grid-flow-col grid-rows-4 gap-x-20">
@@ -106,7 +117,9 @@ export default function Home() {
                       </div>
                       <Button
                         variant="dark"
-                        onClick={() => navigate(`/update/${book.google_book_id}`)}
+                        onClick={() =>
+                          navigate(`/update/${book.google_book_id}`)
+                        }
                       >
                         Update Progress
                       </Button>
@@ -134,14 +147,16 @@ export default function Home() {
           </Typography>
           <Box className="bg-sand flex gap-x-2 rounded-lg overflow-x-auto shadow-custom">
             {toRead.length > 0 ? (
-              toRead.slice(0, 3).map((book, index) => (
-                <img
-                  key={index}
-                  src={book.thumbnail}
-                  onClick={() => navigate(`/book/${book.google_book_id}`)}
-                  className="p-4 cursor-pointer"
-                />
-              ))
+              toRead
+                .slice(0, 3)
+                .map((book, index) => (
+                  <img
+                    key={index}
+                    src={book.thumbnail}
+                    onClick={() => navigate(`/book/${book.google_book_id}`)}
+                    className="p-4 cursor-pointer"
+                  />
+                ))
             ) : (
               <p className="p-4">Nothing added yet!</p>
             )}
@@ -165,14 +180,16 @@ export default function Home() {
           </Typography>
           <Box className="bg-sand flex gap-x-2 rounded-lg overflow-x-auto shadow-custom">
             {recommendation.length > 0 ? (
-              recommendation.slice(0, 3).map((book, index) => (
-                <img
-                  key={index}
-                  src={book.thumbnail}
-                  onClick={() => navigate(`/book/${book.google_book_id}`)}
-                  className="p-4 cursor-pointer"
-                />
-              ))
+              recommendation
+                .slice(0, 3)
+                .map((book, index) => (
+                  <img
+                    key={index}
+                    src={book.thumbnail}
+                    onClick={() => navigate(`/book/${book.google_book_id}`)}
+                    className="p-4 cursor-pointer"
+                  />
+                ))
             ) : (
               <p className="p-4">Nothing added yet!</p>
             )}

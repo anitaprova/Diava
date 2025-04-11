@@ -2,26 +2,25 @@ const { Pool } = require("pg");
 const pool = new Pool({
   user: "postgres",
   host: "localhost",
-  database: "Diava",
-  password: "Iwtbrinn#03",
+  database: "diava",
+  password: "Capstone2025!",
   port: 5432,
 });
 
-
 const createUser = async (body) => {
   try {
-    const {user_id, name} = body;
+    const { user_id, name } = body;
     const results = await pool.query(
       "INSERT INTO users (user_id, name) VALUES ($1, $2) RETURNING * ",
-      [ user_id, name]
+      [user_id, name]
     );
     const userId = results.rows[0].user_id;
     const defaultLists = ["Want to Read", "Currently Reading", "Read"];
     for (const listName of defaultLists) {
-      await pool.query(
-        "INSERT INTO lists (user_id, name) VALUES ($1, $2)",
-        [userId, listName]
-      );
+      await pool.query("INSERT INTO lists (user_id, name) VALUES ($1, $2)", [
+        userId,
+        listName,
+      ]);
     }
     return results.rows[0]; // Return the created user
   } catch (error) {
@@ -34,9 +33,9 @@ const getUniqueUser = async (user_id) => {
     const query = "SELECT name FROM users WHERE user_id = $1";
     const result = await pool.query(query, [user_id]);
     if (result.rows.length > 0) {
-      return result.rows[0];  
+      return result.rows[0];
     } else {
-      return([]);  
+      return [];
     }
   } catch (error) {
     console.error("Error fetching user:", error);
@@ -103,10 +102,9 @@ const updateGoal = async (id, body) => {
 // Get all lists
 const getLists = async (user_id) => {
   try {
-    const results = await pool.query(
-      "SELECT * FROM lists WHERE user_id = $1",
-      [user_id]
-    );
+    const results = await pool.query("SELECT * FROM lists WHERE user_id = $1", [
+      user_id,
+    ]);
     return results.rows;
   } catch (error) {
     console.error("Error fetching lists:", error);
@@ -175,10 +173,13 @@ const deleteList = async (id) => {
 
 const addBook = async (body) => {
   try {
-    const { list_id, google_book_id, title, thumbnail,user_id, author} = body;
-    const results = await pool.query("INSERT INTO list_books (list_id, google_book_id, title, thumbnail,user_id, author) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *", [list_id, google_book_id, title, thumbnail, user_id,author]);
+    const { list_id, google_book_id, title, thumbnail, user_id, author } = body;
+    const results = await pool.query(
+      "INSERT INTO list_books (list_id, google_book_id, title, thumbnail,user_id, author) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+      [list_id, google_book_id, title, thumbnail, user_id, author]
+    );
     return results.rows[0];
-  } catch(error) {
+  } catch (error) {
     console.error("Error adding book to user's list: ", error);
     throw new Error("Internal database error.");
   }
@@ -219,7 +220,7 @@ const getReview = async (user_id, book_id) => {
     return rows;
   } catch (error) {
     console.error("Error fetching review:", error);
-    throw new Error("Internal server error");
+    throw new Error("Internal server error", error.message);
   }
 };
 
@@ -277,5 +278,5 @@ module.exports = {
   getBooks,
   getUserBooks,
   addReview,
-  getReview
+  getReview,
 };

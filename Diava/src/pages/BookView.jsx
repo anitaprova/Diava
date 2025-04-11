@@ -19,6 +19,7 @@ import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import Divider from "@mui/material/Divider";
 import { auth } from "../firebase/firebase";
+import { supabase } from "../client";
 
 export default function BookDetail() {
   const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
@@ -36,6 +37,7 @@ export default function BookDetail() {
   const [open, setOpen] = useState(false);
   const [selectedListName, setSelectedListName] = useState("");
   const anchorRef = React.useRef(null);
+  const [review, setReview] = useState();
 
   const handleMenuItemClick = async (event, listName) => {
     setSelectedListName(listName);
@@ -82,19 +84,49 @@ export default function BookDetail() {
   }, [id]);
 
   useEffect(() => {
-    const userId = auth.currentUser?.uid;
-    if (userId) {
-      axios
-        .get(`http://localhost:5001/list/${userId}`)
-        .then((response) => setUserLists(response.data || []))
-        .catch((error) => console.error("Error fetching lists:", error));
+    const fetchData = async () => {
+      try {
+        const userId = auth.currentUser.uid;
+        const { data } = await supabase
+          .from("lists")
+          .select()
+          .eq("user_id", userId);
+        setUserLists(data);
+      } catch (error) {
+        console.error(
+          "Error fetching list books:",
+          error.response?.data || error.message
+        );
+      }
     }
-  }, []);
+    fetchData();
+    }, []);
+
+    useEffect(() => {
+      const fetchData = async () => {
+        try {
+          const userId = auth.currentUser.uid;
+          const { data } = await supabase
+            .from("reviews")
+            .select()
+            .eq("user_id", userId)
+            .eq("book_id", id);
+          setReview(data);
+          console.log("reviews", data);
+        } catch (error) {
+          console.error(
+            "Error fetching list books:",
+            error.response?.data || error.message
+          );
+        }
+      };
+      fetchData();
+    }, []);
 
   return (
-    <div className="font-merriweather mr-25 ml-25 mt-15">
+    <div className="font-merriweather mr-25 ml-25 mt-15 mb-15">
       {book && book.volumeInfo.imageLinks ? (
-        <div className="grid grid-cols-5 gap-x-8">
+        <div className="grid grid-cols-5 gap-x-8 mb-15">
           <div className="flex flex-col gap-y-5">
             <img
               src={book.volumeInfo.imageLinks.thumbnail}
@@ -103,7 +135,7 @@ export default function BookDetail() {
             <ul className="flex flex-wrap text-sm gap-3">
               {genres &&
                 genres.map((genre) => (
-                  <li className="bg-sand p-1 text-center rounded-sm w-fit">
+                  <li className="bg-sand p-1 text-center rounded-sm w-fit pr-4">
                     <LocalOfferIcon color="secondary" /> {genre}
                   </li>
                 ))}
@@ -149,7 +181,7 @@ export default function BookDetail() {
                 <div>
                   <p
                     dangerouslySetInnerHTML={{
-                      __html: book.volumeInfo.description,
+                      __html: book?.volumeInfo?.description,
                     }}
                   />
                   <span className="underline" onClick={() => setSeeMore(false)}>
@@ -160,7 +192,8 @@ export default function BookDetail() {
                 <div>
                   <p
                     dangerouslySetInnerHTML={{
-                      __html: book.volumeInfo.description.substr(0, 650) + "...",
+                      __html:
+                        book?.volumeInfo?.description?.substr(0, 650) + "...",
                     }}
                   />
                   <span className="underline" onClick={() => setSeeMore(true)}>
@@ -207,7 +240,7 @@ export default function BookDetail() {
                   <Paper>
                     <ClickAwayListener onClickAway={handleClose}>
                       <MenuList id="split-button-menu" autoFocusItem>
-                        {userLists.map((list) => (
+                        {userLists?.map((list) => (
                           <MenuItem
                             key={list.id}
                             selected={list.name === selectedListName}
@@ -252,6 +285,52 @@ export default function BookDetail() {
           </div>
         </Stack>
       )}
+
+      <Divider />
+
+      <div className="mt-15">
+        <Typography variant="h4" sx={{marginBottom: "10px"}}>Ratings and Reviews</Typography>
+        {review && review.length > 0 ? (
+          <div className="bg-vanilla rounded-md p-5 space-y-5">
+            <Typography variant="h5">Your Review</Typography>
+            <span className="flex justify-between">
+              <Rating value={review[0]?.rating} precision={0.5} readOnly />
+              <Typography>{review[0]?.format}</Typography>
+            </span>
+
+            <Typography>{review[0]?.review_text}</Typography>
+            <span className="flex justify-between">
+              <Typography>
+                Start: {review[0]?.start_date?.split("T")[0]}
+              </Typography>
+              <Typography>End: {review[0]?.end_date?.split("T")[0]}</Typography>
+            </span>
+
+            <ul className="flex flex-wrap text-sm gap-3">
+              {review[0]?.tags &&
+                review[0]?.tags.map((tag) => (
+                  <li className="bg-sand p-1 text-center rounded-sm w-fit pr-4">
+                    <LocalOfferIcon color="secondary" /> {tag}
+                  </li>
+                ))}
+            </ul>
+          </div>
+        ) : (
+          <div className="bg-sand flex flex-col items-center p-5 text-center rounded-sm">
+            <Typography variant="h5">Add your thoughts</Typography>
+            <Button
+              variant="dark"
+              onClick={() => navigate(`/review/${book.id}`)}
+              className="w-fit"
+              sx={{
+                marginTop: "20px"
+              }}
+            >
+              Add Review
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

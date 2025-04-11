@@ -20,6 +20,7 @@ import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormControl from "@mui/material/FormControl";
 import { auth } from "../firebase/firebase";
+import { supabase } from "../client";
 
 export default function Review() {
   const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
@@ -47,15 +48,16 @@ export default function Review() {
 
   const saveReview = async (listData) => {
     try {
-      const response = await axios.post(
-        "http://localhost:5001/review",
-        listData
-      );
-      console.log(response);
+      const { data } = await supabase
+        .from("reviews")
+        .insert(listData);
+      navigate(`/book/${book.id}`);
     } catch (error) {
-      console.error("Error creating review:", error.response.data);
+      console.error(
+        "Error fetching list books:",
+        error.response?.data || error.message
+      );
     }
-    navigate(`/book/${book.id}`);
   };
 
   useEffect(() => {
@@ -66,8 +68,6 @@ export default function Review() {
         .catch((error) => console.error("Error fetching books:", error));
     }
   }, [id]);
-
-  console.log(tags);
 
   return (
     <div className="flex bg-vanilla justify-center  font-merriweather h-full w-full bg-[linear-gradient(transparent_0px,transparent_38px,#C5AD91_40px),linear-gradient(90deg,transparent_0px,transparent_38px,#C5AD91_40px)] bg-[size:40px_40px]">
@@ -228,7 +228,7 @@ export default function Review() {
                   review_text: notes,
                   start_date: startDate,
                   end_date: endDate,
-                  format: format, 
+                  format: format,
                   tags: tags,
                 })
               }
