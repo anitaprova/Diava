@@ -19,6 +19,7 @@ import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import Divider from "@mui/material/Divider";
 import { auth } from "../firebase/firebase";
+import { supabase } from "../client";
 
 export default function BookDetail() {
   const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
@@ -83,23 +84,44 @@ export default function BookDetail() {
   }, [id]);
 
   useEffect(() => {
-    const userId = auth.currentUser?.uid;
-    if (userId) {
-      axios
-        .get(`http://localhost:5001/list/${userId}`)
-        .then((response) => setUserLists(response.data || []))
-        .catch((error) => console.error("Error fetching lists:", error));
+    const fetchData = async () => {
+      try {
+        const userId = auth.currentUser.uid;
+        const { data } = await supabase
+          .from("lists")
+          .select()
+          .eq("user_id", userId);
+        setUserLists(data);
+      } catch (error) {
+        console.error(
+          "Error fetching list books:",
+          error.response?.data || error.message
+        );
+      }
     }
-  }, []);
+    fetchData();
+    }, []);
 
-  useEffect(() => {
-    axios
-      .get(`http://localhost:5001/review`, {
-        params: { user_id: auth.currentUser.uid, book_id: id },
-      })
-      .then((response) => setReview(response.data || []))
-      .catch((error) => console.error("Error fetching books:", error));
-  }, []);
+    useEffect(() => {
+      const fetchData = async () => {
+        try {
+          const userId = auth.currentUser.uid;
+          const { data } = await supabase
+            .from("reviews")
+            .select()
+            .eq("user_id", userId)
+            .eq("book_id", id);
+          setReview(data);
+          console.log("reviews", data);
+        } catch (error) {
+          console.error(
+            "Error fetching list books:",
+            error.response?.data || error.message
+          );
+        }
+      };
+      fetchData();
+    }, []);
 
   return (
     <div className="font-merriweather mr-25 ml-25 mt-15 mb-15">
@@ -218,7 +240,7 @@ export default function BookDetail() {
                   <Paper>
                     <ClickAwayListener onClickAway={handleClose}>
                       <MenuList id="split-button-menu" autoFocusItem>
-                        {userLists.map((list) => (
+                        {userLists?.map((list) => (
                           <MenuItem
                             key={list.id}
                             selected={list.name === selectedListName}
