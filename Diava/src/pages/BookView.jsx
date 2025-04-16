@@ -20,6 +20,7 @@ import Stack from "@mui/material/Stack";
 import Divider from "@mui/material/Divider";
 import { auth } from "../firebase/firebase";
 import { supabase } from "../client";
+import EditIcon from "@mui/icons-material/Edit";
 
 export default function BookDetail() {
   const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
@@ -157,7 +158,6 @@ export default function BookDetail() {
             .eq("user_id", userId)
             .eq("book_id", id);
           setReview(data);
-          console.log("reviews", data);
         } catch (error) {
           console.error(
             "Error fetching list books:",
@@ -334,10 +334,15 @@ export default function BookDetail() {
       <Divider />
 
       <div className="mt-15">
-        <Typography variant="h4" sx={{marginBottom: "10px"}}>Ratings and Reviews</Typography>
+        <Typography variant="h4" sx={{ marginBottom: "10px" }}>
+          Ratings and Reviews
+        </Typography>
         {review && review.length > 0 ? (
           <div className="bg-vanilla rounded-md p-5 space-y-5">
-            <Typography variant="h5">Your Review</Typography>
+            <Typography variant="h5">
+              Your Review{" "}
+              <EditIcon onClick={() => navigate(`/review/edit/${book.id}`)} />{" "}
+            </Typography>
             <span className="flex justify-between">
               <Rating value={review[0]?.rating} precision={0.5} readOnly />
               <Typography>{review[0]?.format}</Typography>
@@ -368,7 +373,7 @@ export default function BookDetail() {
               onClick={() => navigate(`/review/${book.id}`)}
               className="w-fit"
               sx={{
-                marginTop: "20px"
+                marginTop: "20px",
               }}
             >
               Add Review

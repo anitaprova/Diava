@@ -18,6 +18,7 @@ import Profile from "./pages/Profile.jsx";
 import GoogleSignUp from "./pages/GoogleSignUp.jsx";
 import ClubSettings from "./pages/ClubSettings.jsx";
 import CustomList from "./components/CustomList.jsx";
+import EditReview from "./pages/EditReview.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import "./index.css";
 
@@ -60,6 +61,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Review />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/review/edit/:id"
+            element={
+              <ProtectedRoute>
+                <EditReview />
               </ProtectedRoute>
             }
           />
