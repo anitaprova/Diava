@@ -28,64 +28,28 @@ export default function Profile() {
   const [booksRead, setBooksRead] = useState();
   const [reviews, setReviews] = useState();
   const [ratings, setRatings] = useState();
+  const [stats, setStats] = useState(null);
 
-  const getReviewsAndRatings = async () => {
+  const getReadingStats = async () => {
     try {
       const user_id = auth.currentUser?.uid;
       if (!user_id) return;
 
       const { data, error } = await supabase
-        .from("reviews")
+        .from("reading_statistics")
         .select("*")
-        .eq("user_id", user_id);
+        .eq("user_id", user_id)
+        .single();
 
       if (error) throw error;
 
-      setRatings(data);
-      setReviews(
-        data.filter(
-          (review) => (review.review_text !== "")
-        )
-      ); 
-
-      console.log("Ratings:", data);
-      console.log(
-        "Written Reviews:",
-        data.filter((review) => review.review_text !== null)
-      );
+      setStats(data);
+      console.log(data);
+      console.log("Reading stats:", data);
     } catch (error) {
-      console.error("Error fetching reviews/ratings:", error.message);
+      console.error("Error fetching reading stats:", error.message);
     }
   };
-
-  const getBooksRead = async () => {
-    try {
-      const user_id = auth.currentUser?.uid;
-      if (!user_id) return;
-
-      const { data, error } = await supabase
-        .from("lists")
-        .select(
-          `
-          id,
-          list_books(
-            list_id,
-            google_books_id, 
-            title, 
-            pages
-          )
-          `
-        )
-        .eq("user_id", user_id)
-        .eq("name", "Read");
-
-      setBooksRead(data);
-      if (error) throw error;
-
-    } catch (error) {
-      console.error("Error fetching list:", error.message);
-    }
-  };  
 
   const getGoals = async () => {
     try {
@@ -156,8 +120,7 @@ export default function Profile() {
 
     fetchUser();
     getGoals(); 
-    getBooksRead();
-    getReviewsAndRatings();
+    getReadingStats();
   }, []);
  
   return (
@@ -186,26 +149,23 @@ export default function Profile() {
 
         <Box className="flex gap-x-5 justify-around text-xl text-center">
           <Typography variant="h4">
-            {booksRead?.[0]?.list_books?.length || 0}
+            {stats?.books_read || 0}
             <Typography variant="body2">Books Read</Typography>
           </Typography>
           <Typography variant="h4">
-            {booksRead?.[0]?.list_books?.reduce(
-              (total, current) => total + current.pages,
-              0
-            ) || 0}
+            {stats?.pages_read || 0}
             <Typography variant="body2">Pages Read</Typography>
           </Typography>
           <Typography variant="h4">
-            {ratings?.length || 0}
+            {stats?.number_of_ratings || 0}
             <Typography variant="body2">Ratings</Typography>
           </Typography>
           <Typography variant="h4">
-            {reviews?.length || 0}
+            {stats?.number_of_reviews || 0}
             <Typography variant="body2">Reviews</Typography>
           </Typography>
           <Typography variant="h4">
-            15
+            {stats?.number_of_badges || 0}
             <Typography variant="body2">Badges</Typography>
           </Typography>
         </Box>
@@ -254,13 +214,13 @@ export default function Profile() {
           ]}
         />
 
-        <div className="col-span-2">
+        <div className="col-span-2 h-full">
           <NotebookCard
             title="Recent Achievements"
             hole={10}
             rows={[
               <div className="flex justify-around w-full">
-                <span className="flex flex-col items-center gap-2">
+                {/* <span className="flex flex-col items-center gap-2">
                   <span>
                     <Trophy /> <strong>Review Master</strong>
                   </span>
@@ -285,7 +245,7 @@ export default function Profile() {
                     🏆 <strong>Consistency Champion</strong>
                   </span>
                   <span>30-Day Reading Streak</span>
-                </span>
+                </span> */}
               </div>,
             ]}
           />
