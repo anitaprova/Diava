@@ -72,7 +72,7 @@ export default function BookDetail() {
           lists!list_id (name)
         `)
         .eq("user_id", userId)
-        .eq("google_book_id", book?.id)
+        .eq("google_books_id", book?.id)
         .in("lists.name", ["Currently Reading", "Want to Read"]);
   
         if (fetchError) {
@@ -89,7 +89,7 @@ export default function BookDetail() {
   
         const bookData = {
           list_id: selectedList.id,
-          google_book_id: book?.id,
+          google_books_id: book?.id,
           title: book?.volumeInfo?.title,
           thumbnail: book?.volumeInfo?.imageLinks?.thumbnail,
           user_id: userId,
