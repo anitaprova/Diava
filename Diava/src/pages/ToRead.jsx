@@ -7,12 +7,14 @@ import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import Rating from "@mui/material/Rating";
 import axios from "axios";
 import { auth } from "../firebase/firebase"; // adjust if path differs
+import { supabase } from "../client";
 
 export default function ToRead() {
   const navigate = useNavigate();
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
 
+ 
   useEffect(() => {
     const fetchBooks = async () => {
       try {
@@ -20,11 +22,19 @@ export default function ToRead() {
         if (!user) return;
 
         const userID = user.uid;
-        const listName = "Want to Read"; // make sure backend matches this casing
-        const response = await axios.get(`http://localhost:5001/list_books/${userID}/${listName}`);
-        setBooks(response.data);
+        const listName = "Want to Read";
+
+        const { data, error } = await supabase
+          .from("list_books")
+          .select("*")
+          .eq("user_id", userID)
+          .eq("list_name", listName); 
+
+        if (error) throw error;
+
+        setBooks(data);
       } catch (err) {
-        console.error("Failed to fetch books:", err);
+        console.error("Failed to fetch books:", err.message);
       } finally {
         setLoading(false);
       }

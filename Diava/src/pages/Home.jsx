@@ -50,21 +50,30 @@ export default function Home() {
         setUserLists(data);
         console.log("supbase test", data);
 
-        const crResponse = await axios.get(
-          `http://localhost:5001/list_books/${userId}/Currently Reading`
+        const crList = lists.find((l) => l.name === "Currently Reading");
+        const trList = lists.find((l) => l.name === "Want to Read");
+        const customLists = lists.filter(
+          (l) => l.name !== "Currently Reading" && l.name !== "Want to Read"
         );
-        setCurrentlyReading(crResponse.data || []);
-
-        // 2. Fetch books for "To Read"
-        const trResponse = await axios.get(
-          `http://localhost:5001/list_books/${userId}/Want To Read`
-        );
-        setToRead(trResponse.data || []);
+        setUserLists(customLists);
+        if (crList) {
+          const { data: crBooks, error: crError } = await supabase
+            .from("list_books")
+            .select("*")
+            .eq("list_id", crList.id);
+          if (crError) throw crError;
+          setCurrentlyReading(crBooks || []);
+        }
+        if (trList) {
+          const { data: trBooks, error: trError } = await supabase
+            .from("list_books")
+            .select("*")
+            .eq("list_id", trList.id);
+          if (trError) throw trError;
+          setToRead(trBooks || []);
+        }
       } catch (error) {
-        console.error(
-          "Error fetching list books:",
-          error.response?.data || error.message
-        );
+        console.error("Error fetching list data:", error.message);
       }
     };
 

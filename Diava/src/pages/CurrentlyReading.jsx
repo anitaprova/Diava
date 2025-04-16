@@ -15,18 +15,23 @@ export default function CurrentlyReading() {
       try {
         const userId = auth.currentUser?.uid;
         if (!userId) return;
-
-        const response = await axios.get(
-          `http://localhost:5001/list_books/${userId}/Currently Reading`
-        );
-        setBooks(response.data || []);
+  
+        const { data, error } = await supabase
+          .from("list_books")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("list_name", "Currently Reading");
+  
+        if (error) throw error;
+  
+        setBooks(data || []);
       } catch (error) {
-        console.error("Error fetching Currently Reading books:", error);
+        console.error("Error fetching Currently Reading books:", error.message);
       } finally {
         setLoading(false);
       }
     };
-
+  
     fetchCurrentlyReading();
   }, []);
 
