@@ -94,6 +94,7 @@ export default function BookDetail() {
           thumbnail: book?.volumeInfo?.imageLinks?.thumbnail,
           user_id: userId,
           author: book?.volumeInfo?.authors?.join(", "),
+          pages: book?.volumeInfo?.pageCount,
         };
   
         const { error: insertError } = await supabase

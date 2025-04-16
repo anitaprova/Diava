@@ -28,7 +28,36 @@ export default function Profile() {
   const [editIndex, setEditIndex] = useState(null);
   const [text, setText] = useState("");
   const [username, setUserName] = useState("");
-  
+  const [booksRead, setBooksRead] = useState();
+
+  const getBooksRead = async () => {
+    try {
+      const user_id = auth.currentUser?.uid;
+      if (!user_id) return;
+
+      const { data, error } = await supabase
+        .from("lists")
+        .select(
+          `
+          id,
+          list_books(
+            list_id,
+            google_books_id, 
+            title, 
+            pages
+          )
+          `
+        )
+        .eq("user_id", user_id)
+        .eq("name", "Read");
+
+      setBooksRead(data);
+      if (error) throw error;
+
+    } catch (error) {
+      console.error("Error fetching list:", error.message);
+    }
+  };  
 
   const getGoals = async () => {
     try {
@@ -99,6 +128,7 @@ export default function Profile() {
 
     fetchUser();
     getGoals(); 
+    getBooksRead();
   }, []);
  
   return (
@@ -127,11 +157,11 @@ export default function Profile() {
 
         <Box className="flex gap-x-5 justify-around text-xl text-center">
           <Typography variant="h4">
-            123
+            {booksRead?.[0]?.list_books?.length || 0}
             <Typography variant="body2">Books Read</Typography>
           </Typography>
           <Typography variant="h4">
-            12,345
+            {booksRead?.[0]?.list_books?.reduce((total,current) => total + current.pages, 0) || 0}
             <Typography variant="body2">Pages Read</Typography>
           </Typography>
           <Typography variant="h4">
