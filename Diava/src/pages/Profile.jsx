@@ -13,9 +13,6 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import NotebookCard from "../components/Notebook";
 import { auth } from "../firebase/firebase";
-import { useNavigate } from "react-router-dom";
-import { signOut } from "firebase/auth";
-import axios from "axios"
 import { supabase } from "../client";
 
 export default function Profile() {
@@ -29,6 +26,37 @@ export default function Profile() {
   const [text, setText] = useState("");
   const [username, setUserName] = useState("");
   const [booksRead, setBooksRead] = useState();
+  const [reviews, setReviews] = useState();
+  const [ratings, setRatings] = useState();
+
+  const getReviewsAndRatings = async () => {
+    try {
+      const user_id = auth.currentUser?.uid;
+      if (!user_id) return;
+
+      const { data, error } = await supabase
+        .from("reviews")
+        .select("*")
+        .eq("user_id", user_id);
+
+      if (error) throw error;
+
+      setRatings(data);
+      setReviews(
+        data.filter(
+          (review) => (review.review_text !== "")
+        )
+      ); 
+
+      console.log("Ratings:", data);
+      console.log(
+        "Written Reviews:",
+        data.filter((review) => review.review_text !== null)
+      );
+    } catch (error) {
+      console.error("Error fetching reviews/ratings:", error.message);
+    }
+  };
 
   const getBooksRead = async () => {
     try {
@@ -129,6 +157,7 @@ export default function Profile() {
     fetchUser();
     getGoals(); 
     getBooksRead();
+    getReviewsAndRatings();
   }, []);
  
   return (
@@ -161,11 +190,18 @@ export default function Profile() {
             <Typography variant="body2">Books Read</Typography>
           </Typography>
           <Typography variant="h4">
-            {booksRead?.[0]?.list_books?.reduce((total,current) => total + current.pages, 0) || 0}
+            {booksRead?.[0]?.list_books?.reduce(
+              (total, current) => total + current.pages,
+              0
+            ) || 0}
             <Typography variant="body2">Pages Read</Typography>
           </Typography>
           <Typography variant="h4">
-            80
+            {ratings?.length || 0}
+            <Typography variant="body2">Ratings</Typography>
+          </Typography>
+          <Typography variant="h4">
+            {reviews?.length || 0}
             <Typography variant="body2">Reviews</Typography>
           </Typography>
           <Typography variant="h4">
