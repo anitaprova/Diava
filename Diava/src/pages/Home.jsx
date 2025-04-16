@@ -42,35 +42,59 @@ export default function Home() {
     const fetchData = async () => {
       try {
         const userId = auth.currentUser.uid;
-        const { data } = await supabase
+  
+        // Fetch "Currently Reading"
+        const { data: crBooks, error: crError } = await supabase
+          .from("list_books")
+          .select(`
+            *,
+            lists (
+              id,
+              name
+            )
+          `)
+          .eq("lists.user_id", userId)
+          .eq("lists.name", "Currently Reading");
+  
+        if (crError) throw crError;
+        setCurrentlyReading(crBooks || []);
+  
+        // Fetch "Want to Read"
+        const { data: trBooks, error: trError } = await supabase
+          .from("list_books")
+          .select(`
+            *,
+            lists (
+              id,
+              name
+            )
+          `)
+          .eq("lists.user_id", userId)
+          .eq("lists.name", "Want to Read");
+  
+        if (trError) throw trError;
+        setToRead(trBooks || []);
+  
+        // Fetch all *custom* lists (not CR or TR)
+        const { data: allLists, error: listError } = await supabase
           .from("lists")
-          .select()
+          .select("*")
           .eq("user_id", userId);
-
-        setUserLists(data);
-        console.log("supbase test", data);
-
-        const crResponse = await axios.get(
-          `http://localhost:5001/list_books/${userId}/Currently Reading`
+  
+        if (listError) throw listError;
+  
+        const customLists = (allLists || []).filter(
+          (l) => l.name !== "Currently Reading" && l.name !== "Want to Read"
         );
-        setCurrentlyReading(crResponse.data || []);
-
-        // 2. Fetch books for "To Read"
-        const trResponse = await axios.get(
-          `http://localhost:5001/list_books/${userId}/Want To Read`
-        );
-        setToRead(trResponse.data || []);
+  
+        setUserLists(customLists);
       } catch (error) {
-        console.error(
-          "Error fetching list books:",
-          error.response?.data || error.message
-        );
+        console.error("Error fetching list data:", error.message);
       }
     };
-
+  
     fetchData();
   }, []);
-  
   return (
     <div className="ml-50 mr-50 mt-10 mb-25 font-merriweather text-darkbrown">
       <div className="grid grid-flow-col grid-rows-4 gap-x-20">
@@ -89,7 +113,7 @@ export default function Home() {
                 <div className="flex mt-5 ml-5 gap-x-5" key={index}>
                   <img
                     src={book.thumbnail}
-                    onClick={() => navigate(`/book/${book.google_book_id}`)}
+                    onClick={() => navigate(`/book/${book.google_books_id}`)}
                     className="w-fit cursor-pointer"
                   />
                   <div className="space-y-5">
@@ -118,7 +142,7 @@ export default function Home() {
                       <Button
                         variant="dark"
                         onClick={() =>
-                          navigate(`/update/${book.google_book_id}`)
+                          navigate(`/update/${book.google_books_id}`)
                         }
                       >
                         Update Progress
@@ -153,7 +177,7 @@ export default function Home() {
                   <img
                     key={index}
                     src={book.thumbnail}
-                    onClick={() => navigate(`/book/${book.google_book_id}`)}
+                    onClick={() => navigate(`/book/${book.google_books_id}`)}
                     className="p-4 cursor-pointer"
                   />
                 ))
@@ -186,7 +210,7 @@ export default function Home() {
                   <img
                     key={index}
                     src={book.thumbnail}
-                    onClick={() => navigate(`/book/${book.google_book_id}`)}
+                    onClick={() => navigate(`/book/${book.google_books_id}`)}
                     className="p-4 cursor-pointer"
                   />
                 ))

@@ -11,6 +11,8 @@ import {
 import { auth, db } from "../firebase/firebase";
 import { setDoc, doc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
+import { supabase } from "../client";
+
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
@@ -57,44 +59,81 @@ const SignUp = () => {
     }
   };
 
-  // Handle form submissiona
+  // Handle form submission
   const checkUsernameExists = async (username) => {
     if (!username) {
       console.error("Username cannot be empty.");
       return false;
     }
     try {
-      const response = await axios.get(
-        `http://localhost:5001/users?name=${username}`
-      );
-      if (response.data == null) {
-        return false;
-      } else {
-        return true;
-      }
+      const { data, error } = await supabase
+        .from("users")
+        .select("name")
+        .eq("name", username)
+        .single();
+
+      return !!data;
     } catch (error) {
       console.error("Error checking username:", error);
       return false;
     }
   };
+  async function getAllUsers() {
+    const { data, error } = await supabase
+      .from('lists')
+      .select('*');
+  
+    if (error) {
+      console.error('Error fetching users:', error);
+      return [];
+    }
+  
+    return data;
+  }
+  
 
-  const createUser = async (userData) => {
+  getAllUsers().then(lists=> {
+    console.log('Users:', lists);
+  });
+  const createDefaultLists = async (user_id) => {
+    const defaultLists = [
+      { user_id, name: "Want to Read" },
+      { user_id, name: "Currently Reading" },
+      { user_id, name: "Read" },
+      { user_id, name: "Favorites" },
+    ];
+  
     try {
-      await axios.post("http://localhost:5001/allusers", userData);
-    } catch (error) {
-      console.error("Error creating user:", error);
+      const { error } = await supabase.from("lists").insert(defaultLists);
+      if (error) throw error;
+      console.log("Default lists created");
+    } catch (err) {
+      console.error("Error creating user's default lists:", err.message);
     }
   };
 
+  const createUser = async (userData) => {
+    try {
+      const { error } = await supabase
+        .from("users") 
+        .insert([userData]);
+  
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error creating user:", error.message);
+    }
+  };
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     try {
       const usernameAvailabe = await checkUsernameExists(formData.username);
       if (usernameAvailabe) {
         alert("Username is already taken. Please pick another one.");
         return;
       }
+  
       await createUserWithEmailAndPassword(
         auth,
         formData.email,
@@ -103,8 +142,7 @@ const SignUp = () => {
         const user = userCredentials.user;
         await sendEmailVerification(user);
         alert("Go to your email and verify your account.");
-
-        // Store user in database.
+  
         if (user) {
           await setDoc(doc(db, "Users", user.uid), {
             email: user.email,
@@ -113,28 +151,29 @@ const SignUp = () => {
             username: formData.username,
             uid: user.uid,
           });
-
-            await setDoc(doc(db, "UserChats", user.uid), {});
-            await setDoc(doc(db, "UserClubs", user.uid), {});
-            
-            // Store username in postgres
-            const newUser = {user_id: user.uid, name:formData.username};
-            createUser(newUser);
-            console.log("New user created");
-          }
-
+  
+          await setDoc(doc(db, "UserChats", user.uid), {});
+          await setDoc(doc(db, "UserClubs", user.uid), {});
+  
+          // Store username in database
+          const newUser = { user_id: user.uid, name: formData.username };
+          await createUser(newUser); 
+          await createDefaultLists(user.uid);
+          console.log("New user created in Supabase");
+        }
+  
         navigate("/login");
         console.log("User signed up successfully.");
       });
     } catch (error) {
       console.log(error.message);
     }
-
+  
     console.log("Form submitted:", formData);
-    // Navigate to home page after successful signup
     navigate("/");
   };
 
+ 
   // Handle Google Sign Up
   const handleGoogleSignUp = () => {
     console.log("Google sign up clicked");

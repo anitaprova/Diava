@@ -4,6 +4,7 @@ import { Typography, Box, Button } from "@mui/material";
 import LinearProgress from "@mui/material/LinearProgress";
 import axios from "axios";
 import { auth } from "../firebase/firebase";
+import { supabase } from "../client";
 
 export default function CurrentlyReading() {
   const navigate = useNavigate();
@@ -15,18 +16,23 @@ export default function CurrentlyReading() {
       try {
         const userId = auth.currentUser?.uid;
         if (!userId) return;
-
-        const response = await axios.get(
-          `http://localhost:5001/list_books/${userId}/Currently Reading`
-        );
-        setBooks(response.data || []);
+  
+        const { data, error } = await supabase
+          .from("list_books")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("list_name", "Currently Reading");
+  
+        if (error) throw error;
+  
+        setBooks(data || []);
       } catch (error) {
-        console.error("Error fetching Currently Reading books:", error);
+        console.error("Error fetching Currently Reading books:", error.message);
       } finally {
         setLoading(false);
       }
     };
-
+  
     fetchCurrentlyReading();
   }, []);
 
@@ -39,13 +45,13 @@ export default function CurrentlyReading() {
         ) : books.length > 0 ? (
           books.map((book) => (
             <div
-              key={book.google_book_id}
+              key={book.google_books_id}
               className="bg-vanilla rounded-md p-6 w-fit flex m-5 gap-x-5"
             >
               <img
                 src={book.thumbnail}
                 alt={book.title}
-                onClick={() => navigate(`/book/${book.google_book_id}`)}
+                onClick={() => navigate(`/book/${book.google_books_id}`)}
                 className="w-fit cursor-pointer"
               />
               <div className="space-y-4">
@@ -73,7 +79,7 @@ export default function CurrentlyReading() {
 
                   <Button
                     variant="dark"
-                    onClick={() => navigate(`/update/${book.google_book_id}`)}
+                    onClick={() => navigate(`/update/${book.google_books_id}`)}
                   >
                     Update Progress
                   </Button>

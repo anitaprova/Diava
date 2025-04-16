@@ -43,27 +43,72 @@ export default function BookDetail() {
   const handleMenuItemClick = async (event, listName) => {
     setSelectedListName(listName);
     setOpen(false);
-
+    async function getAllUsers() {
+      const { data, error } = await supabase
+        .from('lists')
+        .select('*');
+    
+      if (error) {
+        console.error('Error fetching users:', error);
+        return [];
+      }
+    
+      return data;
+    }
+    
+    // Example usage
+    getAllUsers().then(users => {
+      console.log('Users:', users);
+    });
     const selectedList = userLists.find((list) => list.name === listName);
-
+  
     if (selectedList) {
       try {
+        const userId = auth.currentUser.uid;
+  
+        const { data: existingBooks, error: fetchError } = await supabase
+        .from("list_books")
+        .select(`
+          *,
+          lists!list_id (name)
+        `)
+        .eq("user_id", userId)
+        .eq("google_books_id", book?.id)
+        .in("lists.name", ["Currently Reading", "Want to Read"]);
+  
+        if (fetchError) {
+          console.error("Error checking existing books:", fetchError.message);
+          return;
+        }
+  
+        if ((existingBooks ?? []).length > 0) {
+          alert(
+            "This book is already in your 'Currently Reading' or 'Want to Read'. Please remove it from one list before adding it to the other."
+          );
+          return;
+        }
+  
         const bookData = {
           list_id: selectedList.id,
-          google_book_id: book.id,
-          title: book.volumeInfo.title,
-          thumbnail: book.volumeInfo.imageLinks.thumbnail,
-          user_id: auth.currentUser.uid,
-          author: book.volumeInfo.authors?.join(", ")
+          google_books_id: book?.id,
+          title: book?.volumeInfo?.title,
+          thumbnail: book?.volumeInfo?.imageLinks?.thumbnail,
+          user_id: userId,
+          author: book?.volumeInfo?.authors?.join(", "),
         };
-        await axios.post("http://localhost:5001/list_books", bookData);
+  
+        const { error: insertError } = await supabase
+          .from("list_books")
+          .insert([bookData]);
+  
+        if (insertError) throw insertError;
+  
         console.log(`Book added to ${listName} list`);
       } catch (error) {
-        console.error("Error adding book to list:", error);
+        console.error("Error adding book to list:", error.message);
       }
     }
   };
-
   const handleToggle = () => {
     setOpen((prevOpen) => !prevOpen);
   };

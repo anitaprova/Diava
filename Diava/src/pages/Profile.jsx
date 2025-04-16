@@ -16,7 +16,7 @@ import { auth } from "../firebase/firebase";
 import { useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import axios from "axios"
-
+import { supabase } from "../client";
 
 export default function Profile() {
   const [goals, setGoals] = useState([
@@ -29,38 +29,51 @@ export default function Profile() {
   const [text, setText] = useState("");
   const [username, setUserName] = useState("");
   
+
   const getGoals = async () => {
     try {
-      const response  = await axios.get('http://localhost:5001/goals')
+      const user_id = auth.currentUser?.uid;
+      if (!user_id) return;
 
+      const { data, error } = await supabase
+        .from("goals")
+        .select("*")
+        .eq("user_id", user_id);
+
+      if (error) throw error;
+
+      setGoals(data.map((goal) => goal.goal));
     } catch (error) {
-      console.error("Error creating goal:", error)
+      console.error("Error fetching goals:", error.message);
     }
   };
-  
+
   const createGoal = async (goalData) => {
     try {
-      const response = await axios.post("http://localhost:5001/goals", goalData);
-      setGoals([...goals, response.data]); 
+      const { data, error } = await supabase
+        .from("goals")
+        .insert([goalData])
+        .select();
+
+      if (error) throw error;
+
+      setGoals([...goals, goalData.goal]);
     } catch (error) {
-      console.error("Error creating goal:", error);
+      console.error("Error creating goal:", error.message);
     }
   };
 
   const handleClick = () => {
     setGoals([...goals, "Double click and enter a goal!"]);
-    console.log();
   };
 
   const handleEnter = async (event) => {
     if (event.key === "Enter" && editIndex !== null) {
       const updatedGoals = [...goals];
       updatedGoals[editIndex] = text;
-      const user_id = auth.currentUser.uid //update to current.auth user id
-      const new_goal = {user_id, goal: text, is_completed: false};
+      const user_id = auth.currentUser?.uid;
+      const new_goal = { user_id, goal: text, is_completed: false };
       await createGoal(new_goal);
-      console.log('New goal added: ', new_goal);
-      console.log(auth.currentUser.uid)
       setGoals(updatedGoals);
       setEditIndex(null);
       setText("");
@@ -70,19 +83,22 @@ export default function Profile() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const user_id = auth.currentUser.uid;
-        if(!user_id){
-          console.log("UserID not found");
-        }
-
-        const response = await axios.get(`http://localhost:5001/users/${user_id}`);
-        setUserName(response.data.name);
+        const user_id = auth.currentUser?.uid;
+        if (!user_id) return;
+        const { data, error } = await supabase
+          .from("users")
+          .select("name")
+          .eq("user_id", user_id)
+          .single();
+        if (error) throw error;
+        setUserName(data.name);
       } catch (error) {
-        console.error("Cannot fetch username: ", error);
+        console.error("Cannot fetch username:", error.message);
       }
     };
 
     fetchUser();
+    getGoals(); 
   }, []);
  
   return (
