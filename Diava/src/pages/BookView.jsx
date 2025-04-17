@@ -135,6 +135,27 @@ export default function BookDetail() {
     }
     fetchData();
     }, []);
+    
+    useEffect(() => {
+      const fetchData = async () => {
+        try {
+          const userId = auth.currentUser.uid;
+          const { data } = await supabase
+            .from("reviews")
+            .select()
+            .eq("user_id", userId)
+            .eq("book_id", id);
+          setReview(data);
+        } catch (error) {
+          console.error(
+            "Error fetching list books:",
+            error.response?.data || error.message
+          );
+        }
+      };
+      fetchData();
+    }, []);
+    
     useEffect(() => {
       const fetchAverageRating = async () => {
         try {
