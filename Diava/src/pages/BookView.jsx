@@ -26,46 +26,37 @@ export default function BookDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [book, setBook] = useState(null);
+  const [averageRating, setAverageRating] = useState(null);
   const [seeMore, setSeeMore] = useState(false);
   const [userLists, setUserLists] = useState([]);
   const genresRaw = book?.volumeInfo?.categories || [];
   const genres = [
     ...new Set(genresRaw.flatMap((category) => category.split("/"))),
   ];
-
-  // Dropdown related states
   const [open, setOpen] = useState(false);
   const [selectedListName, setSelectedListName] = useState("");
   const anchorRef = React.useRef(null);
   const [review, setReview] = useState();
-
   const handleMenuItemClick = async (event, listName) => {
     setSelectedListName(listName);
     setOpen(false);
-    async function getAllUsers() {
-      const { data, error } = await supabase
-        .from('lists')
-        .select('*');
-    
-      if (error) {
-        console.error('Error fetching users:', error);
-        return [];
+  
+    try {
+      const userId = auth.currentUser.uid;
+      const { data: listData, error: listError } = await supabase
+        .from("lists") 
+        .select("id")
+        .eq("user_id", userId)
+        .eq("name", listName)
+        .single();
+  
+      if (listError || !listData) {
+        console.error("Could not find list_id:", listError?.message);
+        return;
       }
-    
-      return data;
-    }
-    
-    // Example usage
-    getAllUsers().then(users => {
-      console.log('Users:', users);
-    });
-    const selectedList = userLists.find((list) => list.name === listName);
   
-    if (selectedList) {
-      try {
-        const userId = auth.currentUser.uid;
-  
-        const { data: existingBooks, error: fetchError } = await supabase
+      const list_id = listData.id;
+      const { data: existingBooks, error: fetchError } = await supabase
         .from("list_books")
         .select(`
           *,
@@ -75,37 +66,35 @@ export default function BookDetail() {
         .eq("google_books_id", book?.id)
         .in("lists.name", ["Currently Reading", "Want to Read"]);
   
-        if (fetchError) {
-          console.error("Error checking existing books:", fetchError.message);
-          return;
-        }
-  
-        if ((existingBooks ?? []).length > 0) {
-          alert(
-            "This book is already in your 'Currently Reading' or 'Want to Read'. Please remove it from one list before adding it to the other."
-          );
-          return;
-        }
-  
-        const bookData = {
-          list_id: selectedList.id,
-          google_books_id: book?.id,
-          title: book?.volumeInfo?.title,
-          thumbnail: book?.volumeInfo?.imageLinks?.thumbnail,
-          user_id: userId,
-          author: book?.volumeInfo?.authors?.join(", "),
-        };
-  
-        const { error: insertError } = await supabase
-          .from("list_books")
-          .insert([bookData]);
-  
-        if (insertError) throw insertError;
-  
-        console.log(`Book added to ${listName} list`);
-      } catch (error) {
-        console.error("Error adding book to list:", error.message);
+      if (fetchError) {
+        console.error("Error checking existing books:", fetchError.message);
+        return;
       }
+  
+      if ((existingBooks ?? []).length > 0) {
+        alert(
+          "This book is already in your 'Currently Reading' or 'Want to Read'. Please remove it from one list before adding it to the other."
+        );
+        return;
+      }
+      const bookData = {
+        list_id,
+        google_books_id: book?.id,
+        title: book?.volumeInfo?.title,
+        thumbnail: book?.volumeInfo?.imageLinks?.thumbnail,
+        user_id: userId,
+        author: book?.volumeInfo?.authors?.join(", "),
+      };
+  
+      const { error: insertError } = await supabase
+        .from("list_books")
+        .insert([bookData]);
+  
+      if (insertError) throw insertError;
+  
+      console.log(`Book added to '${listName}' list`);
+    } catch (error) {
+      console.error("Error adding book to list:", error.message);
     }
   };
   const handleToggle = () => {
@@ -127,7 +116,7 @@ export default function BookDetail() {
         .catch((error) => console.error("Error fetching books:", error));
     }
   }, [id]);
-
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -146,28 +135,36 @@ export default function BookDetail() {
     }
     fetchData();
     }, []);
-
     useEffect(() => {
-      const fetchData = async () => {
+      const fetchAverageRating = async () => {
         try {
-          const userId = auth.currentUser.uid;
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from("reviews")
-            .select()
-            .eq("user_id", userId)
-            .eq("book_id", id);
-          setReview(data);
-          console.log("reviews", data);
-        } catch (error) {
-          console.error(
-            "Error fetching list books:",
-            error.response?.data || error.message
-          );
+            .select("rating")
+            .eq("book_id", id); 
+          if (error) {
+            console.error("Error fetching ratings:", error.message);
+            return;
+          }
+    
+          if (data.length === 0) {
+            setAverageRating(null); 
+            return;
+          }
+          //get array of ratings
+          const avg =
+            data.reduce((sum, r) => sum + r.rating, 0) / data.length;
+            //convert into string and round up to one decimal place
+          setAverageRating(parseFloat(avg.toFixed(1)));
+        } catch (err) {
+          console.error("Error calculating average rating:", err.message);
         }
       };
-      fetchData();
-    }, []);
-
+    
+      if (id) {
+        fetchAverageRating();
+      }
+    }, [id]);
   return (
     <div className="font-merriweather mr-25 ml-25 mt-15 mb-15">
       {book && book.volumeInfo.imageLinks ? (
@@ -210,13 +207,13 @@ export default function BookDetail() {
 
             <div className="flex mt-2 mb-4 gap-x-4">
               <Rating
-                value={book.volumeInfo.averageRating}
+                value={averageRating || 0}
                 precision={0.5}
                 size="large"
                 readOnly
               />
               <p className="inline-block align-middle text-lg">
-                {book.volumeInfo.averageRating}
+                {averageRating}
               </p>
             </div>
 

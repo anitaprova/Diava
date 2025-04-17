@@ -29,7 +29,7 @@ const SignUp = () => {
   const { currentUser } = useAuth();
   const mainpage = "/profile";
 
-  // Check if user is logged in
+  // Check if current user is logged in
   useEffect(() => {
     if (currentUser && currentUser.emailVerified) {
       navigate(mainpage, { replace: true });
