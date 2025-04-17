@@ -42,40 +42,36 @@ export default function Home() {
     const fetchData = async () => {
       try {
         const userId = auth.currentUser.uid;
-  
-        // Fetch "Currently Reading"
         const { data: crBooks, error: crError } = await supabase
-          .from("list_books")
-          .select(`
-            *,
-            lists (
-              id,
-              name
-            )
-          `)
-          .eq("lists.user_id", userId)
-          .eq("lists.name", "Currently Reading");
+        .from("list_books")
+        .select(`
+          *,
+          lists!inner (
+            id,
+            name
+          )
+        `)
+        .eq("lists.user_id", userId)
+        .eq("lists.name", "Currently Reading");
   
         if (crError) throw crError;
         setCurrentlyReading(crBooks || []);
   
-        // Fetch "Want to Read"
         const { data: trBooks, error: trError } = await supabase
-          .from("list_books")
-          .select(`
-            *,
-            lists (
-              id,
-              name
-            )
-          `)
-          .eq("lists.user_id", userId)
-          .eq("lists.name", "Want to Read");
+        .from("list_books")
+        .select(`
+         *,
+        lists!inner (
+        id,
+        name
+                  )
+      `)
+  .eq("lists.user_id", userId)
+  .eq("lists.name", "Want to Read");
   
         if (trError) throw trError;
         setToRead(trBooks || []);
-  
-        // Fetch all *custom* lists (not CR or TR)
+
         const { data: allLists, error: listError } = await supabase
           .from("lists")
           .select("*")

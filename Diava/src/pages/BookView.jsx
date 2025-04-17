@@ -20,53 +20,43 @@ import Stack from "@mui/material/Stack";
 import Divider from "@mui/material/Divider";
 import { auth } from "../firebase/firebase";
 import { supabase } from "../client";
-import EditIcon from "@mui/icons-material/Edit";
 
 export default function BookDetail() {
   const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
   const { id } = useParams();
   const navigate = useNavigate();
   const [book, setBook] = useState(null);
+  const [averageRating, setAverageRating] = useState(null);
   const [seeMore, setSeeMore] = useState(false);
   const [userLists, setUserLists] = useState([]);
   const genresRaw = book?.volumeInfo?.categories || [];
   const genres = [
     ...new Set(genresRaw.flatMap((category) => category.split("/"))),
   ];
-
-  // Dropdown related states
   const [open, setOpen] = useState(false);
   const [selectedListName, setSelectedListName] = useState("");
   const anchorRef = React.useRef(null);
   const [review, setReview] = useState();
-
   const handleMenuItemClick = async (event, listName) => {
     setSelectedListName(listName);
     setOpen(false);
-    async function getAllUsers() {
-      const { data, error } = await supabase
-        .from('lists')
-        .select('*');
-    
-      if (error) {
-        console.error('Error fetching users:', error);
-        return [];
+  
+    try {
+      const userId = auth.currentUser.uid;
+      const { data: listData, error: listError } = await supabase
+        .from("lists") 
+        .select("id")
+        .eq("user_id", userId)
+        .eq("name", listName)
+        .single();
+  
+      if (listError || !listData) {
+        console.error("Could not find list_id:", listError?.message);
+        return;
       }
-    
-      return data;
-    }
-    
-    // Example usage
-    getAllUsers().then(users => {
-      console.log('Users:', users);
-    });
-    const selectedList = userLists.find((list) => list.name === listName);
   
-    if (selectedList) {
-      try {
-        const userId = auth.currentUser.uid;
-  
-        const { data: existingBooks, error: fetchError } = await supabase
+      const list_id = listData.id;
+      const { data: existingBooks, error: fetchError } = await supabase
         .from("list_books")
         .select(`
           *,
@@ -76,10 +66,10 @@ export default function BookDetail() {
         .eq("google_books_id", book?.id)
         .in("lists.name", ["Currently Reading", "Want to Read"]);
   
-        if (fetchError) {
-          console.error("Error checking existing books:", fetchError.message);
-          return;
-        }
+      if (fetchError) {
+        console.error("Error checking existing books:", fetchError.message);
+        return;
+      }
   
         if ((existingBooks ?? []).length > 0) {
           alert(
@@ -98,16 +88,15 @@ export default function BookDetail() {
           pages: book?.volumeInfo?.pageCount,
         };
   
-        const { error: insertError } = await supabase
-          .from("list_books")
-          .insert([bookData]);
+      const { error: insertError } = await supabase
+        .from("list_books")
+        .insert([bookData]);
   
-        if (insertError) throw insertError;
+      if (insertError) throw insertError;
   
-        console.log(`Book added to ${listName} list`);
-      } catch (error) {
-        console.error("Error adding book to list:", error.message);
-      }
+      console.log(`Book added to '${listName}' list`);
+    } catch (error) {
+      console.error("Error adding book to list:", error.message);
     }
   };
   const handleToggle = () => {
@@ -129,7 +118,7 @@ export default function BookDetail() {
         .catch((error) => console.error("Error fetching books:", error));
     }
   }, [id]);
-
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -148,7 +137,7 @@ export default function BookDetail() {
     }
     fetchData();
     }, []);
-
+    
     useEffect(() => {
       const fetchData = async () => {
         try {
@@ -168,7 +157,37 @@ export default function BookDetail() {
       };
       fetchData();
     }, []);
-
+    
+    useEffect(() => {
+      const fetchAverageRating = async () => {
+        try {
+          const { data, error } = await supabase
+            .from("reviews")
+            .select("rating")
+            .eq("book_id", id); 
+          if (error) {
+            console.error("Error fetching ratings:", error.message);
+            return;
+          }
+    
+          if (data.length === 0) {
+            setAverageRating(null); 
+            return;
+          }
+          //get array of ratings
+          const avg =
+            data.reduce((sum, r) => sum + r.rating, 0) / data.length;
+            //convert into string and round up to one decimal place
+          setAverageRating(parseFloat(avg.toFixed(1)));
+        } catch (err) {
+          console.error("Error calculating average rating:", err.message);
+        }
+      };
+    
+      if (id) {
+        fetchAverageRating();
+      }
+    }, [id]);
   return (
     <div className="font-merriweather mr-25 ml-25 mt-15 mb-15">
       {book && book.volumeInfo.imageLinks ? (
@@ -211,13 +230,13 @@ export default function BookDetail() {
 
             <div className="flex mt-2 mb-4 gap-x-4">
               <Rating
-                value={book.volumeInfo.averageRating}
+                value={averageRating || 0}
                 precision={0.5}
                 size="large"
                 readOnly
               />
               <p className="inline-block align-middle text-lg">
-                {book.volumeInfo.averageRating}
+                {averageRating}
               </p>
             </div>
 
@@ -335,15 +354,10 @@ export default function BookDetail() {
       <Divider />
 
       <div className="mt-15">
-        <Typography variant="h4" sx={{ marginBottom: "10px" }}>
-          Ratings and Reviews
-        </Typography>
+        <Typography variant="h4" sx={{marginBottom: "10px"}}>Ratings and Reviews</Typography>
         {review && review.length > 0 ? (
           <div className="bg-vanilla rounded-md p-5 space-y-5">
-            <Typography variant="h5">
-              Your Review{" "}
-              <EditIcon onClick={() => navigate(`/review/edit/${book.id}`)} />{" "}
-            </Typography>
+            <Typography variant="h5">Your Review</Typography>
             <span className="flex justify-between">
               <Rating value={review[0]?.rating} precision={0.5} readOnly />
               <Typography>{review[0]?.format}</Typography>
@@ -374,7 +388,7 @@ export default function BookDetail() {
               onClick={() => navigate(`/review/${book.id}`)}
               className="w-fit"
               sx={{
-                marginTop: "20px",
+                marginTop: "20px"
               }}
             >
               Add Review

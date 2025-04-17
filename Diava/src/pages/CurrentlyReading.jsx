@@ -19,9 +19,16 @@ export default function CurrentlyReading() {
   
         const { data, error } = await supabase
           .from("list_books")
-          .select("*")
-          .eq("user_id", userId)
-          .eq("list_name", "Currently Reading");
+          .select(`
+            *,
+            lists!inner (
+              id,
+              name,
+              user_id
+            )
+          `)
+          .eq("lists.user_id", userId)
+          .eq("lists.name", "Currently Reading");
   
         if (error) throw error;
   

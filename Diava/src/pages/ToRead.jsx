@@ -16,33 +16,36 @@ export default function ToRead() {
 
  
   useEffect(() => {
-    const fetchBooks = async () => {
+    const fetchCurrentlyReading = async () => {
       try {
-        const user = auth.currentUser;
-        if (!user) return;
-
-        const userID = user.uid;
-        const listName = "Want to Read";
-
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+          //Use inner join maybe?
         const { data, error } = await supabase
           .from("list_books")
-          .select("*")
-          .eq("user_id", userID)
-          .eq("list_name", listName); 
-
+          .select(`
+            *,
+            lists!inner (
+              id,
+              name,
+              user_id
+            )
+          `)
+          .eq("lists.user_id", userId)
+          .eq("lists.name", "Want to Read");
+  
         if (error) throw error;
-
-        setBooks(data);
-      } catch (err) {
-        console.error("Failed to fetch books:", err.message);
+  
+        setBooks(data || []);
+      } catch (error) {
+        console.error("Error fetching Want to Read books:", error.message);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchBooks();
+  
+    fetchCurrentlyReading();
   }, []);
-
   return (
     <div className="font-merriweather ml-50 mr-50 mt-10 mb-10">
       <Typography variant="h4">To Read Pile</Typography>
@@ -84,7 +87,7 @@ export default function ToRead() {
                   <div>
                     <Typography variant="h6">{title}</Typography>
                     <Typography variant="subtitle2">
-                      By {authors}
+                      By: {authors}
                     </Typography>
                   </div>
 
