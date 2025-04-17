@@ -20,6 +20,7 @@ import Stack from "@mui/material/Stack";
 import Divider from "@mui/material/Divider";
 import { auth } from "../firebase/firebase";
 import { supabase } from "../client";
+import EditIcon from "@mui/icons-material/Edit";
 
 export default function BookDetail() {
   const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
@@ -31,12 +32,15 @@ export default function BookDetail() {
   const [userLists, setUserLists] = useState([]);
   const genresRaw = book?.volumeInfo?.categories || [];
   const genres = [
-    ...new Set(genresRaw.flatMap((category) => category.split("/"))),
+    ...new Set(
+      genresRaw.flatMap((category) => category.replace(/\s+/g, "").split("/"))
+    ),
   ];
   const [open, setOpen] = useState(false);
   const [selectedListName, setSelectedListName] = useState("");
   const anchorRef = React.useRef(null);
   const [review, setReview] = useState();
+  
   const handleMenuItemClick = async (event, listName) => {
     setSelectedListName(listName);
     setOpen(false);
@@ -71,20 +75,23 @@ export default function BookDetail() {
         return;
       }
   
-      if ((existingBooks ?? []).length > 0) {
-        alert(
-          "This book is already in your 'Currently Reading' or 'Want to Read'. Please remove it from one list before adding it to the other."
-        );
-        return;
-      }
-      const bookData = {
-        list_id,
-        google_books_id: book?.id,
-        title: book?.volumeInfo?.title,
-        thumbnail: book?.volumeInfo?.imageLinks?.thumbnail,
-        user_id: userId,
-        author: book?.volumeInfo?.authors?.join(", "),
-      };
+        if ((existingBooks ?? []).length > 0) {
+          alert(
+            "This book is already in your 'Currently Reading' or 'Want to Read'. Please remove it from one list before adding it to the other."
+          );
+          return;
+        }
+  
+        const bookData = {
+          list_id: selectedList.id,
+          google_books_id: book?.id,
+          title: book?.volumeInfo?.title,
+          thumbnail: book?.volumeInfo?.imageLinks?.thumbnail,
+          user_id: userId,
+          author: book?.volumeInfo?.authors?.join(", "),
+          pages: book?.volumeInfo?.pageCount,
+          genres: genres,
+        };
   
       const { error: insertError } = await supabase
         .from("list_books")
@@ -97,6 +104,7 @@ export default function BookDetail() {
       console.error("Error adding book to list:", error.message);
     }
   };
+
   const handleToggle = () => {
     setOpen((prevOpen) => !prevOpen);
   };
@@ -352,10 +360,15 @@ export default function BookDetail() {
       <Divider />
 
       <div className="mt-15">
-        <Typography variant="h4" sx={{marginBottom: "10px"}}>Ratings and Reviews</Typography>
+        <Typography variant="h4" sx={{ marginBottom: "10px" }}>
+          Ratings and Reviews
+        </Typography>
         {review && review.length > 0 ? (
           <div className="bg-vanilla rounded-md p-5 space-y-5">
-            <Typography variant="h5">Your Review</Typography>
+            <Typography variant="h5">
+              Your Review{" "}
+              <EditIcon onClick={() => navigate(`/review/edit/${book?.id}`)} />{" "}
+            </Typography>
             <span className="flex justify-between">
               <Rating value={review[0]?.rating} precision={0.5} readOnly />
               <Typography>{review[0]?.format}</Typography>
@@ -386,7 +399,7 @@ export default function BookDetail() {
               onClick={() => navigate(`/review/${book.id}`)}
               className="w-fit"
               sx={{
-                marginTop: "20px"
+                marginTop: "20px",
               }}
             >
               Add Review

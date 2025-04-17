@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Typography, Box, listClasses } from "@mui/material";
+import { Box } from "@mui/material";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import Rating from "@mui/material/Rating";
@@ -28,7 +28,7 @@ export default function Review() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [rating, setRating] = useState(0);
-  const [format, setFormat] = useState();
+  const [format, setFormat] = useState("");
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
   const [tagsText, setTagsText] = useState("");
@@ -86,8 +86,6 @@ export default function Review() {
 
   }, [id]);
 
-	
-
 	useEffect(() => {
     const fetchData = async () => {
       try {
@@ -138,80 +136,41 @@ export default function Review() {
                       <StarsIcon /> Rating
                     </span>
 
-                    {rating ? (
-                      <Rating
-                        defaultValue={rating}
-                        precision={0.5}
-                        size="large"
-                        onChange={(event, newValue) => {
-                          setRating(newValue);
-                        }}
-                      />
-                    ) : (
-                      <Rating
-                        defaultValue={0.0}
-                        precision={0.5}
-                        size="large"
-                        onChange={(event, newValue) => {
-                          setRating(newValue);
-                        }}
-                      />
-                    )}
+                    <Rating
+                      value={rating || 0}
+                      precision={0.5}
+                      size="large"
+                      onChange={(event, newValue) => {
+                        setRating(newValue);
+                      }}
+                    />
                   </div>
-                  {format ? (
-                    <FormControl>
-                      <RadioGroup
-                        row
-                        onChange={(event, newValue) => setFormat(newValue)}
-                        defaultValue={format}
-                      >
-                        <FormControlLabel
-                          value="ebook"
-                          control={<Radio />}
-                          label={<PhoneIphoneIcon />}
-                          labelPlacement="top"
-                        />
-                        <FormControlLabel
-                          value="book"
-                          control={<Radio />}
-                          label={<AutoStoriesIcon />}
-                          labelPlacement="top"
-                        />
-                        <FormControlLabel
-                          value="audio"
-                          control={<Radio />}
-                          label={<HeadphonesIcon size="large" />}
-                          labelPlacement="top"
-                        />
-                      </RadioGroup>
-                    </FormControl>
-                  ) : (
-                    <FormControl>
-                      <RadioGroup
-                        row
-                        onChange={(event, newValue) => setFormat(newValue)}
-                      >
-                        <FormControlLabel
-                          value="ebook"
-                          control={<Radio />}
-                          label={<PhoneIphoneIcon />}
-                          labelPlacement="top"
-                        />
-                        <FormControlLabel
-                          value="book"
-                          control={<Radio />}
-                          label={<AutoStoriesIcon />}
-                          labelPlacement="top"
-                        />
-                        <FormControlLabel
-                          value="audio"
-                          control={<Radio />}
-                          label={<HeadphonesIcon size="large" />}
-                          labelPlacement="top"
-                        />
-                      </RadioGroup>
-                    </FormControl>
-                  )}
+                  <FormControl>
+                    <RadioGroup
+                      row
+                      onChange={(event, newValue) => setFormat(newValue)}
+                      value={format}
+                    >
+                      <FormControlLabel
+                        value="ebook"
+                        control={<Radio />}
+                        label={<PhoneIphoneIcon />}
+                        labelPlacement="top"
+                      />
+                      <FormControlLabel
+                        value="book"
+                        control={<Radio />}
+                        label={<AutoStoriesIcon />}
+                        labelPlacement="top"
+                      />
+                      <FormControlLabel
+                        value="audio"
+                        control={<Radio />}
+                        label={<HeadphonesIcon size="large" />}
+                        labelPlacement="top"
+                      />
+                    </RadioGroup>
+                  </FormControl>
                 </div>
               </div>
             </div>
@@ -335,7 +294,9 @@ export default function Review() {
           </div>
 
           <div className="flex justify-around">
-            <Button variant="outline" onClick={deleteReview}>Delete Review</Button>
+            <Button variant="outline" onClick={deleteReview}>
+              Delete Review
+            </Button>
             <Button
               variant="dark"
               onClick={() =>

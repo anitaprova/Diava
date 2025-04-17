@@ -194,7 +194,7 @@ export default function Home() {
         </div>
 
         {/* Recommendations */}
-        <div className="col-span-1 row-span-2 mt-5">
+        <div className="col-span-1 row-span-2 mt-15">
           <Typography variant="h4" onClick={() => navigate(`/recommendations`)}>
             Recommendations
           </Typography>
