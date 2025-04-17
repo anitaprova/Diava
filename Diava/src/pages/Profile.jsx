@@ -27,7 +27,7 @@ export default function Profile() {
   const [username, setUserName] = useState("");
   const [stats, setStats] = useState(null);
   const [achievements, setAchievements] = useState();
-
+  console.log(stats);
   const getAchievements = async () => {
     try {
       const user_id = auth.currentUser?.uid;
@@ -247,25 +247,16 @@ export default function Profile() {
             hole={10}
             rows={[
               <div className="flex justify-around w-full">
-                {/* {achievements?.map((achievement) => (
-                  <span className="flex flex-col items-center gap-2">
-                    <span>
-                      {achievement?.achievements.icon} <strong>{achievement?.achievements.title}</strong>
-                    </span>
-                    <span>{achievement?.achievements.description}</span>
-                  </span>
-                ))} */}
-
                 <span className="flex flex-col items-center gap-2">
                   <span>
-                    {achievements?.[0]?.achievements?.icon}
+                    {achievements?.[0]?.achievements?.icon}{" "}
                     <strong>{achievements?.[0]?.achievements?.title}</strong>
                   </span>
                   <span>{achievements?.[0]?.achievements?.description}</span>
                 </span>
                 <span className="flex flex-col items-center gap-2">
                   <span>
-                    {achievements?.[1]?.achievements?.icon}
+                    {achievements?.[1]?.achievements?.icon}{" "}
                     <strong>{achievements?.[1]?.achievements?.title}</strong>
                   </span>
                   <span>{achievements?.[1]?.achievements?.description}</span>
@@ -275,14 +266,14 @@ export default function Profile() {
               <div className="flex justify-around w-full">
                 <span className="flex flex-col items-center gap-2">
                   <span>
-                    {achievements?.[2]?.achievements?.icon}
+                    {achievements?.[2]?.achievements?.icon}{" "}
                     <strong>{achievements?.[2]?.achievements?.title}</strong>
                   </span>
                   <span>{achievements?.[2]?.achievements?.description}</span>
                 </span>
                 <span className="flex flex-col items-center gap-2">
                   <span>
-                    {achievements?.[3]?.achievements?.icon}
+                    {achievements?.[3]?.achievements?.icon}{" "}
                     <strong>{achievements?.[3]?.achievements?.title}</strong>
                   </span>
                   <span>{achievements?.[3]?.achievements?.description}</span>
@@ -297,10 +288,12 @@ export default function Profile() {
           hole={6}
           rows={[
             <div className="flex justify-between w-full">
-              <span>Average Reading Time</span> <span>2 Days</span>
+              <span>Average Reading Time</span>{" "}
+              <span>{stats?.average_reading_time} Days</span>
             </div>,
             <div className="flex justify-between w-full">
-              <span>Favorite Genre</span> <span>Fiction</span>
+              <span>Favorite Genre</span>{" "}
+              <span>{stats?.favorite_genre || "Not calulated yet"}</span>
             </div>,
             <div className="flex justify-between w-full">
               <span>Longest Streak</span> <span>42 Days</span>
