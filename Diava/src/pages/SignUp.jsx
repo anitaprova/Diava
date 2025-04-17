@@ -77,6 +77,7 @@ const SignUp = () => {
       return false;
     }
   };
+
   async function getAllUsers() {
     const { data, error } = await supabase.from("lists").select("*");
 
@@ -113,11 +114,25 @@ const SignUp = () => {
     const stat = [{ user_id }];
 
     try {
-      const { error } = await supabase.from("lists").insert(stat);
+      const { error } = await supabase.from("reading_statistics").insert(stat);
       if (error) throw error;
       console.log("Default stat created");
     } catch (err) {
       console.error("Error creating user's stats", err.message);
+    }
+  };
+
+  const createAchievement = async (user_id) => {
+    const achievement = [{ user_id, achievement_key: "login" }];
+
+    try {
+      const { error } = await supabase
+        .from("user_achievements")
+        .insert(achievement);
+      if (error) throw error;
+      console.log("Default achievement created");
+    } catch (err) {
+      console.error("Error creating user's achievement", err.message);
     }
   };
 
@@ -167,6 +182,7 @@ const SignUp = () => {
           await createUser(newUser);
           await createDefaultLists(user.uid);
           await createUserStatistic(user.uid);
+          await createAchievement(user.uid);
           console.log("New user created in Supabase");
         }
 

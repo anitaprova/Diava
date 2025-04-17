@@ -29,6 +29,34 @@ export default function Profile() {
   const [reviews, setReviews] = useState();
   const [ratings, setRatings] = useState();
   const [stats, setStats] = useState(null);
+  const [achievements, setAchievements] = useState();
+
+  const getAchievements = async () => {
+    try {
+      const user_id = auth.currentUser?.uid;
+      if (!user_id) return;
+
+      const { data, error } = await supabase
+        .from("user_achievements")
+        .select(
+          `
+          *, 
+          "achievements" (
+            *
+          )
+          `
+        )
+        .eq("user_id", user_id);
+
+      if (error) throw error;
+
+      setAchievements(data);
+      console.log(data);
+      console.log("Achievements:", data);
+    } catch (error) {
+      console.error("Error fetching achievements:", error.message);
+    }
+  };
 
   const getReadingStats = async () => {
     try {
@@ -44,8 +72,6 @@ export default function Profile() {
       if (error) throw error;
 
       setStats(data);
-      console.log(data);
-      console.log("Reading stats:", data);
     } catch (error) {
       console.error("Error fetching reading stats:", error.message);
     }
@@ -121,6 +147,7 @@ export default function Profile() {
     fetchUser();
     getGoals(); 
     getReadingStats();
+    getAchievements();
   }, []);
  
   return (
@@ -144,7 +171,10 @@ export default function Profile() {
             </Box>
           </Box>
 
-          <Chip icon={<Streak />} label="7 Day Streak" />
+          <Chip
+            icon={<Streak />}
+            label={stats?.streak + " Days" || 0 + " Days"}
+          />
         </Box>
 
         <Box className="flex gap-x-5 justify-around text-xl text-center">
@@ -220,6 +250,16 @@ export default function Profile() {
             hole={10}
             rows={[
               <div className="flex justify-around w-full">
+                {achievements?.map((achievement) => (
+                  <span className="flex flex-col items-center gap-2">
+                    <span>
+                      {achievement?.achievements.icon}
+                      <strong>{achievement?.achievements.title}</strong>
+                    </span>
+                    <span>{achievement?.achievements.description}</span>
+                  </span>
+                ))}
+
                 {/* <span className="flex flex-col items-center gap-2">
                   <span>
                     <Trophy /> <strong>Review Master</strong>
