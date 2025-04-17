@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import { Box, Button, Typography, Chip, Paper } from "@mui/material";
+import { Box, Typography, Chip } from "@mui/material";
 import {
   Whatshot as Streak,
   EmojiEvents as Trophy,
@@ -25,9 +25,6 @@ export default function Profile() {
   const [editIndex, setEditIndex] = useState(null);
   const [text, setText] = useState("");
   const [username, setUserName] = useState("");
-  const [booksRead, setBooksRead] = useState();
-  const [reviews, setReviews] = useState();
-  const [ratings, setRatings] = useState();
   const [stats, setStats] = useState(null);
   const [achievements, setAchievements] = useState();
 
@@ -46,13 +43,13 @@ export default function Profile() {
           )
           `
         )
-        .eq("user_id", user_id);
+        .eq("user_id", user_id)
+        .order("achieved_at", { ascending: false })
+        .limit(4);
 
       if (error) throw error;
 
       setAchievements(data);
-      console.log(data);
-      console.log("Achievements:", data);
     } catch (error) {
       console.error("Error fetching achievements:", error.message);
     }
@@ -250,42 +247,46 @@ export default function Profile() {
             hole={10}
             rows={[
               <div className="flex justify-around w-full">
-                {achievements?.map((achievement) => (
+                {/* {achievements?.map((achievement) => (
                   <span className="flex flex-col items-center gap-2">
                     <span>
-                      {achievement?.achievements.icon}
-                      <strong>{achievement?.achievements.title}</strong>
+                      {achievement?.achievements.icon} <strong>{achievement?.achievements.title}</strong>
                     </span>
                     <span>{achievement?.achievements.description}</span>
                   </span>
-                ))}
+                ))} */}
 
-                {/* <span className="flex flex-col items-center gap-2">
+                <span className="flex flex-col items-center gap-2">
                   <span>
-                    <Trophy /> <strong>Review Master</strong>
+                    {achievements?.[0]?.achievements?.icon}
+                    <strong>{achievements?.[0]?.achievements?.title}</strong>
                   </span>
-                  <span>Wrote 50 reviews</span>
+                  <span>{achievements?.[0]?.achievements?.description}</span>
                 </span>
                 <span className="flex flex-col items-center gap-2">
                   <span>
-                    <Star /> <strong>Genre Explorer</strong>
+                    {achievements?.[1]?.achievements?.icon}
+                    <strong>{achievements?.[1]?.achievements?.title}</strong>
                   </span>
-                  <span>Read 5 Different Genres</span>
+                  <span>{achievements?.[1]?.achievements?.description}</span>
                 </span>
               </div>,
+
               <div className="flex justify-around w-full">
                 <span className="flex flex-col items-center gap-2">
                   <span>
-                    🏃 <strong>Speed Reader</strong>
+                    {achievements?.[2]?.achievements?.icon}
+                    <strong>{achievements?.[2]?.achievements?.title}</strong>
                   </span>
-                  <span>Finish a book in a day</span>
+                  <span>{achievements?.[2]?.achievements?.description}</span>
                 </span>
                 <span className="flex flex-col items-center gap-2">
                   <span>
-                    🏆 <strong>Consistency Champion</strong>
+                    {achievements?.[3]?.achievements?.icon}
+                    <strong>{achievements?.[3]?.achievements?.title}</strong>
                   </span>
-                  <span>30-Day Reading Streak</span>
-                </span> */}
+                  <span>{achievements?.[3]?.achievements?.description}</span>
+                </span>
               </div>,
             ]}
           />
