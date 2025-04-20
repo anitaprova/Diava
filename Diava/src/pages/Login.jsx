@@ -54,6 +54,7 @@ const Login = () => {
       console.log("User logged in sucessfully.")
     }
     catch (error) {
+      alert("Either email or password was incorrect. Please try again.")
       console.log(error);
     }
 
