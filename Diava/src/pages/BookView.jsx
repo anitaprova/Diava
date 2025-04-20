@@ -83,7 +83,7 @@ export default function BookDetail() {
         }
   
         const bookData = {
-          list_id: selectedList.id,
+          list_id,
           google_books_id: book?.id,
           title: book?.volumeInfo?.title,
           thumbnail: book?.volumeInfo?.imageLinks?.thumbnail,
