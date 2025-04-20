@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
 import { FaGoogle, FaBook, FaGamepad, FaUsers } from "react-icons/fa";
 import "../styles/Auth.css";
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut, sendPasswordResetEmail } from "firebase/auth";
 import { auth, db } from "../firebase/firebase";
 import { getDoc, doc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
@@ -97,6 +97,22 @@ const Login = () => {
     }
   };
 
+  // Handle resetting user password
+  const handlePasswordReset = async () => {
+    try {
+      if (!formData.email || formData.email.length === 0) {
+        alert("Please enter your email to receive a password reset link.");
+        return;
+      }
+
+      await sendPasswordResetEmail(auth, formData.email);
+      alert("Check your email inbox to reset your password and try again.");
+    }
+    catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
     <div className="auth-container">
       {/* Left side - Brand and Features */}
@@ -145,7 +161,14 @@ const Login = () => {
               placeholder="Password"
               required
             />
-            <Link to="/forgot-password" className="forgot-password">
+            <Link 
+              to="#" 
+              onClick={(e) => {
+                e.preventDefault();
+                handlePasswordReset();
+              }}
+              className="forgot-password"
+            >
               Forgot password?
             </Link>
 
