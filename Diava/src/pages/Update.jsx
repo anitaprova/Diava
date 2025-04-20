@@ -96,24 +96,24 @@ export default function ToRead() {
             <Box className="flex gap-x-5 justify-around text-xl text-center">
               <Typography variant="h6">
                 Start Date
-                <Typography>03/05/2025</Typography>
+                <Typography component="div">03/05/2025</Typography>
               </Typography>
               <Typography variant="h6">
                 Target End Date
-                <Typography>03/21/2025</Typography>
+                <Typography component="div">03/21/2025</Typography>
               </Typography>
             </Box>
 
             <Box className="text-center">
               <Typography variant="h5">Average Stats</Typography>
               <Box className="flex gap-x-10 justify-center text-xl mt-5">
-                <Typography>
+                <Typography component="h6">
                   13
-                  <Typography>Pages Per Day</Typography>
+                  <Typography component="div">Pages Per Day</Typography>
                 </Typography>
-                <Typography>
+                <Typography component="h6">
                   55 minutes
-                  <Typography>Spend Per Day</Typography>
+                  <Typography component="div">Spend Per Day</Typography>
                 </Typography>
               </Box>
             </Box>
@@ -121,6 +121,7 @@ export default function ToRead() {
             <Button
               variant="dark"
               className="self-center w-fit"
+              sx={{ marginBottom: "3%" }}
               onClick={handleOpen}
             >
               Add Log
@@ -143,6 +144,8 @@ export default function ToRead() {
                       comment: formJson.notes,
                       rating: formJson.rating,
                     };
+
+                    console.log(newLog);
 
                     if (selectedLog) {
                       setLogs((prevLogs) =>
@@ -170,14 +173,14 @@ export default function ToRead() {
                     variant="outlined"
                     type="number"
                     name="page"
-                    value={selectedLog?.page || ""}
+                    defaultValue={selectedLog?.page}
                   />
                 </div>
 
                 <div className="gap-x-5">
                   <Typography>Session Rating</Typography>
                   <Rating
-                    value={selectedLog?.rating || 0}
+                    defaultValue={selectedLog?.rating || 0}
                     precision={0.5}
                     name="rating"
                     size="large"
@@ -194,7 +197,7 @@ export default function ToRead() {
                       size="small"
                       name="date"
                       type="date"
-                      value={
+                      defaultValue={
                         selectedLog?.date
                           ? new Date(selectedLog.date)
                               .toISOString()
@@ -214,7 +217,7 @@ export default function ToRead() {
                     minRows={8}
                     multiline
                     fullWidth
-                    value={selectedLog?.comment || ""}
+                    defaultValue={selectedLog?.comment || ""}
                   />
                 </div>
               </DialogContent>
@@ -227,7 +230,9 @@ export default function ToRead() {
           </Box>
         </div>
       ) : (
-        <Typography className="text-center mt-10">Loading book details...</Typography>
+        <Typography className="text-center mt-10">
+          Loading book details...
+        </Typography>
       )}
 
       <Box className="flex flex-col gap-y-10 mt-10">
@@ -253,13 +258,21 @@ export default function ToRead() {
               <Typography className="text-right text-grey">
                 {entry.date}
               </Typography>
-              <Box className="flex items-center space-x-2">
+              <Box>
                 <Button
                   size="small"
                   variant="coffee"
+                  sx={{ marginRight: "5px" }}
                   onClick={() => handleEditOpen(entry)}
                 >
                   Edit
+                </Button>
+                <Button
+                  variant="dark"
+                  size="small"
+                  onClick={() => setLogs(logs.filter((item) => item !== entry))}
+                >
+                  Delete
                 </Button>
               </Box>
             </Box>
