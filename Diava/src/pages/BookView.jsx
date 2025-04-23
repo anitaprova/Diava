@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { data, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { Typography, Box } from "@mui/material";
 import Button from "@mui/material/Button";
@@ -33,7 +33,7 @@ export default function BookDetail() {
   const genresRaw = book?.volumeInfo?.categories || [];
   const genres = [
     ...new Set(
-      genresRaw.flatMap((category) => category.replace(/\s+/g, "").split("/"))
+      genresRaw.flatMap((category) => category.split("/"))
     ),
   ];
   const [open, setOpen] = useState(false);
@@ -58,7 +58,7 @@ export default function BookDetail() {
         console.error("Could not find list_id:", listError?.message);
         return;
       }
-  
+      
       const list_id = listData.id;
       const { data: existingBooks, error: fetchError } = await supabase
         .from("list_books")
@@ -69,7 +69,7 @@ export default function BookDetail() {
         .eq("user_id", userId)
         .eq("google_books_id", book?.id)
         .in("lists.name", ["Currently Reading", "Want to Read"]);
-  
+
       if (fetchError) {
         console.error("Error checking existing books:", fetchError.message);
         return;
@@ -90,7 +90,7 @@ export default function BookDetail() {
           user_id: userId,
           author: book?.volumeInfo?.authors?.join(", "),
           pages: book?.volumeInfo?.pageCount,
-          genres: genres,
+          genres: genres?.map((genre) => genre?.replace(/\s+/g, "")),
         };
   
       const { error: insertError } = await supabase
@@ -124,6 +124,32 @@ export default function BookDetail() {
         .catch((error) => console.error("Error fetching books:", error));
     }
   }, [id]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const userId = auth.currentUser.uid;
+        const { data: existingBooks } = await supabase
+          .from("list_books")
+          .select(
+            `
+          *,
+          lists!list_id (name)
+        `
+          )
+          .eq("user_id", userId)
+          .eq("google_books_id", book?.id)
+          .in("lists.name", ["Currently Reading", "Want to Read"]);
+        setSelectedListName(existingBooks?.[0]?.lists?.name);
+      } catch (error) {
+        console.error(
+          "Error fetching list name:",
+          error.response?.data || error.message
+        );
+      }
+    };
+    fetchData();
+  }, [book?.id]);
   
   useEffect(() => {
     const fetchData = async () => {
@@ -194,6 +220,7 @@ export default function BookDetail() {
         fetchAverageRating();
       }
     }, [id]);
+
   return (
     <div className="font-merriweather mr-25 ml-25 mt-15 mb-15">
       {book && book.volumeInfo.imageLinks ? (
@@ -278,7 +305,7 @@ export default function BookDetail() {
           <div className="flex flex-col gap-y-5 h-fit w-fit">
             <ButtonGroup>
               <Button variant="soft" ref={anchorRef} onClick={handleToggle}>
-                {selectedListName || "Select List"}
+                {selectedListName}
               </Button>
               <Button
                 size="small"
