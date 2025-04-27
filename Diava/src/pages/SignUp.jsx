@@ -13,7 +13,6 @@ import { setDoc, doc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../client";
 
-
 const SignUp = () => {
   const [formData, setFormData] = useState({
     firstName: "",
@@ -78,23 +77,22 @@ const SignUp = () => {
       return false;
     }
   };
+
   async function getAllUsers() {
-    const { data, error } = await supabase
-      .from('lists')
-      .select('*');
-  
+    const { data, error } = await supabase.from("lists").select("*");
+
     if (error) {
-      console.error('Error fetching users:', error);
+      console.error("Error fetching users:", error);
       return [];
     }
-  
+
     return data;
   }
-  
 
-  getAllUsers().then(lists=> {
-    console.log('Users:', lists);
+  getAllUsers().then((lists) => {
+    console.log("Users:", lists);
   });
+
   const createDefaultLists = async (user_id) => {
     const defaultLists = [
       { user_id, name: "Want to Read" },
@@ -102,7 +100,7 @@ const SignUp = () => {
       { user_id, name: "Read" },
       { user_id, name: "Favorites" },
     ];
-  
+
     try {
       const { error } = await supabase.from("lists").insert(defaultLists);
       if (error) throw error;
@@ -112,28 +110,52 @@ const SignUp = () => {
     }
   };
 
-  const createUser = async (userData) => {
+  const createUserStatistic = async (user_id) => {
+    const stat = [{ user_id }];
+
+    try {
+      const { error } = await supabase.from("reading_statistics").insert(stat);
+      if (error) throw error;
+      console.log("Default stat created");
+    } catch (err) {
+      console.error("Error creating user's stats", err.message);
+    }
+  };
+
+  const createAchievement = async (user_id) => {
+    const achievement = [{ user_id, achievement_key: "login" }];
+
     try {
       const { error } = await supabase
-        .from("users") 
-        .insert([userData]);
-  
+        .from("user_achievements")
+        .insert(achievement);
+      if (error) throw error;
+      console.log("Default achievement created");
+    } catch (err) {
+      console.error("Error creating user's achievement", err.message);
+    }
+  };
+
+  const createUser = async (userData) => {
+    try {
+      const { error } = await supabase.from("users").insert([userData]);
+
       if (error) throw error;
     } catch (error) {
       console.error("Error creating user:", error.message);
     }
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     try {
       const usernameAvailabe = await checkUsernameExists(formData.username);
       if (usernameAvailabe) {
         alert("Username is already taken. Please pick another one.");
         return;
       }
-  
+
       await createUserWithEmailAndPassword(
         auth,
         formData.email,
@@ -142,7 +164,7 @@ const SignUp = () => {
         const user = userCredentials.user;
         await sendEmailVerification(user);
         alert("Go to your email and verify your account.");
-  
+
         if (user) {
           await setDoc(doc(db, "Users", user.uid), {
             email: user.email,
@@ -151,29 +173,30 @@ const SignUp = () => {
             username: formData.username,
             uid: user.uid,
           });
-  
+
           await setDoc(doc(db, "UserChats", user.uid), {});
           await setDoc(doc(db, "UserClubs", user.uid), {});
-  
+
           // Store username in database
           const newUser = { user_id: user.uid, name: formData.username };
-          await createUser(newUser); 
+          await createUser(newUser);
           await createDefaultLists(user.uid);
+          await createUserStatistic(user.uid);
+          await createAchievement(user.uid);
           console.log("New user created in Supabase");
         }
-  
+
         navigate("/login");
         console.log("User signed up successfully.");
       });
     } catch (error) {
       console.log(error.message);
     }
-  
+
     console.log("Form submitted:", formData);
     navigate("/");
   };
 
- 
   // Handle Google Sign Up
   const handleGoogleSignUp = () => {
     console.log("Google sign up clicked");

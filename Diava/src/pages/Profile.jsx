@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import { Box, Button, Typography, Chip, Paper } from "@mui/material";
+import { Box, Typography, Chip } from "@mui/material";
 import {
   Whatshot as Streak,
   EmojiEvents as Trophy,
@@ -13,9 +13,6 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import NotebookCard from "../components/Notebook";
 import { auth } from "../firebase/firebase";
-import { useNavigate } from "react-router-dom";
-import { signOut } from "firebase/auth";
-import axios from "axios"
 import { supabase } from "../client";
 
 export default function Profile() {
@@ -28,7 +25,54 @@ export default function Profile() {
   const [editIndex, setEditIndex] = useState(null);
   const [text, setText] = useState("");
   const [username, setUserName] = useState("");
-  
+  const [stats, setStats] = useState(null);
+  const [achievements, setAchievements] = useState();
+  console.log(stats);
+  const getAchievements = async () => {
+    try {
+      const user_id = auth.currentUser?.uid;
+      if (!user_id) return;
+
+      const { data, error } = await supabase
+        .from("user_achievements")
+        .select(
+          `
+          *, 
+          "achievements" (
+            *
+          )
+          `
+        )
+        .eq("user_id", user_id)
+        .order("achieved_at", { ascending: false })
+        .limit(4);
+
+      if (error) throw error;
+
+      setAchievements(data);
+    } catch (error) {
+      console.error("Error fetching achievements:", error.message);
+    }
+  };
+
+  const getReadingStats = async () => {
+    try {
+      const user_id = auth.currentUser?.uid;
+      if (!user_id) return;
+
+      const { data, error } = await supabase
+        .from("reading_statistics")
+        .select("*")
+        .eq("user_id", user_id)
+        .single();
+
+      if (error) throw error;
+
+      setStats(data);
+    } catch (error) {
+      console.error("Error fetching reading stats:", error.message);
+    }
+  };
 
   const getGoals = async () => {
     try {
@@ -99,6 +143,8 @@ export default function Profile() {
 
     fetchUser();
     getGoals(); 
+    getReadingStats();
+    getAchievements();
   }, []);
  
   return (
@@ -122,24 +168,31 @@ export default function Profile() {
             </Box>
           </Box>
 
-          <Chip icon={<Streak />} label="7 Day Streak" />
+          <Chip
+            icon={<Streak />}
+            label={stats?.streak + " Days" || 0 + " Days"}
+          />
         </Box>
 
         <Box className="flex gap-x-5 justify-around text-xl text-center">
           <Typography variant="h4">
-            123
+            {stats?.books_read || 0}
             <Typography variant="body2">Books Read</Typography>
           </Typography>
           <Typography variant="h4">
-            12,345
+            {stats?.pages_read || 0}
             <Typography variant="body2">Pages Read</Typography>
           </Typography>
           <Typography variant="h4">
-            80
+            {stats?.number_of_ratings || 0}
+            <Typography variant="body2">Ratings</Typography>
+          </Typography>
+          <Typography variant="h4">
+            {stats?.number_of_reviews || 0}
             <Typography variant="body2">Reviews</Typography>
           </Typography>
           <Typography variant="h4">
-            15
+            {stats?.number_of_badges || 0}
             <Typography variant="body2">Badges</Typography>
           </Typography>
         </Box>
@@ -188,7 +241,7 @@ export default function Profile() {
           ]}
         />
 
-        <div className="col-span-2">
+        <div className="col-span-2 h-full">
           <NotebookCard
             title="Recent Achievements"
             hole={10}
@@ -196,29 +249,34 @@ export default function Profile() {
               <div className="flex justify-around w-full">
                 <span className="flex flex-col items-center gap-2">
                   <span>
-                    <Trophy /> <strong>Review Master</strong>
+                    {achievements?.[0]?.achievements?.icon}{" "}
+                    <strong>{achievements?.[0]?.achievements?.title}</strong>
                   </span>
-                  <span>Wrote 50 reviews</span>
+                  <span>{achievements?.[0]?.achievements?.description}</span>
                 </span>
                 <span className="flex flex-col items-center gap-2">
                   <span>
-                    <Star /> <strong>Genre Explorer</strong>
+                    {achievements?.[1]?.achievements?.icon}{" "}
+                    <strong>{achievements?.[1]?.achievements?.title}</strong>
                   </span>
-                  <span>Read 5 Different Genres</span>
+                  <span>{achievements?.[1]?.achievements?.description}</span>
                 </span>
               </div>,
+
               <div className="flex justify-around w-full">
                 <span className="flex flex-col items-center gap-2">
                   <span>
-                    🏃 <strong>Speed Reader</strong>
+                    {achievements?.[2]?.achievements?.icon}{" "}
+                    <strong>{achievements?.[2]?.achievements?.title}</strong>
                   </span>
-                  <span>Finish a book in a day</span>
+                  <span>{achievements?.[2]?.achievements?.description}</span>
                 </span>
                 <span className="flex flex-col items-center gap-2">
                   <span>
-                    🏆 <strong>Consistency Champion</strong>
+                    {achievements?.[3]?.achievements?.icon}{" "}
+                    <strong>{achievements?.[3]?.achievements?.title}</strong>
                   </span>
-                  <span>30-Day Reading Streak</span>
+                  <span>{achievements?.[3]?.achievements?.description}</span>
                 </span>
               </div>,
             ]}
@@ -230,10 +288,12 @@ export default function Profile() {
           hole={6}
           rows={[
             <div className="flex justify-between w-full">
-              <span>Average Reading Time</span> <span>2 Days</span>
+              <span>Average Reading Time</span>{" "}
+              <span>{stats?.average_reading_time} Days</span>
             </div>,
             <div className="flex justify-between w-full">
-              <span>Favorite Genre</span> <span>Fiction</span>
+              <span>Favorite Genre</span>{" "}
+              <span>{stats?.favorite_genre || "Not calulated yet"}</span>
             </div>,
             <div className="flex justify-between w-full">
               <span>Longest Streak</span> <span>42 Days</span>
