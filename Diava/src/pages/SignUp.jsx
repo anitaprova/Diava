@@ -171,6 +171,7 @@ const SignUp = () => {
             firstName: formData.firstName,
             lastName: formData.lastName,
             username: formData.username,
+            fullName: formData.firstName.toLowerCase() + " " + formData.lastName.toLowerCase(),
             uid: user.uid,
           });
 
