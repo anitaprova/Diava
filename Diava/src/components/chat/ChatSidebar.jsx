@@ -1,6 +1,7 @@
 import React, {
   useState,
   useEffect,
+  useRef,
   forwardRef,
   useImperativeHandle,
 } from "react";
@@ -33,6 +34,9 @@ import { FaHashtag } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import {
   collection,
+  orderBy,
+  startAt,
+  endAt,
   query,
   where,
   getDocs,
@@ -130,10 +134,13 @@ const ChatSidebar = forwardRef(
     const [clubMenuAnchor, setClubMenuAnchor] = useState(null);
     const [showInput, setShowInput] = useState(false);
     const [inputText, setInputText] = useState("");
+    const [userSearchResults, setUserSearchResults] = useState([]);
+    const [clubSearchResults, setClubSearchResults] = useState([]);
     const [user, setUser] = useState(null);
     const { currentUser } = useAuth();
     const { dispatch } = useChat();
     const { currentClub, setCurrentChannel } = useClub();
+    const searchResultsRef = useRef(null);
 
     // Create Club Dialog state
     const [createClubOpen, setCreateClubOpen] = useState(false);
@@ -146,6 +153,23 @@ const ChatSidebar = forwardRef(
         setCreateClubOpen(open);
       },
     }));
+
+    // Check if user clicks outside of search event
+    useEffect(() => {
+      const handleClickOutside = (event) => {
+        if (searchResultsRef.current && !searchResultsRef.current.contains(event.target)) {
+          setUserSearchResults([]);
+          setClubSearchResults([]);
+          setInputText("");
+        }
+      };
+
+      document.addEventListener("mousedown", handleClickOutside);
+
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }, []);
 
     // Update tab value when viewMode changes
     useEffect(() => {
@@ -361,24 +385,42 @@ const ChatSidebar = forwardRef(
       if (inputText == "") return;
       
       try {
-        // Search by username
+        const inputLower = inputText.toLowerCase();
+
+        // Search by username or partial match
         const qUsername = query(
           collection(db, "Users"),
-          where("username", "==", inputText)
+          orderBy("username"),
+          startAt(inputText),
+          endAt(inputText + "\uf8ff")
         );
 
-        const qUsernameSnap = await getDocs(qUsername);
-        if (qUsernameSnap.empty) {
+        // Search by fullname or partial match
+        const qFullname = query(
+          collection(db, "Users"),
+          orderBy("fullname"),
+          startAt(inputLower),
+          endAt(inputLower + "\uf8ff")
+        );
+
+        // Get the query snapshots and combine them
+        const [qUsernameSnap, qFullnameSnap] = await Promise.all([
+          getDocs(qUsername),
+          getDocs(qFullname)
+        ]);
+
+        const allDocs = [...qUsernameSnap.docs, ...qFullnameSnap.docs];
+
+        if (allDocs.length === 0) {
           alert("User does not exist");
           return;
         }
 
-        qUsernameSnap.forEach((doc) => {
-          setUser(doc.data());
-          createPrivateChat(doc.data());
-        });
+        const users =allDocs.map(doc => ({id: doc.id, ...doc.data() }));
 
-        console.log("Successfully found user.");
+        setUserSearchResults(users);
+
+        console.log("Successfully found user(s).");
       } catch (error) {
         console.log(error);
       }
@@ -551,6 +593,46 @@ const ChatSidebar = forwardRef(
           ) : (
             // Show channels for the selected club
             renderChannels()
+          )}
+
+          {/* Search results overlayed on user chats */}
+          {userSearchResults.length > 0 && (
+            <Box
+              ref={searchResultsRef}
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                background: "white",
+                border: "1px solid #ccc",
+                maxHeight: "300px",
+                overflowY: "auto",
+                zIndex: 10,
+              }}
+            >
+              {userSearchResults.map((user) => (
+                <Box
+                  key={user.id}
+                  sx={{
+                    padding: "8px",
+                    borderBottom: "1px solid #eee",
+                    cursor: "pointer",
+                    "&:hover": { backgroundColor: "#f5f5f5" },
+                  }}
+                  onClick={() => {
+                    createPrivateChat(user);
+                    setUserSearchResults([]);
+                    setInputText("");
+                    setShowInput(false);
+                  }}
+                >
+                  <Typography variant="body1">
+                    {user.firstName} {user.lastName} ({user.username})
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
           )}
         </ContentContainer>
 
