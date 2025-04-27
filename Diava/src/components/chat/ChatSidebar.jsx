@@ -280,6 +280,7 @@ const ChatSidebar = forwardRef(
         clubname: newClubName,
         description: newClubDescription,
         createdBy: currentUser.uid,
+        createdByUsername: currentUserInfo.username,
         createdAt: serverTimestamp(),
         initial: newClubName[0].toUpperCase(),
         logo: {},
@@ -317,67 +318,78 @@ const ChatSidebar = forwardRef(
       if (inputText == "") return;
 
       try {
-        // Check if club exists
-        const clubsQ = query(
+        // Search by clubname or partial match
+        const qClubname = query(
           collection(db, "Clubs"),
-          where("uid", "==", inputText) // In the future "uid" should be replaced with "clubname"
+          orderBy("clubname"),
+          startAt(inputText),
+          endAt(inputText + "\uf8ff")
         );
   
-        const clubsDoc = await getDocs(clubsQ);
-        if (clubsDoc.empty) {
-          alert("Club does not exist");
+        const qClubnameSnap = await getDocs(qClubname);
+
+        const allDocs = qClubnameSnap.docs;
+
+        if (allDocs.length === 0) {
+          alert("Cannot find club(s).");
           return;
         }
-  
-        // Check if user is in club
-        const userClubsRef = doc(db, "UserClubs", currentUser.uid);
-        const userClubsDoc = await getDoc(userClubsRef);
 
-        if (userClubsDoc.exists()) {
-          const userClubsData = userClubsDoc.data();
-          const isInClub = inputText in userClubsData;
-        
-          if (isInClub) {
-            alert("You're already in the club.");
-            console.log("User is already in the club!");
-            return;
-          }
+        const clubs =allDocs.map(doc => ({id: doc.id, ...doc.data() }));
 
-          // Add user to club
+        setClubSearchResults(clubs);
 
-          // Get current user's username and club's name
-          const userRef = doc(db, "Users", currentUser.uid);
-          const userDoc = await getDoc(userRef);
-          const currentUserInfo = userDoc.data();
-          const clubRef = doc(db, "Clubs", inputText);
-          const clubDoc = await getDoc(clubRef);
-
-          await updateDoc(clubRef, {
-            [`members.${currentUser.uid}`]: {
-              username: currentUserInfo.username,
-              role: "Member",
-              joined: serverTimestamp()
-            }
-          });
-          await updateDoc(doc(db, "UserClubs", currentUser.uid), {
-            [inputText + ".clubInfo"]: {
-              clubuid: inputText,
-              clubname: clubDoc.data().clubname,
-              joined: serverTimestamp()
-            }
-          });
-
-          console.log("Successfully added user to club.");
-        }
-        else {
-          alert("Error finding user's UserClubs reference");
-          console.log("Error adding user to club.");
-          return;
-        }
-  
-        console.log("Successfully found club.");
-      } catch (error) {
+        console.log("Successfully found club(s).");
+      }
+      catch (error) {
         console.log(error);
+      }
+    };
+
+    const joinClub = async (club) => {
+      // Check if user is in club
+      const userClubsRef = doc(db, "UserClubs", currentUser.uid);
+      const userClubsDoc = await getDoc(userClubsRef);
+
+      if (userClubsDoc.exists()) {
+        const userClubsData = userClubsDoc.data();
+        const isInClub = club.uid in userClubsData;
+      
+        if (isInClub) {
+          alert("You're already in the club.");
+          console.log("User is already in the club!");
+          return;
+        }
+
+        // Add user to club
+
+        // Get current user's username and club's name
+        const userRef = doc(db, "Users", currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        const currentUserInfo = userDoc.data();
+        const clubRef = doc(db, "Clubs", club.uid);
+
+        await updateDoc(clubRef, {
+          [`members.${currentUser.uid}`]: {
+            username: currentUserInfo.username,
+            role: "Member",
+            joined: serverTimestamp()
+          }
+        });
+        await updateDoc(doc(db, "UserClubs", currentUser.uid), {
+          [club.uid + ".clubInfo"]: {
+            clubuid: club.uid,
+            clubname: club.clubname,
+            joined: serverTimestamp()
+          }
+        });
+
+        console.log("Successfully added user to club.");
+      }
+      else {
+        alert("Error finding user's UserClubs reference");
+        console.log("Error adding user to club.");
+        return;
       }
     };
 
@@ -593,6 +605,46 @@ const ChatSidebar = forwardRef(
           ) : (
             // Show channels for the selected club
             renderChannels()
+          )}
+
+          {/* Search results overlayed on club channels */}
+          {clubSearchResults.length > 0 && (
+            <Box
+              ref={searchResultsRef}
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                background: "white",
+                border: "1px solid #ccc",
+                maxHeight: "300px",
+                overflowY: "auto",
+                zIndex: 10,
+              }}
+            >
+              {clubSearchResults.map((club) => (
+                <Box
+                  key={club.id}
+                  sx={{
+                    padding: "8px",
+                    borderBottom: "1px solid #eee",
+                    cursor: "pointer",
+                    "&:hover": { backgroundColor: "#f5f5f5" },
+                  }}
+                  onClick={() => {
+                    joinClub(club);
+                    setClubSearchResults([]);
+                    setInputText("");
+                    setShowInput(false);
+                  }}
+                >
+                  <Typography variant="body1">
+                    {club.clubname} ({club.createdByUsername? club.createdByUsername : club.createdBy})
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
           )}
 
           {/* Search results overlayed on user chats */}
