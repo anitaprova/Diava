@@ -13,26 +13,23 @@ import { supabase } from "../client";
 export default function CustomList({ id, name, list_id }) {
   const navigate = useNavigate();
   const [currName, setCurrName] = useState(name);
-  const [books, setBooks] = useState([
-    {
-      id: "3vo0NQbIN2YC",
-      volumeInfo: {
-        title: "A Thousand Splendid Suns",
-        authors: ["Khaled Hosseini"],
-        publishedDate: "2008-09-18",
-        description:
-          "'A Thousand Splendid Suns' is a chronicle of Afghan history, and a deeply moving story of family, friendship, and the salvation to be found in love.",
-        pageCount: 419,
-        categories: ["Fiction / General"],
-        averageRating: 5,
-        imageLinks: {
-          thumbnail:
-            "http://books.google.com/books/content?id=3vo0NQbIN2YC&printsec=frontcover&img=1&zoom=1&edge=curl&imgtk=AFLRE71jVhNuWmSXykiQxuqgjmnYXICqQKU_xGWgCb8bckuuq2JGVGBufunssx_MEON9cwxnZSVZ7X7gf9btSeZttBEqmw5ANGbrJDpjA_PALpf5beNOV5Gm7NKhu6Tr_cbaajc60bIG&source=gbs_api",
-        },
-      },
-    },
-  ]);
+  const [books, setBooks] = useState([]);
+  useEffect(() => {
+    const fetchBooks = async () => {
+      const { data, error } = await supabase
+        .from("list_books")
+        .select("*")
+        .eq("list_id", list_id);
 
+      if (error) {
+        console.error("Error fetching books for list:", error);
+      } else {
+        setBooks(data || []);
+      }
+    };
+
+    fetchBooks();
+  }, [list_id]);
   const [open, setOpen] = useState(false);
   const handleOpen = () => {
     setOpen(true);
@@ -117,20 +114,21 @@ export default function CustomList({ id, name, list_id }) {
           </Button>
         </DialogActions>
       </Dialog>
-      <Box className="bg-vanilla shadow-custom w-full rounded-md">
-        {books?.length > 0 ? (
-          books?.map((book) => (
-            <div className="p-6">
-              <img
-                src={book?.volumeInfo?.imageLinks?.thumbnail}
-                onClick={() => navigate(`/book/${book.id}`)}
-                className="w-fit"
-              />
-            </div>
-          ))
-        ) : (
-          <p>Nothing added yet!</p>
-        )}
+      <Box className="bg-vanilla shadow-custom w-full rounded-md overflow-x-auto">
+        <Box className="flex gap-x-4 p-4">
+          {books?.length > 0 ? (
+            books.map((book, idx) => (
+          <img
+            key={idx}
+            src={book.thumbnail}
+            onClick={() => navigate(`/book/${book.google_books_id}`)}
+            className="w-[120px] h-auto cursor-pointer flex-shrink-0"
+          />
+        ))
+      ) : (
+      <p className="p-5">Nothing added yet!</p>
+       )}
+        </Box>
       </Box>
     </div>
   );
