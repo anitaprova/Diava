@@ -325,10 +325,22 @@ const ChatSidebar = forwardRef(
           startAt(inputText),
           endAt(inputText + "\uf8ff")
         );
-  
-        const qClubnameSnap = await getDocs(qClubname);
 
-        const allDocs = qClubnameSnap.docs;
+        // Search by username or partial match
+        const qUsername = query(
+          collection(db, "Clubs"),
+          orderBy("createdByUsername"),
+          startAt(inputText),
+          endAt(inputText + "\uf8ff")
+        );
+  
+        // Get the query snapshots and combine them
+        const [qClubnameSnap, qUsernameSnap] = await Promise.all([
+          getDocs(qClubname),
+          getDocs(qUsername)
+        ]);
+
+        const allDocs = [...qClubnameSnap.docs, ...qUsernameSnap.docs];
 
         if (allDocs.length === 0) {
           alert("Cannot find club(s).");
