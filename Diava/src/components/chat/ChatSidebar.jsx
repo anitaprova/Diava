@@ -361,19 +361,19 @@ const ChatSidebar = forwardRef(
       if (inputText == "") return;
       
       try {
-        // Check if user exists
-        const q = query(
+        // Search by username
+        const qUsername = query(
           collection(db, "Users"),
-          where("uid", "==", inputText) // In the future "uid" should be replaced with "username"
+          where("username", "==", inputText)
         );
 
-        const querySnapshot = await getDocs(q);
-        if (querySnapshot.empty) {
+        const qUsernameSnap = await getDocs(qUsername);
+        if (qUsernameSnap.empty) {
           alert("User does not exist");
           return;
         }
 
-        querySnapshot.forEach((doc) => {
+        qUsernameSnap.forEach((doc) => {
           setUser(doc.data());
           createPrivateChat(doc.data());
         });
