@@ -45,6 +45,8 @@ import {
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useChat } from "../../context/ChatContext";
+import { MdBarChart } from "react-icons/md";
+import { GiTrophyCup } from "react-icons/gi";
 
 const SidebarContainer = styled(Box)(({ theme }) => ({
   width: 300,
@@ -363,6 +365,54 @@ const ChatSidebar = forwardRef(
               </ChannelItem>
             ))}
           </List>
+
+          {/* Features Section */}
+          <Box sx={{ marginTop: "auto" }}>
+            <Divider />
+            <SectionHeader>Features</SectionHeader>
+            <List disablePadding>
+              <ChannelItem
+                onClick={() => {
+                  setSelectedChannel({
+                    id: "book-voting",
+                    name: "Book Voting",
+                    type: "feature",
+                    featureType: "bookVoting",
+                  });
+                }}
+                isSelected={selectedChannel?.id === "book-voting"}
+              >
+                <ChannelText
+                  primary={
+                    <>
+                      <MdBarChart size={16} />
+                      Book Voting
+                    </>
+                  }
+                />
+              </ChannelItem>
+              <ChannelItem
+                onClick={() => {
+                  setSelectedChannel({
+                    id: "challenges",
+                    name: "Challenges",
+                    type: "feature",
+                    featureType: "challenges",
+                  });
+                }}
+                isSelected={selectedChannel?.id === "challenges"}
+              >
+                <ChannelText
+                  primary={
+                    <>
+                      <GiTrophyCup size={16} />
+                      Challenges
+                    </>
+                  }
+                />
+              </ChannelItem>
+            </List>
+          </Box>
         </>
       );
     };

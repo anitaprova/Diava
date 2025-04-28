@@ -8,6 +8,8 @@ import { onSnapshot, doc } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
+import BookVoting from "../components/chat/BookVoting";
+import ClubChallenges from "../components/chat/ClubChallenges";
 
 const ChatContainer = styled("div")({
   display: "flex",
@@ -113,6 +115,31 @@ const ChatPage = () => {
     }
   };
 
+  const renderMainContent = () => {
+    if (viewMode === "clubs" && selectedChannel) {
+      // Check if it's a feature type channel
+      if (selectedChannel.type === "feature") {
+        if (selectedChannel.featureType === "bookVoting") {
+          return <BookVoting clubName={selectedClub?.name} />;
+        } else if (selectedChannel.featureType === "challenges") {
+          return <ClubChallenges clubName={selectedClub?.name} />;
+        }
+      }
+
+      // Regular channel
+      return (
+        <ChatWindow
+          selectedChat={selectedChannel}
+          isClubChannel={true}
+          clubName={selectedClub?.name}
+        />
+      );
+    } else {
+      // Direct messages
+      return <ChatWindow selectedChat={selectedChat} isClubChannel={false} />;
+    }
+  };
+
   return (
     <ChatContainer>
       {viewMode === "clubs" && (
@@ -138,11 +165,7 @@ const ChatPage = () => {
         onCreateClub={handleCreateClub}
       />
 
-      <ChatWindow
-        selectedChat={viewMode === "messages" ? selectedChat : selectedChannel}
-        isClubChannel={viewMode === "clubs"}
-        clubName={selectedClub?.name}
-      />
+      {renderMainContent()}
     </ChatContainer>
   );
 };
