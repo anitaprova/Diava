@@ -9,6 +9,12 @@ import { getDoc, setDoc, doc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 
 const GoogleSignUp = () => {
+  // State to manage form input values
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    username: "",
+  });
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const mainpage = "/profile";
@@ -19,13 +25,6 @@ const GoogleSignUp = () => {
       navigate(mainpage, { replace: true });
     }
   }, [currentUser, navigate]);
-
-  // State to manage form input values
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    username: "",
-  });
 
   // Handle input changes
   const handleChange = (e) => {
@@ -48,9 +47,7 @@ const GoogleSignUp = () => {
       if (result.user) {
         const userRef = doc(db, "Users", result.user.uid);
         const userDoc = await getDoc(userRef);
-    
-        // NOTE: Before creating doc username needs to be unique.
-        // This should be done through seperate database
+
         // Store user in database
         if (!userDoc.exists()) {
           await setDoc(doc(db, "Users", result.user.uid), {
@@ -62,6 +59,7 @@ const GoogleSignUp = () => {
           });
 
           await setDoc(doc(db, "UserChats", result.user.uid), {});
+          await setDoc(doc(db, "UserClubs", user.uid), {});
         }
     
           navigate(mainpage);

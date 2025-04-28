@@ -114,13 +114,14 @@ const SignUp = () => {
             uid: user.uid,
           });
 
-          await setDoc(doc(db, "UserChats", user.uid), {});
-
-          // Store username in postgres
-          const newUser = { name: formData.username };
-          createUser(newUser);
-          console.log("New user created");
-        }
+            await setDoc(doc(db, "UserChats", user.uid), {});
+            await setDoc(doc(db, "UserClubs", user.uid), {});
+            
+            // Store username in postgres
+            const newUser = {user_id: user.uid, name:formData.username};
+            createUser(newUser);
+            console.log("New user created");
+          }
 
         navigate("/login");
         console.log("User signed up successfully.");

@@ -1,107 +1,69 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Typography, Box, Button, TextField } from "@mui/material";
-import LinearProgress from "@mui/material/LinearProgress";
+import {
+  Typography,
+  Box,
+  Button,
+  TextField,
+  LinearProgress,
+  Dialog,
+  DialogTitle,
+  DialogActions,
+  DialogContent,
+} from "@mui/material";
 import Add from "@mui/icons-material/Add";
 import ArrowCircleRightIcon from "@mui/icons-material/ArrowCircleRight";
 import axios from "axios";
 import CustomList from "../components/CustomList";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
 import { auth } from "../firebase/firebase";
 
 export default function Home() {
   const navigate = useNavigate();
-  const [toRead, setToRead] = useState([
-    {
-      id: "3vo0NQbIN2YC",
-      volumeInfo: {
-        title: "A Thousand Splendid Suns",
-        authors: ["Khaled Hosseini"],
-        publishedDate: "2008-09-18",
-        description:
-          "'A Thousand Splendid Suns' is a chronicle of Afghan history, and a deeply moving story of family, friendship, and the salvation to be found in love.",
-        pageCount: 419,
-        categories: ["Fiction / General"],
-        averageRating: 5,
-        imageLinks: {
-          thumbnail:
-            "http://books.google.com/books/content?id=3vo0NQbIN2YC&printsec=frontcover&img=1&zoom=1&edge=curl&imgtk=AFLRE71jVhNuWmSXykiQxuqgjmnYXICqQKU_xGWgCb8bckuuq2JGVGBufunssx_MEON9cwxnZSVZ7X7gf9btSeZttBEqmw5ANGbrJDpjA_PALpf5beNOV5Gm7NKhu6Tr_cbaajc60bIG&source=gbs_api",
-        },
-      },
-    },
-    {
-      id: "3vo0NQbIN2YC",
-      volumeInfo: {
-        title: "A Thousand Splendid Suns",
-        authors: ["Khaled Hosseini"],
-        publishedDate: "2008-09-18",
-        description:
-          "'A Thousand Splendid Suns' is a chronicle of Afghan history, and a deeply moving story of family, friendship, and the salvation to be found in love.",
-        pageCount: 419,
-        categories: ["Fiction / General"],
-        averageRating: 5,
-        imageLinks: {
-          thumbnail:
-            "http://books.google.com/books/content?id=3vo0NQbIN2YC&printsec=frontcover&img=1&zoom=1&edge=curl&imgtk=AFLRE71jVhNuWmSXykiQxuqgjmnYXICqQKU_xGWgCb8bckuuq2JGVGBufunssx_MEON9cwxnZSVZ7X7gf9btSeZttBEqmw5ANGbrJDpjA_PALpf5beNOV5Gm7NKhu6Tr_cbaajc60bIG&source=gbs_api",
-        },
-      },
-    },
-    {
-      id: "3vo0NQbIN2YC",
-      volumeInfo: {
-        title: "A Thousand Splendid Suns",
-        authors: ["Khaled Hosseini"],
-        publishedDate: "2008-09-18",
-        description:
-          "'A Thousand Splendid Suns' is a chronicle of Afghan history, and a deeply moving story of family, friendship, and the salvation to be found in love.",
-        pageCount: 419,
-        categories: ["Fiction / General"],
-        averageRating: 5,
-        imageLinks: {
-          thumbnail:
-            "http://books.google.com/books/content?id=3vo0NQbIN2YC&printsec=frontcover&img=1&zoom=1&edge=curl&imgtk=AFLRE71jVhNuWmSXykiQxuqgjmnYXICqQKU_xGWgCb8bckuuq2JGVGBufunssx_MEON9cwxnZSVZ7X7gf9btSeZttBEqmw5ANGbrJDpjA_PALpf5beNOV5Gm7NKhu6Tr_cbaajc60bIG&source=gbs_api",
-        },
-      },
-    },
-  ]);
-  const [currentlyReading, setCurrentlyReading] = useState([""]);
-  const [recommendation, setRecommendation] = useState([""]);
+  const [toRead, setToRead] = useState([]);
+  const [currentlyReading, setCurrentlyReading] = useState([]);
+  const [recommendation, setRecommendation] = useState([]);
   const [userLists, setUserLists] = useState([]);
   const [open, setOpen] = useState(false);
-  const handleOpen = () => {
-    setOpen(true);
-  };
 
-  const handleClose = () => {
-    setOpen(false);
-  };
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
 
   const createList = async (listData) => {
     try {
       const response = await axios.post("http://localhost:5001/list", listData);
-      console.log(response);
-      setUserLists([...userLists, response.data]);
+      setUserLists((prev) => [...prev, response.data]);
     } catch (error) {
-      console.error("Error creating list:", error.response.data);
+      console.error("Error creating list:", error.response?.data || error.message);
     }
   };
-
   useEffect(() => {
-    axios
-      .get(`http://localhost:5001/list`, {
-        params: { user_id: auth.currentUser.uid }
-      })
-      .then((response) => setUserLists(response.data || []))
-      .catch((error) => console.error("Error fetching books:", error));
-  }, []);
+    const fetchData = async () => {
+      try {
+        const userId = auth.currentUser.uid;
+  
 
+        const crResponse = await axios.get(
+          `http://localhost:5001/list_books/${userId}/Currently Reading`
+        );
+        setCurrentlyReading(crResponse.data || []);
+  
+        // 2. Fetch books for "To Read"
+        const trResponse = await axios.get(
+          `http://localhost:5001/list_books/${userId}/Want To Read`
+        );
+        setToRead(trResponse.data || []);
+  
+      } catch (error) {
+        console.error("Error fetching list books:", error.response?.data || error.message);
+      }
+    };
+  
+    fetchData();
+  }, []);
   return (
     <div className="ml-50 mr-50 mt-10 mb-25 font-merriweather text-darkbrown">
       <div className="grid grid-flow-col grid-rows-4 gap-x-20">
+        {/* Currently Reading */}
         <div className="row-span-4">
           <Typography
             variant="h4"
@@ -112,20 +74,18 @@ export default function Home() {
           </Typography>
           <Box className="bg-sand flex flex-col justify-around rounded-lg h-full w-auto shadow-custom">
             {currentlyReading.length > 0 ? (
-              toRead.slice(0, 2).map((book) => (
-                <div className="flex mt-5 ml-5 gap-x-5">
+              currentlyReading.slice(0, 2).map((book, index) => (
+                <div className="flex mt-5 ml-5 gap-x-5" key={index}>
                   <img
-                    src={book.volumeInfo.imageLinks.thumbnail}
-                    onClick={() => navigate(`/book/${book.id}`)}
-                    className="w-fit"
+                    src={book.thumbnail}
+                    onClick={() => navigate(`/book/${book.google_book_id}`)}
+                    className="w-fit cursor-pointer"
                   />
                   <div className="space-y-5">
                     <div>
-                      <Typography variant="h6">
-                        {book.volumeInfo.title}
-                      </Typography>
+                      <Typography variant="h6">{book.title}</Typography>
                       <Typography variant="subtitle2">
-                        By {book.volumeInfo.authors}
+                        By {book.author}
                       </Typography>
                     </div>
                     <div className="space-y-5">
@@ -134,18 +94,19 @@ export default function Home() {
                         <Box sx={{ width: "100%", mr: 1 }}>
                           <LinearProgress
                             variant="determinate"
-                            value={60}
+                            value={book.progress || 60}
                             sx={{ height: "100%" }}
                           />
                         </Box>
                         <Box sx={{ minWidth: 35 }}>
-                          <Typography variant="body2">60%</Typography>
+                          <Typography variant="body2">
+                            {book.progress || 60}%
+                          </Typography>
                         </Box>
                       </div>
-
                       <Button
                         variant="dark"
-                        onClick={() => navigate(`/update/${book.id}`)}
+                        onClick={() => navigate(`/update/${book.google_book_id}`)}
                       >
                         Update Progress
                       </Button>
@@ -154,7 +115,7 @@ export default function Home() {
                 </div>
               ))
             ) : (
-              <p>Nothing added yet!</p>
+              <p className="p-5">Nothing added yet!</p>
             )}
             <Button
               variant="dark"
@@ -166,23 +127,23 @@ export default function Home() {
           </Box>
         </div>
 
+        {/* To Read */}
         <div className="col-span-1 row-span-2">
           <Typography variant="h4" onClick={() => navigate(`/toread`)}>
             To Read Pile
           </Typography>
           <Box className="bg-sand flex gap-x-2 rounded-lg overflow-x-auto shadow-custom">
             {toRead.length > 0 ? (
-              toRead
-                .slice(0, 3)
-                .map((book) => (
-                  <img
-                    src={book.volumeInfo.imageLinks.thumbnail}
-                    onClick={() => navigate(`/book/${book.id}`)}
-                    className="p-4"
-                  />
-                ))
+              toRead.slice(0, 3).map((book, index) => (
+                <img
+                  key={index}
+                  src={book.thumbnail}
+                  onClick={() => navigate(`/book/${book.google_book_id}`)}
+                  className="p-4 cursor-pointer"
+                />
+              ))
             ) : (
-              <p>Nothing added yet!</p>
+              <p className="p-4">Nothing added yet!</p>
             )}
             <ArrowCircleRightIcon
               size="large"
@@ -197,23 +158,23 @@ export default function Home() {
           </Box>
         </div>
 
+        {/* Recommendations */}
         <div className="col-span-1 row-span-2 mt-5">
           <Typography variant="h4" onClick={() => navigate(`/recommendations`)}>
             Recommendations
           </Typography>
           <Box className="bg-sand flex gap-x-2 rounded-lg overflow-x-auto shadow-custom">
             {recommendation.length > 0 ? (
-              toRead
-                .slice(0, 3)
-                .map((book) => (
-                  <img
-                    src={book.volumeInfo.imageLinks.thumbnail}
-                    onClick={() => navigate(`/book/${book.id}`)}
-                    className="p-4"
-                  />
-                ))
+              recommendation.slice(0, 3).map((book, index) => (
+                <img
+                  key={index}
+                  src={book.thumbnail}
+                  onClick={() => navigate(`/book/${book.google_book_id}`)}
+                  className="p-4 cursor-pointer"
+                />
+              ))
             ) : (
-              <p>Nothing added yet!</p>
+              <p className="p-4">Nothing added yet!</p>
             )}
             <ArrowCircleRightIcon
               size="large"
@@ -229,6 +190,7 @@ export default function Home() {
         </div>
       </div>
 
+      {/* User Lists */}
       <div className="mt-30">
         <Typography variant="h4" className="flex justify-between">
           Your Lists{" "}
@@ -245,10 +207,9 @@ export default function Home() {
                 event.preventDefault();
                 const formData = new FormData(event.currentTarget);
                 const formJson = Object.fromEntries(formData.entries());
-                const name = formJson.name;
                 createList({
                   user_id: auth.currentUser.uid,
-                  name: name,
+                  name: formJson.name,
                 });
                 handleClose();
               },
@@ -271,7 +232,12 @@ export default function Home() {
         <div>
           {userLists.length > 0 ? (
             userLists.map((list) => (
-              <CustomList id={list.id} name={list.name} />
+              <CustomList
+                key={list.id}
+                id={list.id}
+                name={list.name}
+                list_id={list.id}
+              />
             ))
           ) : (
             <p>Nothing added yet!</p>

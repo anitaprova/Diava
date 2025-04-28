@@ -64,7 +64,7 @@ const ClubSidebar = ({
   setSelectedClub,
   onCreateClub,
 }) => {
-  const handleCreateClub = () => {
+  const handleCreateClub = async () => {
     // Call the parent component's handler to show the create club dialog
     if (onCreateClub) {
       onCreateClub();
@@ -73,16 +73,20 @@ const ClubSidebar = ({
 
   return (
     <SidebarContainer>
-      {clubs.map((club) => (
-        <Tooltip key={club.id} title={club.name} placement="right">
-          <ClubAvatarWrapper
-            isSelected={selectedClub?.id === club.id}
-            onClick={() => setSelectedClub(club)}
-          >
-            <StyledAvatar initial={club.initial} />
-          </ClubAvatarWrapper>
-        </Tooltip>
-      ))}
+      {clubs ? (
+        Object.entries(clubs)
+        .sort((a, b) => a[1].clubInfo.joined - b[1].clubInfo.joined)
+          .map((club) => (
+            <Tooltip key={club[0]} title={club[1].clubInfo.clubname} placement="right">
+              <ClubAvatarWrapper
+                isSelected={selectedClub?.id === club[0]}
+                onClick={() => setSelectedClub(club[1])}
+              >
+                <StyledAvatar initial={club[1].clubInfo.clubname[0].toUpperCase()} />
+              </ClubAvatarWrapper>
+            </Tooltip>
+          ))
+      ) : null}
 
       {/* Add Club Button at the bottom */}
       <AddButtonContainer>

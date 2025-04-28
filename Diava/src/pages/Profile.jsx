@@ -27,6 +27,7 @@ export default function Profile() {
 
   const [editIndex, setEditIndex] = useState(null);
   const [text, setText] = useState("");
+  const [username, setUserName] = useState("");
   
   const getGoals = async () => {
     try {
@@ -55,35 +56,35 @@ export default function Profile() {
     if (event.key === "Enter" && editIndex !== null) {
       const updatedGoals = [...goals];
       updatedGoals[editIndex] = text;
-      const user_id = 12345678
+      const user_id = auth.currentUser.uid //update to current.auth user id
       const new_goal = {user_id, goal: text, is_completed: false};
       await createGoal(new_goal);
-      console.log('New goal added: ', createGoal.goalData);
+      console.log('New goal added: ', new_goal);
+      console.log(auth.currentUser.uid)
       setGoals(updatedGoals);
       setEditIndex(null);
       setText("");
     }
-  };
-  /*
-  const handleClick = () => {
-    setGoals([...goals, "Double click and enter a goal!"]);
-    console.log();
   };
 
-  const handleEnter = async (event) => {
-    if (event.key === "Enter" && editIndex !== null) {
-      const updatedGoals = [...goals];
-      updatedGoals[editIndex] = text;
-      const user_id = 12345678
-      const new_goal = {id: 26, user_id, goal: text, is_completed: false};
-      await createGoal(new_goal);
-      console.log('New goal added: ', createGoal.goalData);
-      setGoals(updatedGoals);
-      setEditIndex(null);
-      setText("");
-    }
-  };
-*/
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const user_id = auth.currentUser.uid;
+        if(!user_id){
+          console.log("UserID not found");
+        }
+
+        const response = await axios.get(`http://localhost:5001/users/${user_id}`);
+        setUserName(response.data.name);
+      } catch (error) {
+        console.error("Cannot fetch username: ", error);
+      }
+    };
+
+    fetchUser();
+  }, []);
+ 
   return (
     <Box className="flex flex-col">
       <Box className="bg-vanilla pb-5 text-darkbrown">
@@ -99,7 +100,7 @@ export default function Profile() {
             />
             <Box>
               <Typography variant="h4">
-                Hello, <span className="font-bold">Username!</span>
+                Hello, <span className="font-bold">{username}!</span>
               </Typography>
               <Typography variant="h7">Level 10</Typography>
             </Box>
