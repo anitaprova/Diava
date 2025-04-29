@@ -39,6 +39,7 @@ export default function Review() {
   const [tags, setTags] = useState([]);
   const [notes, setNotes] = useState("");
 
+
   const handleTags = (event) => {
     if (event.key === "Enter") {
       if (tags.includes(tagsText)) {
@@ -73,16 +74,14 @@ export default function Review() {
         user_id: userId,
         author: book?.volumeInfo?.authors?.join(", "),
         pages: book?.volumeInfo?.pageCount,
-        genres: genres.map( (genre) => genre.replace(/\s+/g, "")),
+        genres: genres.map((genre) => genre.trim()),
       };
 
       console.log(bookData);
 
       const { error: insertError } = await supabase
         .from("list_books")
-        .update([bookData])
-        .eq("user_id", userId)
-        .eq("google_books_id", book?.id);
+        .insert([bookData]);
 
       if (insertError) throw insertError;
     } catch (error) {
@@ -97,7 +96,7 @@ export default function Review() {
     try {
       const { data } = await supabase.from("reviews").insert(listData);
       addToReadList();
-      navigate(`/book/${book.id}`);
+      // navigate(`/book/${book.id}`);
     } catch (error) {
       console.error(
         "Error fetching list books:",

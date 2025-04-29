@@ -252,12 +252,12 @@ export default function BookDetail() {
             <Typography variant="body" className="flex flex-row gap-x-8">
               <Typography className="flex gap-x-2">
                 <AutoStoriesIcon fontSize="small" />
-                {book.volumeInfo.pageCount} pages
+                {book?.volumeInfo?.pageCount || 0} pages
               </Typography>
 
               <Typography className="flex gap-x-2">
                 <AccessTimeIcon fontSize="small" /> ~
-                {Math.floor(book.volumeInfo.pageCount / 0.6 / 60)} hrs
+                {Math.floor(book?.volumeInfo?.pageCount / 0.6 / 60) || 0} hrs
               </Typography>
             </Typography>
 
