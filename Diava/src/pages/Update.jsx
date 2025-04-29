@@ -7,12 +7,18 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import { auth } from "../firebase/firebase";
+import { supabase } from "../client";
 
 export default function ToRead() {
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [book, setBook] = useState(null);
+  const genresRaw = book?.volumeInfo?.categories || [];
+  const genres = [
+    ...new Set(genresRaw.flatMap((category) => category.split("/"))),
+  ];
   const [logs, setLogs] = useState([
     {
       page: "40",
@@ -71,6 +77,53 @@ export default function ToRead() {
     setOpen(false);
   };
 
+  const addToReadList = async () => {
+    try {
+      const userId = auth.currentUser.uid;
+      const { data: listData, error: listError } = await supabase
+        .from("lists")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("name", "Read")
+        .single();
+
+      if (listError || !listData) {
+        console.error("Could not find list_id:", listError?.message);
+        return;
+      }
+
+      const list_id = listData.id;
+      const bookData = {
+        list_id,
+        google_books_id: book?.id,
+        title: book?.volumeInfo?.title,
+        thumbnail: book?.volumeInfo?.imageLinks?.thumbnail,
+        user_id: userId,
+        author: book?.volumeInfo?.authors?.join(", "),
+        pages: book?.volumeInfo?.pageCount,
+        genres: genres.map((genre) => genre.trim()),
+      };
+
+      console.log(bookData);
+
+      const { error: insertError } = await supabase
+        .from("list_books")
+        .insert([bookData]);
+
+      if (insertError) throw insertError;
+    } catch (error) {
+      console.error(
+        "Error fetching list books:",
+        error.response?.data || error.message
+      );
+    }
+  };
+
+  const finishedBook = () => {
+    addToReadList();
+    navigate(`/review/${book.id}`);
+  };
+
   return (
     <div className="font-merriweather ml-50 mr-50 mt-10 mb-10">
       {book && book.volumeInfo ? (
@@ -118,13 +171,24 @@ export default function ToRead() {
               </Box>
             </Box>
 
-            <Button
-              variant="dark"
-              className="self-center w-fit"
-              onClick={handleOpen}
-            >
-              Add Log
-            </Button>
+            <Box className="flex w-full justify-center mb-5">
+              <Button
+                variant="dark"
+                className="self-center w-fit"
+                sx={{ marginRight: "1%" }}
+                onClick={handleOpen}
+              >
+                Add Log
+              </Button>
+
+              <Button
+                variant="dark"
+                className="self-center w-fit"
+                onClick={finishedBook}
+              >
+                Finished?
+              </Button>
+            </Box>
 
             <Dialog
               open={open}
@@ -227,7 +291,9 @@ export default function ToRead() {
           </Box>
         </div>
       ) : (
-        <Typography className="text-center mt-10">Loading book details...</Typography>
+        <Typography className="text-center mt-10">
+          Loading book details...
+        </Typography>
       )}
 
       <Box className="flex flex-col gap-y-10 mt-10">
