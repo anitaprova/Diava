@@ -101,16 +101,14 @@ export default function ToRead() {
         user_id: userId,
         author: book?.volumeInfo?.authors?.join(", "),
         pages: book?.volumeInfo?.pageCount,
-        genres: genres.map((genre) => genre.replace(/\s+/g, "")),
+        genres: genres.map((genre) => genre.trim()),
       };
 
       console.log(bookData);
 
       const { error: insertError } = await supabase
         .from("list_books")
-        .update([bookData])
-        .eq("user_id", userId)
-        .eq("google_books_id", book?.id);
+        .insert([bookData]);
 
       if (insertError) throw insertError;
     } catch (error) {
