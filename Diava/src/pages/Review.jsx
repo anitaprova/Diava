@@ -141,7 +141,7 @@ export default function Review() {
       if(favorite){
         addToFavorites();
       }
-      // navigate(`/book/${book.id}`);
+      navigate(`/book/${book.id}`);
     } catch (error) {
       console.error(
         "Error fetching list books:",
