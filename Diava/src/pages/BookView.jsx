@@ -33,7 +33,7 @@ export default function BookDetail() {
   const genresRaw = book?.volumeInfo?.categories || [];
   const genres = [
     ...new Set(
-      genresRaw.flatMap((category) => category.replace(/\s+/g, "").split("/"))
+      genresRaw.flatMap((category) => category.split("/"))
     ),
   ];
   const [open, setOpen] = useState(false);
