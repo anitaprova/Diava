@@ -66,8 +66,8 @@ export default function Home() {
         name
                   )
       `)
-  .eq("lists.user_id", userId)
-  .eq("lists.name", "Want to Read");
+        .eq("lists.user_id", userId)
+        .eq("lists.name", "Want to Read");
   
         if (trError) throw trError;
         setToRead(trBooks || []);
