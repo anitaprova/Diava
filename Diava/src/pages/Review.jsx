@@ -38,7 +38,7 @@ export default function Review() {
   const [tagsText, setTagsText] = useState("");
   const [tags, setTags] = useState([]);
   const [notes, setNotes] = useState("");
-
+  const [favorite, setFavorite] = useState(false);
 
   const handleTags = (event) => {
     if (event.key === "Enter") {
@@ -47,6 +47,48 @@ export default function Review() {
         return;
       }
       setTags([...tags, tagsText]);
+    }
+  };
+
+  const addToFavorites = async () => {
+    try {
+      const userId = auth.currentUser.uid;
+      const { data: listData, error: listError } = await supabase
+        .from("lists")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("name", "Favorites")
+        .single();
+
+      if (listError || !listData) {
+        console.error("Could not find list_id:", listError?.message);
+        return;
+      }
+
+      const list_id = listData.id;
+      const bookData = {
+        list_id,
+        google_books_id: book?.id,
+        title: book?.volumeInfo?.title,
+        thumbnail: book?.volumeInfo?.imageLinks?.thumbnail,
+        user_id: userId,
+        author: book?.volumeInfo?.authors?.join(", "),
+        pages: book?.volumeInfo?.pageCount,
+        genres: genres.map((genre) => genre.trim()),
+      };
+
+      console.log(bookData);
+
+      const { error: insertError } = await supabase
+        .from("list_books")
+        .insert([bookData]);
+
+      if (insertError) throw insertError;
+    } catch (error) {
+      console.error(
+        "Error fetching list books:",
+        error.response?.data || error.message
+      );
     }
   };
 
@@ -96,6 +138,9 @@ export default function Review() {
     try {
       const { data } = await supabase.from("reviews").insert(listData);
       addToReadList();
+      if(favorite){
+        addToFavorites();
+      }
       // navigate(`/book/${book.id}`);
     } catch (error) {
       console.error(
@@ -257,6 +302,7 @@ export default function Review() {
                 emptyIcon={<FavoriteBorderIcon fontSize="inherit" />}
                 max={1}
                 variant="heart"
+                onChange={() => favorite ? setFavorite(false) : setFavorite(true)}
               />{" "}
               <p className="text-md ">Add to Favorites</p>
             </div>
