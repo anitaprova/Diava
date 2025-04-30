@@ -25,6 +25,7 @@ export default function Home() {
   const [recommendation, setRecommendation] = useState([]);
   const [userLists, setUserLists] = useState([]);
   const [open, setOpen] = useState(false);
+  const [currentProgress, setCurrentProgress] = useState([]);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -78,11 +79,9 @@ export default function Home() {
           .eq("user_id", userId);
   
         if (listError) throw listError;
-  
         const customLists = (allLists || []).filter(
           (l) => l.name !== "Currently Reading" && l.name !== "Want to Read"
         );
-  
         setUserLists(customLists);
       } catch (error) {
         console.error("Error fetching list data:", error.message);
@@ -91,6 +90,43 @@ export default function Home() {
   
     fetchData();
   }, []);
+
+ 
+  useEffect(() => {
+    const fetchProgressData = async () => {
+      try {
+        const userId = auth.currentUser?.uid;
+        if (!userId || currentlyReading.length === 0) return;
+  
+        const bookIds = currentlyReading.map(book => book.google_books_id);
+  
+        const { data, error } = await supabase
+          .from("progress")
+          .select("google_books_id, progress")
+          .eq("user_id", userId)
+          .in("google_books_id", bookIds);
+  
+        if (error) throw error;
+  
+        const progressMap = data.reduce((acc, { google_books_id, progress }) => {
+          acc[google_books_id] = Math.max(acc[google_books_id] || 0, progress);
+          return acc;
+        }, {});
+  
+        const progressArr = Object.entries(progressMap).map(
+          ([google_books_id, progress]) => ({ google_books_id, progress })
+        );
+        setCurrentProgress(progressArr);
+      } catch (error) {
+        console.error("Error fetching progress data:", error.message);
+      }
+    };
+  
+    fetchProgressData();
+  }, [currentlyReading]);
+  
+  
+  
   return (
     <div className="ml-50 mr-50 mt-10 mb-25 font-merriweather text-darkbrown">
       <div className="grid grid-flow-col grid-rows-4 gap-x-20">
@@ -101,52 +137,53 @@ export default function Home() {
             className="w-full"
             onClick={() => navigate(`/currentlyreading`)}
           >
-            Currently Reading
+             Currently Reading
           </Typography>
           <Box className="bg-sand flex flex-col justify-around rounded-lg h-full w-auto shadow-custom">
             {currentlyReading.length > 0 ? (
-              currentlyReading.slice(0, 2).map((book, index) => (
-                <div className="flex mt-5 ml-5 gap-x-5" key={index}>
-                  <img
-                    src={book.thumbnail}
-                    onClick={() => navigate(`/book/${book.google_books_id}`)}
-                    className="w-fit cursor-pointer"
-                  />
-                  <div className="space-y-5">
-                    <div>
-                      <Typography variant="h6">{book.title}</Typography>
-                      <Typography variant="subtitle2">
-                        By: {book.author}
-                      </Typography>
-                    </div>
+              currentlyReading.slice(0, 2).map((book, index) => {
+                const progressData = currentProgress.find(
+                  (progress) => progress.google_books_id === book.google_books_id
+                );
+                const progress = progressData ? progressData.progress : 0; 
+
+                return (
+                  <div className="flex mt-5 ml-5 gap-x-5" key={index}>
+                    <img
+                      src={book.thumbnail}
+                      onClick={() => navigate(`/book/${book.google_books_id}`)}
+                      className="w-fit cursor-pointer"
+                    />
                     <div className="space-y-5">
-                      <Typography>Reading Progress:</Typography>
-                      <div className="flex align-center">
-                        <Box sx={{ width: "100%", mr: 1 }}>
-                          <LinearProgress
-                            variant="determinate"
-                            value={book.progress || 60}
-                            sx={{ height: "100%" }}
-                          />
-                        </Box>
-                        <Box sx={{ minWidth: 35 }}>
-                          <Typography variant="body2">
-                            {book.progress || 60}%
-                          </Typography>
-                        </Box>
+                      <div>
+                        <Typography variant="h6">{book.title}</Typography>
+                        <Typography variant="subtitle2">By: {book.author}</Typography>
                       </div>
-                      <Button
-                        variant="dark"
-                        onClick={() =>
-                          navigate(`/update/${book.google_books_id}`)
-                        }
-                      >
-                        Update Progress
-                      </Button>
+                      <div className="space-y-5">
+                        <Typography>Reading Progress:</Typography>
+                        <div className="flex align-center w-[300px]">
+                          <Box sx={{ width: '80%', mr: 1 }}>
+                            <LinearProgress
+                              variant="determinate"
+                              value={progress || 0}
+                              sx={{ height: 20 }}
+                            />
+                          </Box>
+                          <Box sx={{ minWidth: 35 }}>
+                            <Typography variant="body2">{progress || 0}%</Typography>
+                          </Box>
+                        </div>
+                        <Button
+                          variant="dark"
+                          onClick={() => navigate(`/update/${book.google_books_id}`)}
+                        >
+                          Update Progress
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <p className="p-5">Nothing added yet!</p>
             )}
