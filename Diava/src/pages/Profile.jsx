@@ -8,6 +8,7 @@ import {
   WorkspacePremium as Medal,
   Add as Add,
 } from "@mui/icons-material";
+import ImportContactsIcon from "@mui/icons-material/ImportContacts";
 import CloseIcon from "@mui/icons-material/Close";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
@@ -29,26 +30,26 @@ export default function Profile() {
   const [achievements, setAchievements] = useState();
   const [badge, setBadge] = useState("");
   const [nextBadge, setNextBadge] = useState("");
-
+  
   const getNextMileStone = async () => {
     const curr = badge[0]?.tier;
     if (curr == "Copper") {
-      setNextBadge( "25 Books - Silver Reader");
+      setNextBadge("25 Books-Silver Reader");
     } else if (curr == "Silver") {
-      setNextBadge("50 Books - Gold Reader");
+      setNextBadge("50 Books-Gold Reader");
     } else if (curr == "Gold") {
-      setNextBadge("100 Books - Platinum Reader");
+      setNextBadge("100 Books-Platinum Reader");
     } else if (curr == "Platinum") {
-      setNextBadge( "150 Books - Diamond Reader");
-    } else {
-      setNextBadge( "You have achieved the highest badge!");
+      setNextBadge("150 Books-Diamond Reader");
+    } else if (curr == "Diamond") {
+      setNextBadge("You have achieved the highest badge!");
     }
   };
-  
-  const getBadges = async () =>{
-    try{
+
+  const getBadges = async () => {
+    try {
       if (!stats?.current_badge) return;
-      
+
       const { data, error } = await supabase
         .from("badges")
         .select()
@@ -57,8 +58,7 @@ export default function Profile() {
       if (error) throw error;
 
       setBadge(data);
-    }
-    catch (error){
+    } catch (error) {
       console.error("Error fetching badge:", error.message);
     }
   };
@@ -177,7 +177,7 @@ export default function Profile() {
     };
 
     fetchUser();
-    getGoals(); 
+    getGoals();
     getReadingStats();
     getAchievements();
   }, []);
@@ -187,9 +187,8 @@ export default function Profile() {
   }, [stats]);
 
   useEffect(() => {
-    getNextMileStone()
+    getNextMileStone();
   }, [badge]);
-
 
   return (
     <Box className="flex flex-col">
@@ -245,20 +244,24 @@ export default function Profile() {
             hole={10}
             rows={[
               <div className="flex justify-between w-full">
-                <span className="fgrow">2025 Reading Challenge</span>{" "}
-                <span>24/50</span>
-              </div>,
-              <div className="flex justify-between w-full">
                 <span>
-                  <TrendingUpIcon /> <span>Current Pace</span>
+                  <TrendingUpIcon /> <span>Current Level Pace</span>
                 </span>
                 <span>2 Books Ahead of Schedule</span>
               </div>,
               <div className="flex justify-between w-full">
                 <span>
-                  <TrackChangesIcon /> <span>Next Milestone</span>
+                  <ImportContactsIcon /> Your Reading Progress
                 </span>
-                <span>{nextBadge || "10 Books - Copper Reader"}</span>
+                <span>
+                  {stats?.books_read}/{nextBadge.split("-")[0] || "10 Books"}
+                </span>
+              </div>,
+              <div className="flex justify-between w-full">
+                <span>
+                  <TrackChangesIcon /> <span>Next Badge Milestone</span>
+                </span>
+                <span>{nextBadge.split("-")[1] || "Copper Reader"}</span>
               </div>,
             ]}
           />
@@ -269,9 +272,15 @@ export default function Profile() {
           hole={6}
           rows={[
             <div className="flex justify-center w-full">
-              <div className="bg-vanilla rounded-lg p-3 flex flex-col items-center">
-                <Medal fontSize="large" />
-                {badge?.[0]?.tier || "No badges earned yet"}
+              <div className="flex flex-col items-center text-lg">
+                {badge ? (
+                  <span className="bg-vanilla rounded-lg p-5">
+                    <Medal fontSize="large" />
+                    {badge?.[0]?.tier}
+                  </span>
+                ) : (
+                  <span className="rounded-lg p-5">No badges earned yet</span>
+                )}
               </div>
             </div>,
           ]}
