@@ -18,6 +18,8 @@ export default function ToRead() {
   const [selectedLog, setSelectedLog] = useState(null);
   const [open, setOpen] = useState(false);
   const userId = auth.currentUser.uid
+
+  
   useEffect(() => {
     const fetchBook = async () => {
       try {
@@ -96,31 +98,57 @@ export default function ToRead() {
       progress: progressVal,
     };
     
+    //add a function responsible for when a log is edited, use supabase update function to edit in line
     try {
       const userId = auth.currentUser.uid
       if (!userId) return;
-      const { data, error } = await supabase.from('progress').insert([
-        {
-          user_id: userId,
+      if(selectedLog) 
+      {
+        const {data, error} = await supabase
+        .from('progress')
+        .update({
+          created_at: date,
           comment: comment,
           rating: rating,
           page: page,
           google_books_id:id,
           total_pages:totalPages,
           progress: progressVal,
-        },
-      ]);
-      console.log(progressVal);
-      if (error){
-        throw error;
+        })
+        .eq("id", selectedLog.id)
+        .eq("user_id", userId);
+
+        if (error) throw error;
+        setLogs((prevState) =>
+          prevState.map((log) =>
+            log.id === selectedLog.id
+              ? { ...log, page, created_at: date, comment, rating, progress: progressVal }
+              : log
+          )
+        );
+      } else {
+        const { data, error } = await supabase.from('progress').insert([
+          {
+            user_id: userId,
+            created_at: date,
+            comment: comment,
+            rating: rating,
+            page: page,
+            google_books_id:id,
+            total_pages:totalPages,
+            progress: progressVal,
+          },
+        ]);
+        console.log(progressVal);
+        if (error) throw error;
+        console.log("New log inserted into database:" , data);
+        setLogs((prevState) => [newLog, ...prevState]);
       }
-      console.log("New log inserted into database:" , data);
-      setLogs((prevState) => [newLog, ...prevState]);
       handleClose();
     } catch (error) {
       console.error("Error inserting current user's progress: ", error);
     }
-  }
+  };
   const addToReadList = async () => {
     try {
       const userId = auth.currentUser.uid;
@@ -335,7 +363,7 @@ export default function ToRead() {
   
             <Box className="flex flex-col items-end">
               <Typography className="text-right text-grey">
-                {entry.created_at || 'N/A'}
+              {entry.created_at}
               </Typography>
               <Box className="flex items-center space-x-2">
                 <Button

@@ -138,7 +138,7 @@ function App() {
             }
           />
           <Route
-            path="/list/:name"
+            path="/list/:id"
             element={
               <ProtectedRoute>
                 <CustomList />

@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Typography, Box, Button } from "@mui/material";
 import LinearProgress from "@mui/material/LinearProgress";
-import { auth } from "../firebase/firebase"; // Assuming you're using Firebase for auth
-import { supabase } from "../client"; // Assuming you're using Supabase for data storage
+import { auth } from "../firebase/firebase"; 
+import { supabase } from "../client"; 
 
 export default function CurrentlyReading() {
   const navigate = useNavigate();
@@ -15,8 +15,6 @@ export default function CurrentlyReading() {
       try {
         const userId = auth.currentUser?.uid;
         if (!userId) return;
-
-        // Fetch books from the "Currently Reading" list
         const { data, error } = await supabase
           .from("list_books")
           .select(`
@@ -89,7 +87,7 @@ export default function CurrentlyReading() {
                     <Box sx={{ width: "100%", mr: 1 }}>
                       <LinearProgress
                         variant="determinate"
-                        value={book.progress || 0} // Default to 0 if progress is undefined
+                        value={book.progress || 0} 
                         sx={{ height: "100%" }}
                       />
                     </Box>
