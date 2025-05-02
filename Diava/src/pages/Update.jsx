@@ -17,9 +17,12 @@ export default function ToRead() {
   const [totalPages, setTotalPages] = useState(0);
   const [selectedLog, setSelectedLog] = useState(null);
   const [open, setOpen] = useState(false);
-  const userId = auth.currentUser.uid
+  const userId = auth.currentUser.uid;
+  const genresRaw = book?.volumeInfo?.categories || [];
+  const genres = [
+    ...new Set(genresRaw.flatMap((category) => category.split("/"))),
+  ];
 
-  
   useEffect(() => {
     const fetchBook = async () => {
       try {
@@ -28,7 +31,7 @@ export default function ToRead() {
         );
         const data = await res.json();
         const totalpages = data.volumeInfo?.pageCount || 0;
-        setTotalPages(totalpages); 
+        setTotalPages(totalpages);
         setBook(data);
       } catch (error) {
         console.error("Failed to fetch book:", error);
@@ -49,7 +52,7 @@ export default function ToRead() {
             .select("*")
             .eq("user_id", userId)
             .eq("google_books_id", id)
-            .order("created_at", { ascending: false }); 
+            .order("created_at", { ascending: false });
 
           if (error) {
             throw error;
@@ -64,7 +67,7 @@ export default function ToRead() {
       fetchLogs();
     }
   }, [userId, id]);
-  
+
   const handleOpen = () => {
     setSelectedLog(null);
     setOpen(true);
@@ -85,63 +88,70 @@ export default function ToRead() {
     //convert form input to json format
     const formData = new FormData(event.currentTarget);
     const formJson = Object.fromEntries(formData.entries());
-    const page = parseInt(formJson.page)
+    const page = parseInt(formJson.page);
     const date = formJson.date;
     const comment = formJson.notes;
     const rating = formJson.rating;
 
-    const progressVal = totalPages ? Math.round((page / totalPages) * 100) : 0
+    const progressVal = totalPages ? Math.round((page / totalPages) * 100) : 0;
     const newLog = {
       page,
       date,
-      comment, rating,
+      comment,
+      rating,
       progress: progressVal,
     };
-    
+
     //add a function responsible for when a log is edited, use supabase update function to edit in line
     try {
-      const userId = auth.currentUser.uid
+      const userId = auth.currentUser.uid;
       if (!userId) return;
-      if(selectedLog) 
-      {
-        const {data, error} = await supabase
-        .from('progress')
-        .update({
-          created_at: date,
-          comment: comment,
-          rating: rating,
-          page: page,
-          google_books_id:id,
-          total_pages:totalPages,
-          progress: progressVal,
-        })
-        .eq("id", selectedLog.id)
-        .eq("user_id", userId);
+      if (selectedLog) {
+        const { data, error } = await supabase
+          .from("progress")
+          .update({
+            created_at: date,
+            comment: comment,
+            rating: rating,
+            page: page,
+            google_books_id: id,
+            total_pages: totalPages,
+            progress: progressVal,
+          })
+          .eq("id", selectedLog.id)
+          .eq("user_id", userId);
 
         if (error) throw error;
         setLogs((prevState) =>
           prevState.map((log) =>
             log.id === selectedLog.id
-              ? { ...log, page, created_at: date, comment, rating, progress: progressVal }
+              ? {
+                  ...log,
+                  page,
+                  created_at: date,
+                  comment,
+                  rating,
+                  progress: progressVal,
+                }
               : log
           )
         );
       } else {
-        const { data, error } = await supabase.from('progress').insert([
+        const { data, error } = await supabase.from("progress").insert([
           {
             user_id: userId,
             created_at: date,
             comment: comment,
             rating: rating,
             page: page,
-            google_books_id:id,
-            total_pages:totalPages,
+            google_books_id: id,
+            total_pages: totalPages,
             progress: progressVal,
           },
         ]);
         console.log(progressVal);
         if (error) throw error;
-        console.log("New log inserted into database:" , data);
+        console.log("New log inserted into database:", data);
         setLogs((prevState) => [newLog, ...prevState]);
       }
       handleClose();
@@ -180,7 +190,9 @@ export default function ToRead() {
 
       const { error: insertError } = await supabase
         .from("list_books")
-        .insert([bookData]);
+        .update([bookData])
+        .eq("user_id", userId)
+        .eq("google_books_id", book.id);
 
       if (insertError) throw insertError;
     } catch (error) {
@@ -208,7 +220,7 @@ export default function ToRead() {
               />
             )}
           </div>
-  
+
           <Box className="bg-vanilla rounded-lg col-span-4 flex flex-col gap-y-10 shadow-small">
             <Box className="text-center mt-5">
               <Typography variant="h4">{book.volumeInfo.title}</Typography>
@@ -219,7 +231,7 @@ export default function ToRead() {
                 Total Pages: {totalPages}
               </Typography>
             </Box>
-  
+
             <Box className="flex gap-x-5 justify-around text-xl text-center">
               <Typography variant="h6">
                 Start Date
@@ -230,7 +242,7 @@ export default function ToRead() {
                 <Typography>03/21/2025</Typography>
               </Typography>
             </Box>
-  
+
             <Box className="text-center">
               <Typography variant="h5">Average Stats</Typography>
               <Box className="flex gap-x-10 justify-center text-xl mt-5">
@@ -244,7 +256,7 @@ export default function ToRead() {
                 </Typography>
               </Box>
             </Box>
-  
+
             <Box className="flex w-full justify-center mb-5">
               <Button
                 variant="dark"
@@ -262,7 +274,7 @@ export default function ToRead() {
                 Finished?
               </Button>
             </Box>
-  
+
             <Dialog
               open={open}
               onClose={handleClose}
@@ -274,7 +286,9 @@ export default function ToRead() {
                 },
               }}
             >
-              <DialogTitle>{selectedLog ? "Edit Log" : "Add a New Log"}</DialogTitle>
+              <DialogTitle>
+                {selectedLog ? "Edit Log" : "Add a New Log"}
+              </DialogTitle>
               <DialogContent className="space-y-5">
                 <div>
                   <Typography>On Page</Typography>
@@ -287,7 +301,7 @@ export default function ToRead() {
                     fullWidth
                   />
                 </div>
-  
+
                 <div>
                   <Typography>Session Rating</Typography>
                   <Rating
@@ -297,7 +311,7 @@ export default function ToRead() {
                     size="large"
                   />
                 </div>
-  
+
                 <div className="flex gap-5 w-full">
                   <span className="w-full">
                     <Typography>
@@ -310,13 +324,15 @@ export default function ToRead() {
                       type="date"
                       defaultValue={
                         selectedLog?.date
-                          ? new Date(selectedLog.date).toISOString().split("T")[0]
+                          ? new Date(selectedLog.date)
+                              .toISOString()
+                              .split("T")[0]
                           : ""
                       }
                     />
                   </span>
                 </div>
-  
+
                 <div>
                   <Typography>Notes</Typography>
                   <TextField
@@ -339,9 +355,11 @@ export default function ToRead() {
           </Box>
         </div>
       ) : (
-        <Typography className="text-center mt-10">Loading book details...</Typography>
+        <Typography className="text-center mt-10">
+          Loading book details...
+        </Typography>
       )}
-  
+
       <Box className="flex flex-col gap-y-10 mt-10">
         {logs.map((entry, index) => (
           <Box
@@ -360,10 +378,10 @@ export default function ToRead() {
               </Typography>
               <Typography>{entry.comment}</Typography>
             </Box>
-  
+
             <Box className="flex flex-col items-end">
               <Typography className="text-right text-grey">
-              {entry.created_at}
+                {entry.created_at}
               </Typography>
               <Box className="flex items-center space-x-2">
                 <Button
@@ -380,4 +398,4 @@ export default function ToRead() {
       </Box>
     </div>
   );
-}  
+}
