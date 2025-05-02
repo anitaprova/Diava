@@ -213,7 +213,7 @@ export default function Profile() {
 
           <Chip
             icon={<Streak />}
-            label={stats?.streak + " Days" || 0 + " Days"}
+            label={stats?.streak + " Day(s)" || 0 + " Day(s)"}
           />
         </Box>
 
@@ -341,7 +341,7 @@ export default function Profile() {
               <span>{stats?.favorite_genre || "Not calulated yet"}</span>
             </div>,
             <div className="flex justify-between w-full">
-              <span>Longest Streak</span> <span>42 Days</span>
+              <span>Longest Streak</span> <span>{stats?.longest_streak} Day(s)</span>
             </div>,
           ]}
         />
