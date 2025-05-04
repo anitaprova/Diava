@@ -5,8 +5,7 @@ import AutoStoriesIcon from "@mui/icons-material/AutoStories";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import Rating from "@mui/material/Rating";
-import axios from "axios";
-import { auth } from "../firebase/firebase"; // adjust if path differs
+import { auth } from "../firebase/firebase";
 import { supabase } from "../client";
 
 export default function ToRead() {
@@ -14,121 +13,129 @@ export default function ToRead() {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
 
- 
   useEffect(() => {
-    const fetchCurrentlyReading = async () => {
+    const fetchToReadBooks = async () => {
       try {
         const userId = auth.currentUser?.uid;
         if (!userId) return;
-          //Use inner join maybe?
         const { data, error } = await supabase
           .from("list_books")
-          .select(`
+          .select(
+            `
             *,
             lists!inner (
               id,
               name,
               user_id
             )
-          `)
+          `
+          )
           .eq("lists.user_id", userId)
           .eq("lists.name", "Want to Read");
-  
+
         if (error) throw error;
-  
-        setBooks(data || []);
+
+        const mappedBooks = await Promise.all(
+          (data || []).map(async (book) => {
+            let pageCount = null;
+            let averageRating = null;
+
+            try {
+              const response = await fetch(
+                `https://www.googleapis.com/books/v1/volumes/${book.google_books_id}`
+              );
+              const result = await response.json();
+              pageCount = result.volumeInfo?.pageCount || null;
+            } catch (err) {
+              console.error("Failed to fetch from Google Books API:", err);
+            }
+
+            try {
+              const { data: reviews, error: reviewError } = await supabase
+                .from("reviews")
+                .select("rating")
+                .eq("book_id", book.google_books_id);
+
+              if (reviewError) throw reviewError;
+
+              if (reviews.length > 0) {
+                const total = reviews.reduce((sum, r) => sum + r.rating, 0);
+                averageRating = total / reviews.length;
+              }
+            } catch (err) {
+              console.error("Failed to fetch reviews:", err.message);
+            }
+
+            return {
+              ...book,
+              pageCount,
+              averageRating,
+            };
+          })
+        );
+        setBooks(mappedBooks);
       } catch (error) {
         console.error("Error fetching Want to Read books:", error.message);
       } finally {
         setLoading(false);
       }
     };
-  
-    fetchCurrentlyReading();
+
+    fetchToReadBooks();
   }, []);
+
   return (
     <div className="font-merriweather ml-50 mr-50 mt-10 mb-10">
-      <Typography variant="h4">To Read Pile</Typography>
-      <Box className="bg-mocha rounded-lg grid grid-cols-2 shadow-custom">
+      <Typography variant="h4">Want to Read</Typography>
+      <Box className="bg-mocha shadow-custom w-[1200px] grid grid-cols-2 rounded-lg">
         {loading ? (
           <p>Loading...</p>
         ) : books.length > 0 ? (
-          books.map((book) => {
-            const {
-              google_book_id,
-              title,
-              authors,
-              page_count,
-              average_rating,
-              categories = [],
-              thumbnail,
-            } = book;
-
-            const genres = [
-              ...new Set(
-                categories.flatMap((cat) =>
-                  cat.split("/").map((g) => g.trim())
-                )
-              ),
-            ];
-
-            return (
-              <div
-                key={google_book_id}
-                className="bg-vanilla rounded-md p-6 w-fit flex mt-5 ml-5 mb-5 gap-x-5"
-              >
-                <img
-                  src={thumbnail}
-                  onClick={() => navigate(`/book/${google_book_id}`)}
-                  className="w-fit cursor-pointer"
-                  alt={title}
-                />
-                <div className="space-y-4">
-                  <div>
-                    <Typography variant="h6">{title}</Typography>
-                    <Typography variant="subtitle2">
-                      By: {authors}
+          books.map((book) => (
+            <div
+              key={book.google_books_id}
+              className="bg-vanilla rounded-md p-6 w-[550px] flex m-5 gap-x-5"
+            >
+              <img
+                src={book.thumbnail}
+                alt={book.title}
+                onClick={() => navigate(`/book/${book.google_books_id}`)}
+                className="w-[120px] h-auto object-cover cursor-pointer"
+              />
+              <div className="space-y-4">
+                <div>
+                  <Typography variant="h6">{book.title}</Typography>
+                  <Typography variant="subtitle2">By: {book.author}</Typography>
+                </div>
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <AutoStoriesIcon fontSize="small" />
+                    <Typography variant="body2">
+                      {book.pageCount ? `${book.pageCount} pages` : "Page count unknown"}
                     </Typography>
                   </div>
-
-                  <Typography variant="body2" className="flex flex-row gap-x-8">
-                    <Typography className="flex gap-x-2">
-                      <AutoStoriesIcon fontSize="small" />
-                      {page_count} pages
+                  <div className="flex items-center gap-2">
+                    <AccessTimeIcon fontSize="small" />
+                    <Typography variant="body2">
+                      ~{Math.floor((book?.pageCount || 0) / 0.6 / 60)} hrs
                     </Typography>
-
-                    <Typography className="flex gap-x-2">
-                      <AccessTimeIcon fontSize="small" /> ~
-                      {Math.floor(page_count / 0.6 / 60)} hrs
-                    </Typography>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Rating
+                    name="average-rating"
+                    value={book.averageRating || 0}
+                    precision={0.5}
+                    readOnly
+                    size="small"
+                  />
+                  <Typography variant="body2">
+                    {book.averageRating ? `${book.averageRating.toFixed(1)} / 5` : "NaN"}
                   </Typography>
-
-                  <div className="flex mt-2 mb-4 gap-x-4">
-                    <Rating
-                      value={average_rating}
-                      precision={0.5}
-                      size="large"
-                      readOnly
-                    />
-                    <p className="inline-block align-middle text-lg">
-                      {average_rating}
-                    </p>
-                  </div>
-
-                  <ul className="flex flex-wrap text-sm gap-3">
-                    {genres.map((genre, index) => (
-                      <li
-                        key={index}
-                        className="bg-sand p-1 text-center rounded-sm w-fit"
-                      >
-                        <LocalOfferIcon color="secondary" /> {genre}
-                      </li>
-                    ))}
-                  </ul>
                 </div>
               </div>
-            );
-          })
+            </div>
+          ))
         ) : (
           <p>Nothing added yet!</p>
         )}

@@ -74,7 +74,6 @@ export default function BookDetail() {
         console.error("Error checking existing books:", fetchError.message);
         return;
       }
-  
         if ((existingBooks ?? []).length > 0) {
           alert(
             "This book is already in your 'Currently Reading' or 'Want to Read'. Please remove it from one list before adding it to the other."
