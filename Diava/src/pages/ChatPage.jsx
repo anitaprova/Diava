@@ -146,11 +146,6 @@ const ChatPage = () => {
       />
 
       {renderMainContent()}
-      <ChatWindow
-        selectedChat={viewMode === "messages" ? selectedChat : selectedChannel}
-        isClubChannel={viewMode === "clubs"}
-        clubName={selectedClub?.clubname}
-      />
     </ChatContainer>
   );
 };

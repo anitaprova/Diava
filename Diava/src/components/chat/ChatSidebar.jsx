@@ -243,51 +243,101 @@ const ChatSidebar = forwardRef(
     const handleCreateClub = async () => {
       if (!newClubName.trim()) return;
 
-      const clubUid = uuidv4();
+      try {
+        console.log("Creating club with name:", newClubName);
 
-      // Get current user's username
-      const userRef = doc(db, "Users", currentUser.uid);
-      const userDoc = await getDoc(userRef);
-      const currentUserInfo = userDoc.data();
-      const clubRef = doc(db, "Clubs", clubUid);
+        if (!currentUser || !currentUser.uid) {
+          console.error("Current user not found or missing UID");
+          return;
+        }
 
-      // Create a club
-      await setDoc(clubRef, {
-        uid: clubUid,
-        clubname: newClubName,
-        description: newClubDescription,
-        createdBy: currentUser.uid,
-        createdAt: serverTimestamp(),
-        initial: newClubName[0].toUpperCase(),
-        logo: {},
-        channels: {},
-        members: {
-          [currentUser.uid]: {
-            username: currentUserInfo.username,
-            role: "Admin",
-            joined: serverTimestamp(),
-          },
-        },
-      });
+        const clubUid = uuidv4();
+        console.log("Generated club UID:", clubUid);
 
-      // Add creator to club
-      await updateDoc(doc(db, "UserClubs", currentUser.uid), {
-        [clubUid + ".clubInfo"]: {
-          clubuid: clubUid,
+        // Get current user's username
+        const userRef = doc(db, "Users", currentUser.uid);
+        const userDoc = await getDoc(userRef);
+
+        if (!userDoc.exists()) {
+          console.error("User document not found in Firestore");
+          return;
+        }
+
+        const currentUserInfo = userDoc.data();
+        console.log("Retrieved user info:", currentUserInfo);
+
+        // Check if username exists, provide a fallback if it doesn't
+        const username = currentUserInfo.username || currentUser.email || "User_" + currentUser.uid.substring(0, 8);
+
+        const clubRef = doc(db, "Clubs", clubUid);
+
+        // Create a club
+        await setDoc(clubRef, {
+          uid: clubUid,
           clubname: newClubName,
-          joined: serverTimestamp(),
-        },
-      });
+          description: newClubDescription,
+          createdBy: currentUser.uid,
+          createdAt: serverTimestamp(),
+          initial: newClubName[0].toUpperCase(),
+          logo: {},
+          channels: {
+            general: {
+              id: "general",
+              name: "general",
+              createdAt: serverTimestamp(),
+              type: "text"
+            }
+          },
+          members: {
+            [currentUser.uid]: {
+              username: username,
+              role: "Admin",
+              joined: serverTimestamp(),
+            },
+          },
+        });
+        console.log("Club document created in Firestore");
 
-      // Call the parent component's handler
-      if (onCreateClub) {
-        onCreateClub();
+        // Add creator to club
+        const userClubRef = doc(db, "UserClubs", currentUser.uid);
+        const userClubDoc = await getDoc(userClubRef);
+
+        if (userClubDoc.exists()) {
+          // Update the existing document
+          await updateDoc(userClubRef, {
+            [clubUid + ".clubInfo"]: {
+              clubuid: clubUid,
+              clubname: newClubName,
+              joined: serverTimestamp(),
+            },
+          });
+        } else {
+          // Create a new document if it doesn't exist
+          await setDoc(userClubRef, {
+            [clubUid + ".clubInfo"]: {
+              clubuid: clubUid,
+              clubname: newClubName,
+              joined: serverTimestamp(),
+            },
+          });
+        }
+        console.log("User added to club in UserClubs");
+
+        // Call the parent component's handler
+        if (onCreateClub) {
+          onCreateClub();
+        }
+
+        // Reset form and close dialog
+        setNewClubName("");
+        setNewClubDescription("");
+        setCreateClubOpen(false);
+
+        console.log("Club creation completed successfully");
+      } catch (error) {
+        console.error("Error creating club:", error);
+        alert("Error creating club: " + error.message);
       }
-
-      // Reset form and close dialog
-      setNewClubName("");
-      setNewClubDescription("");
-      setCreateClubOpen(false);
     };
 
     const handleClubSearch = async () => {
@@ -320,8 +370,6 @@ const ChatSidebar = forwardRef(
             return;
           }
 
-          // Add user to club
-
           // Get current user's username and club's name
           const userRef = doc(db, "Users", currentUser.uid);
           const userDoc = await getDoc(userRef);
@@ -329,9 +377,12 @@ const ChatSidebar = forwardRef(
           const clubRef = doc(db, "Clubs", inputText);
           const clubDoc = await getDoc(clubRef);
 
+          // Check if username exists, provide a fallback if it doesn't
+          const username = currentUserInfo.username || currentUser.email || "User_" + currentUser.uid.substring(0, 8);
+
           await updateDoc(clubRef, {
             [`members.${currentUser.uid}`]: {
-              username: currentUserInfo.username,
+              username: username,
               role: "Member",
               joined: serverTimestamp(),
             },
@@ -390,6 +441,9 @@ const ChatSidebar = forwardRef(
         return;
       }
 
+      // Check if target user has a username, provide a fallback if it doesn't
+      const targetUsername = targetUser.username || targetUser.email || "User_" + targetUser.uid.substring(0, 8);
+
       const combinedUID =
         currentUser.uid > targetUser.uid
           ? currentUser.uid + targetUser.uid
@@ -404,7 +458,7 @@ const ChatSidebar = forwardRef(
           await updateDoc(doc(db, "UserChats", currentUser.uid), {
             [combinedUID + ".userInfo"]: {
               uid: targetUser.uid,
-              username: targetUser.username,
+              username: targetUsername,
             },
             [combinedUID + ".date"]: serverTimestamp(),
           });
@@ -414,10 +468,13 @@ const ChatSidebar = forwardRef(
           const userDoc = await getDoc(userRef);
           const currentUserInfo = userDoc.data();
 
+          // Check if username exists, provide a fallback if it doesn't
+          const username = currentUserInfo.username || currentUser.email || "User_" + currentUser.uid.substring(0, 8);
+
           await updateDoc(doc(db, "UserChats", targetUser.uid), {
             [combinedUID + ".userInfo"]: {
               uid: currentUser.uid,
-              username: currentUserInfo.username,
+              username: username,
             },
             [combinedUID + ".date"]: serverTimestamp(),
           });
@@ -466,25 +523,25 @@ const ChatSidebar = forwardRef(
           <SectionHeader>Channels</SectionHeader>
           <List disablePadding>
             {currentClub?.channels &&
-            Object.values(currentClub.channels).length > 0
+              Object.values(currentClub.channels).length > 0
               ? Object.entries(currentClub.channels)
-                  .sort((a, b) => a[1].createdAt - b[1].createdAt)
-                  .map((channel) => (
-                    <ChannelItem
-                      key={channel[0]}
-                      isSelected={selectedChannel?.id === channel[0]}
-                      onClick={() => handleSelectChannel(channel[1])}
-                    >
-                      <ChannelText
-                        primary={
-                          <>
-                            <FaHashtag size={14} />
-                            {channel[1].name}
-                          </>
-                        }
-                      />
-                    </ChannelItem>
-                  ))
+                .sort((a, b) => a[1].createdAt - b[1].createdAt)
+                .map((channel) => (
+                  <ChannelItem
+                    key={channel[0]}
+                    isSelected={selectedChannel?.id === channel[0]}
+                    onClick={() => handleSelectChannel(channel[1])}
+                  >
+                    <ChannelText
+                      primary={
+                        <>
+                          <FaHashtag size={14} />
+                          {channel[1].name}
+                        </>
+                      }
+                    />
+                  </ChannelItem>
+                ))
               : null}
           </List>
 
@@ -646,7 +703,14 @@ const ChatSidebar = forwardRef(
               Cancel
             </Button>
             <Button
-              onClick={handleCreateClub}
+              onClick={() => {
+                try {
+                  handleCreateClub();
+                } catch (error) {
+                  console.error("Error in create club button handler:", error);
+                  alert("Error creating club. Please try again.");
+                }
+              }}
               variant="contained"
               sx={{
                 bgcolor: "#5d4b3d",
