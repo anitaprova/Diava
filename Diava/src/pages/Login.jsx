@@ -3,7 +3,15 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
 import { FaGoogle, FaBook, FaGamepad, FaUsers } from "react-icons/fa";
 import "../styles/Auth.css";
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut, sendPasswordResetEmail } from "firebase/auth";
+import { browserSessionPersistence, 
+          browserLocalPersistence, 
+          signInWithEmailAndPassword, 
+          GoogleAuthProvider, 
+          signInWithPopup, 
+          signOut, 
+          sendPasswordResetEmail, 
+          setPersistence, 
+          inMemoryPersistence} from "firebase/auth";
 import { auth, db } from "../firebase/firebase";
 import { getDoc, doc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
@@ -25,14 +33,15 @@ const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    rememberMe: false,
   });
 
   // Handle input changes
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData((prevState) => ({
       ...prevState,
-      [name]: value,
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
@@ -41,6 +50,12 @@ const Login = () => {
     e.preventDefault();
 
     try {
+      if (formData.rememberMe) {
+        await setPersistence(auth, browserLocalPersistence); // stays across tabs/sessions
+      } else {
+      await setPersistence(auth, browserSessionPersistence); // reset on tab close
+      }
+
       const userCredentials = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredentials.user;
       
@@ -67,6 +82,12 @@ const Login = () => {
     setLoading(true);
 
     try {
+      if (formData.rememberMe) {
+        await setPersistence(auth, browserLocalPersistence); // stays across tabs/sessions
+      } else {
+      await setPersistence(auth, browserSessionPersistence); // reset on tab close
+      }
+
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       console.log(result);
@@ -161,6 +182,16 @@ const Login = () => {
               placeholder="Password"
               required
             />
+            <div className="remember-me">
+              <input
+                type="checkbox"
+                name="rememberMe"
+                checked={formData.rememberMe}
+                onChange={handleChange}
+                id="rememberMe"
+              />
+              <label htmlFor="rememberMe"> Remember me</label>
+            </div>
             <Link 
               to="#" 
               onClick={(e) => {
