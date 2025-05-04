@@ -9,9 +9,18 @@ import {
   IconButton,
   Tooltip,
   Badge,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  TextField,
 } from "@mui/material";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import { FaHashtag } from "react-icons/fa";
+import AddIcon from "@mui/icons-material/Add";
+import { useAuth } from "../../context/AuthContext";
+import { useClub } from "../../context/ClubContext";
 
 const WindowContainer = styled(Box)({
   flex: 1,
@@ -147,8 +156,28 @@ const mockBooks = [
   },
 ];
 
-const BookVoting = ({ clubName }) => {
+const BookVoting = ({ clubName, isAdmin }) => {
+  const { currentUser } = useAuth();
+  const { currentClub } = useClub();
   const [books, setBooks] = useState(mockBooks);
+  const [addBookOpen, setAddBookOpen] = useState(false);
+  const [newBook, setNewBook] = useState({
+    title: "",
+    author: "",
+    pages: "",
+    readTime: "",
+    rating: "",
+    image: "",
+    genres: ""
+  });
+
+  // Check if the user is an admin or owner based on the club data
+  const checkIsAdmin = () => {
+    if (!currentClub || !currentUser) return false;
+
+    const userRole = currentClub.members?.[currentUser.uid]?.role;
+    return userRole === "Admin" || userRole === "Owner";
+  };
 
   const handleVote = (bookId) => {
     setBooks(
@@ -157,6 +186,54 @@ const BookVoting = ({ clubName }) => {
       )
     );
   };
+
+  const handleAddBook = () => {
+    setAddBookOpen(true);
+  };
+
+  const handleCloseAddBook = () => {
+    setAddBookOpen(false);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewBook({ ...newBook, [name]: value });
+  };
+
+  const handleSubmitNewBook = () => {
+    // Create new book object
+    const genresArray = newBook.genres.split(',').map(genre => genre.trim());
+
+    const bookToAdd = {
+      id: Date.now().toString(), // Simple id for now
+      title: newBook.title,
+      author: newBook.author,
+      pages: parseInt(newBook.pages) || 0,
+      readTime: newBook.readTime || "~5 Hours",
+      rating: parseFloat(newBook.rating) || 0,
+      genres: genresArray,
+      image: newBook.image || "https://via.placeholder.com/80x120?text=No+Image",
+      votes: 0
+    };
+
+    // Add new book to the list
+    setBooks([...books, bookToAdd]);
+
+    // Reset form and close dialog
+    setNewBook({
+      title: "",
+      author: "",
+      pages: "",
+      readTime: "",
+      rating: "",
+      image: "",
+      genres: ""
+    });
+    setAddBookOpen(false);
+  };
+
+  // Determine if current user has admin privileges
+  const isUserAdmin = isAdmin || checkIsAdmin();
 
   return (
     <WindowContainer>
@@ -178,9 +255,21 @@ const BookVoting = ({ clubName }) => {
       </Header>
 
       <ContentContainer>
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          Vote for next month's book
-        </Typography>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+          <Typography variant="h6">Vote for next month's book</Typography>
+
+          {/* Admin Add Book Button */}
+          {isUserAdmin && (
+            <Tooltip title="Add book for voting">
+              <IconButton
+                onClick={handleAddBook}
+                sx={{ color: "#5d4b3d" }}
+              >
+                <AddIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
 
         {books.map((book) => (
           <BookItem key={book.id}>
@@ -227,6 +316,105 @@ const BookVoting = ({ clubName }) => {
           </BookItem>
         ))}
       </ContentContainer>
+
+      {/* Add Book Dialog */}
+      <Dialog open={addBookOpen} onClose={handleCloseAddBook}>
+        <DialogTitle>Add a Book for Voting</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Add a book to the voting list. Club members will be able to vote for this book.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            name="title"
+            label="Book Title"
+            fullWidth
+            variant="outlined"
+            value={newBook.title}
+            onChange={handleInputChange}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            name="author"
+            label="Author"
+            fullWidth
+            variant="outlined"
+            value={newBook.author}
+            onChange={handleInputChange}
+            sx={{ mb: 2 }}
+          />
+          <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+            <TextField
+              margin="dense"
+              name="pages"
+              label="Pages"
+              type="number"
+              variant="outlined"
+              value={newBook.pages}
+              onChange={handleInputChange}
+            />
+            <TextField
+              margin="dense"
+              name="readTime"
+              label="Read Time"
+              variant="outlined"
+              value={newBook.readTime}
+              onChange={handleInputChange}
+              placeholder="~5 Hours"
+            />
+            <TextField
+              margin="dense"
+              name="rating"
+              label="Rating"
+              type="number"
+              variant="outlined"
+              value={newBook.rating}
+              onChange={handleInputChange}
+              inputProps={{ min: 0, max: 5, step: 0.1 }}
+            />
+          </Box>
+          <TextField
+            margin="dense"
+            name="genres"
+            label="Genres (comma separated)"
+            fullWidth
+            variant="outlined"
+            value={newBook.genres}
+            onChange={handleInputChange}
+            placeholder="Fiction, Fantasy, Adventure"
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            name="image"
+            label="Book Cover URL"
+            fullWidth
+            variant="outlined"
+            value={newBook.image}
+            onChange={handleInputChange}
+            placeholder="https://example.com/book-cover.jpg"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAddBook} sx={{ color: "#5d4b3d" }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmitNewBook}
+            variant="contained"
+            sx={{
+              bgcolor: "#5d4b3d",
+              color: "white",
+              "&:hover": { bgcolor: "#433422" },
+            }}
+            disabled={!newBook.title || !newBook.author}
+          >
+            Add Book
+          </Button>
+        </DialogActions>
+      </Dialog>
     </WindowContainer>
   );
 };

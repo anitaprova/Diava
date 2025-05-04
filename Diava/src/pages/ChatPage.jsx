@@ -100,9 +100,9 @@ const ChatPage = () => {
       // Check if it's a feature type channel
       if (selectedChannel.type === "feature") {
         if (selectedChannel.featureType === "bookVoting") {
-          return <BookVoting clubName={selectedClub?.name} />;
+          return <BookVoting clubName={selectedClub?.name} isAdmin={isAdmin} />;
         } else if (selectedChannel.featureType === "challenges") {
-          return <ClubChallenges clubName={selectedClub?.name} />;
+          return <ClubChallenges clubName={selectedClub?.name} isAdmin={isAdmin} />;
         }
       }
 

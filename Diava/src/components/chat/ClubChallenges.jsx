@@ -12,11 +12,19 @@ import {
   Button,
   Tooltip,
   IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  TextField,
 } from "@mui/material";
 import { FaHashtag } from "react-icons/fa";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import AddIcon from "@mui/icons-material/Add";
 import UserAvatar from "./UserAvatar";
+import { useAuth } from "../../context/AuthContext";
+import { useClub } from "../../context/ClubContext";
 
 const WindowContainer = styled(Box)({
   flex: 1,
@@ -192,9 +200,26 @@ const mockChallenges = [
   },
 ];
 
-const ClubChallenges = ({ clubName }) => {
+const ClubChallenges = ({ clubName, isAdmin }) => {
+  const { currentUser } = useAuth();
+  const { currentClub } = useClub();
   const [challenges, setChallenges] = useState(mockChallenges);
+  const [addChallengeOpen, setAddChallengeOpen] = useState(false);
+  const [newChallenge, setNewChallenge] = useState({
+    title: "",
+    description: "",
+    dueDate: ""
+  });
+
   const currentUserId = "u3"; // This would come from your auth context
+
+  // Check if the user is an admin or owner based on the club data
+  const checkIsAdmin = () => {
+    if (!currentClub || !currentUser) return false;
+
+    const userRole = currentClub.members?.[currentUser.uid]?.role;
+    return userRole === "Admin" || userRole === "Owner";
+  };
 
   const handleToggleChallenge = (challengeId) => {
     setChallenges(
@@ -232,6 +257,45 @@ const ClubChallenges = ({ clubName }) => {
     );
   };
 
+  const handleAddChallenge = () => {
+    setAddChallengeOpen(true);
+  };
+
+  const handleCloseAddChallenge = () => {
+    setAddChallengeOpen(false);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewChallenge({ ...newChallenge, [name]: value });
+  };
+
+  const handleSubmitNewChallenge = () => {
+    // Create new challenge object
+    const challengeToAdd = {
+      id: Date.now().toString(), // Simple id for now
+      title: newChallenge.title,
+      description: newChallenge.description,
+      dueDate: newChallenge.dueDate,
+      completed: false,
+      completedBy: []
+    };
+
+    // Add new challenge to the list
+    setChallenges([...challenges, challengeToAdd]);
+
+    // Reset form and close dialog
+    setNewChallenge({
+      title: "",
+      description: "",
+      dueDate: ""
+    });
+    setAddChallengeOpen(false);
+  };
+
+  // Determine if current user has admin privileges
+  const isUserAdmin = isAdmin || checkIsAdmin();
+
   return (
     <WindowContainer>
       <Header>
@@ -261,12 +325,14 @@ const ClubChallenges = ({ clubName }) => {
           }}
         >
           <Typography variant="h6">Weekly Reading Challenges</Typography>
-          {/* Admin could add new challenges */}
-          <Tooltip title="Add new challenge">
-            <IconButton size="small" sx={{ color: "#5d4b3d" }}>
-              <AddIcon />
-            </IconButton>
-          </Tooltip>
+          {/* Admin button for adding challenges */}
+          {isUserAdmin && (
+            <Tooltip title="Add new challenge">
+              <IconButton size="small" sx={{ color: "#5d4b3d" }} onClick={handleAddChallenge}>
+                <AddIcon />
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
 
         {challenges.map((challenge) => {
@@ -321,6 +387,66 @@ const ClubChallenges = ({ clubName }) => {
           );
         })}
       </ContentContainer>
+
+      {/* Add Challenge Dialog */}
+      <Dialog open={addChallengeOpen} onClose={handleCloseAddChallenge}>
+        <DialogTitle>Create New Challenge</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Create a new reading challenge for club members to complete.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            name="title"
+            label="Challenge Title"
+            fullWidth
+            variant="outlined"
+            value={newChallenge.title}
+            onChange={handleInputChange}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            name="description"
+            label="Challenge Description"
+            fullWidth
+            multiline
+            rows={3}
+            variant="outlined"
+            value={newChallenge.description}
+            onChange={handleInputChange}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            name="dueDate"
+            label="Due Date"
+            fullWidth
+            variant="outlined"
+            value={newChallenge.dueDate}
+            onChange={handleInputChange}
+            placeholder="May 30, 2023"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAddChallenge} sx={{ color: "#5d4b3d" }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmitNewChallenge}
+            variant="contained"
+            sx={{
+              bgcolor: "#5d4b3d",
+              color: "white",
+              "&:hover": { bgcolor: "#433422" },
+            }}
+            disabled={!newChallenge.title || !newChallenge.dueDate}
+          >
+            Create Challenge
+          </Button>
+        </DialogActions>
+      </Dialog>
     </WindowContainer>
   );
 };
