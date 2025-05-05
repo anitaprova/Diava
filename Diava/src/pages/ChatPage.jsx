@@ -8,6 +8,8 @@ import { onSnapshot, doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
+import BookVoting from "../components/chat/BookVoting";
+import ClubChallenges from "../components/chat/ClubChallenges";
 import { useClub } from "../context/ClubContext";
 
 const ChatContainer = styled("div")({
@@ -48,7 +50,7 @@ const ChatPage = () => {
         }
       );
     }
-  
+
     return () => {
       unsubscribe();
     };
@@ -62,7 +64,7 @@ const ChatPage = () => {
     try {
       const clubRef = doc(db, "Clubs", club.clubInfo.clubuid);
       const clubDoc = await getDoc(clubRef);
-      
+
       if (clubDoc.exists()) {
         const clubData = clubDoc.data();
 
@@ -74,14 +76,11 @@ const ChatPage = () => {
         const isUserAdmin = userClubInfo.role === "Admin";
 
         setIsAdmin(isUserAdmin);
-      }
-      else {
+      } else {
         console.log("Error finding club.");
         return;
       }
-
-    }
-    catch (error) {
+    } catch (error) {
       console.log(error);
     }
   };
@@ -93,6 +92,31 @@ const ChatPage = () => {
   const handleShowCreateClubDialog = () => {
     if (chatSidebarRef.current) {
       chatSidebarRef.current.setCreateClubOpen(true);
+    }
+  };
+
+  const renderMainContent = () => {
+    if (viewMode === "clubs" && selectedChannel) {
+      // Check if it's a feature type channel
+      if (selectedChannel.type === "feature") {
+        if (selectedChannel.featureType === "bookVoting") {
+          return <BookVoting clubName={selectedClub?.name} isAdmin={isAdmin} />;
+        } else if (selectedChannel.featureType === "challenges") {
+          return <ClubChallenges clubName={selectedClub?.name} isAdmin={isAdmin} />;
+        }
+      }
+
+      // Regular channel
+      return (
+        <ChatWindow
+          selectedChat={selectedChannel}
+          isClubChannel={true}
+          clubName={selectedClub?.name}
+        />
+      );
+    } else {
+      // Direct messages
+      return <ChatWindow selectedChat={selectedChat} isClubChannel={false} />;
     }
   };
 
@@ -121,11 +145,7 @@ const ChatPage = () => {
         onCreateClub={handleCreateClub}
       />
 
-      <ChatWindow
-        selectedChat={viewMode === "messages" ? selectedChat : selectedChannel}
-        isClubChannel={viewMode === "clubs"}
-        clubName={selectedClub?.clubname}
-      />
+      {renderMainContent()}
     </ChatContainer>
   );
 };

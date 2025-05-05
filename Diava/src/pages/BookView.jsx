@@ -90,7 +90,7 @@ export default function BookDetail() {
           user_id: userId,
           author: book?.volumeInfo?.authors?.join(", "),
           pages: book?.volumeInfo?.pageCount,
-          genres: genres?.map((genre) => genre?.replace(/\s+/g, "")),
+          genres: genres?.map((genre) => genre.trim()),
         };
   
       const { error: insertError } = await supabase

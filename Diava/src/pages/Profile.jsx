@@ -189,6 +189,7 @@ export default function Profile() {
     getAchievements();
   }, []);
 
+
  
   const calculateXP = (stats) => {
     return Math.floor(
@@ -208,7 +209,6 @@ export default function Profile() {
   useEffect(() => {
     getNextMileStone();
   }, [badge]);
-
 
   return (
     <Box className="flex flex-col">

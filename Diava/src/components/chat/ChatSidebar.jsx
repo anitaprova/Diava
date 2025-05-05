@@ -52,8 +52,10 @@ import {
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useChat } from "../../context/ChatContext";
-import { useClub } from "../../context/ClubContext"
-import { v4 as uuidv4 } from "uuid"
+import { MdBarChart } from "react-icons/md";
+import { GiTrophyCup } from "react-icons/gi";
+import { useClub } from "../../context/ClubContext";
+import { v4 as uuidv4 } from "uuid";
 
 const SidebarContainer = styled(Box)(({ theme }) => ({
   width: 300,
@@ -196,22 +198,21 @@ const ChatSidebar = forwardRef(
 
     const handleLeaveClub = async () => {
       handleClubMenuClose();
-      
+
       try {
         const userClubRef = doc(db, "UserClubs", currentUser.uid);
         const clubRef = doc(db, "Clubs", selectedClub.uid);
-        
+
         await updateDoc(userClubRef, {
-          [selectedClub.uid]: deleteField()
+          [selectedClub.uid]: deleteField(),
         });
 
         await updateDoc(clubRef, {
-          [`members.${currentUser.uid}`]: deleteField()
+          [`members.${currentUser.uid}`]: deleteField(),
         });
 
         console.log("Successfully left Club.");
-      }
-      catch (error) {
+      } catch (error) {
         console.log(error);
       }
     };
@@ -243,8 +244,8 @@ const ChatSidebar = forwardRef(
       //   console.log(error);
       // }
 
-      dispatch({ type: "CHANGE_CHANNEL_CHAT", payload: c })
-    }
+      dispatch({ type: "CHANGE_CHANNEL_CHAT", payload: c });
+    };
 
     const handleSelectedChat = (c) => {
       setSelectedChat(c);
@@ -266,52 +267,101 @@ const ChatSidebar = forwardRef(
     const handleCreateClub = async () => {
       if (!newClubName.trim()) return;
 
-      const clubUid = uuidv4();
+      try {
+        console.log("Creating club with name:", newClubName);
 
-      // Get current user's username
-      const userRef = doc(db, "Users", currentUser.uid);
-      const userDoc = await getDoc(userRef);
-      const currentUserInfo = userDoc.data();
-      const clubRef = doc(db, "Clubs", clubUid);
-
-      // Create a club
-      await setDoc(clubRef, {
-        uid: clubUid,
-        clubname: newClubName,
-        description: newClubDescription,
-        createdBy: currentUser.uid,
-        createdByUsername: currentUserInfo.username,
-        createdAt: serverTimestamp(),
-        initial: newClubName[0].toUpperCase(),
-        logo: {},
-        channels: {},
-        members: {
-          [currentUser.uid]: {
-            username: currentUserInfo.username,
-            role: "Admin",
-            joined: serverTimestamp()
-          }
+        if (!currentUser || !currentUser.uid) {
+          console.error("Current user not found or missing UID");
+          return;
         }
-      });
 
-      // Add creator to club
-      await updateDoc(doc(db, "UserClubs", currentUser.uid), {
-        [clubUid + ".clubInfo"]: {
-          clubuid: clubUid,
+        const clubUid = uuidv4();
+        console.log("Generated club UID:", clubUid);
+
+        // Get current user's username
+        const userRef = doc(db, "Users", currentUser.uid);
+        const userDoc = await getDoc(userRef);
+
+        if (!userDoc.exists()) {
+          console.error("User document not found in Firestore");
+          return;
+        }
+
+        const currentUserInfo = userDoc.data();
+        console.log("Retrieved user info:", currentUserInfo);
+
+        // Check if username exists, provide a fallback if it doesn't
+        const username = currentUserInfo.username || currentUser.email || "User_" + currentUser.uid.substring(0, 8);
+
+        const clubRef = doc(db, "Clubs", clubUid);
+
+        // Create a club
+        await setDoc(clubRef, {
+          uid: clubUid,
           clubname: newClubName,
-          joined: serverTimestamp()
+          description: newClubDescription,
+          createdBy: currentUser.uid,
+          createdAt: serverTimestamp(),
+          initial: newClubName[0].toUpperCase(),
+          logo: {},
+          channels: {
+            general: {
+              id: "general",
+              name: "general",
+              createdAt: serverTimestamp(),
+              type: "text"
+            }
+          },
+          members: {
+            [currentUser.uid]: {
+              username: username,
+              role: "Admin",
+              joined: serverTimestamp(),
+            },
+          },
+        });
+        console.log("Club document created in Firestore");
+
+        // Add creator to club
+        const userClubRef = doc(db, "UserClubs", currentUser.uid);
+        const userClubDoc = await getDoc(userClubRef);
+
+        if (userClubDoc.exists()) {
+          // Update the existing document
+          await updateDoc(userClubRef, {
+            [clubUid + ".clubInfo"]: {
+              clubuid: clubUid,
+              clubname: newClubName,
+              joined: serverTimestamp(),
+            },
+          });
+        } else {
+          // Create a new document if it doesn't exist
+          await setDoc(userClubRef, {
+            [clubUid + ".clubInfo"]: {
+              clubuid: clubUid,
+              clubname: newClubName,
+              joined: serverTimestamp(),
+            },
+          });
         }
-      })
+        console.log("User added to club in UserClubs");
 
-      // Call the parent component's handler
-      if (onCreateClub) {
-        onCreateClub();
+        // Call the parent component's handler
+        if (onCreateClub) {
+          onCreateClub();
+        }
+
+        // Reset form and close dialog
+        setNewClubName("");
+        setNewClubDescription("");
+        setCreateClubOpen(false);
+
+        console.log("Club creation completed successfully");
+      } catch (error) {
+        console.error("Error creating club:", error);
+        alert("Error creating club: " + error.message);
       }
-
-      // Reset form and close dialog
-      setNewClubName("");
-      setNewClubDescription("");
-      setCreateClubOpen(false);
     };
 
     const handleClubSearch = async () => {
@@ -333,27 +383,61 @@ const ChatSidebar = forwardRef(
           startAt(inputText),
           endAt(inputText + "\uf8ff")
         );
-  
-        // Get the query snapshots and combine them
-        const [qClubnameSnap, qUsernameSnap] = await Promise.all([
-          getDocs(qClubname),
-          getDocs(qUsername)
-        ]);
 
-        const allDocs = [...qClubnameSnap.docs, ...qUsernameSnap.docs];
-
-        if (allDocs.length === 0) {
-          alert("Cannot find club(s).");
+        const clubsDoc = await getDocs(clubsQ);
+        if (clubsDoc.empty) {
+          alert("Club does not exist");
           return;
         }
 
-        const clubs =allDocs.map(doc => ({id: doc.id, ...doc.data() }));
+        // Check if user is in club
+        const userClubsRef = doc(db, "UserClubs", currentUser.uid);
+        const userClubsDoc = await getDoc(userClubsRef);
 
-        setClubSearchResults(clubs);
+        if (userClubsDoc.exists()) {
+          const userClubsData = userClubsDoc.data();
+          const isInClub = inputText in userClubsData;
 
-        console.log("Successfully found club(s).");
-      }
-      catch (error) {
+          if (isInClub) {
+            alert("You're already in the club.");
+            console.log("User is already in the club!");
+            return;
+          }
+
+          // Get current user's username and club's name
+          const userRef = doc(db, "Users", currentUser.uid);
+          const userDoc = await getDoc(userRef);
+          const currentUserInfo = userDoc.data();
+          const clubRef = doc(db, "Clubs", inputText);
+          const clubDoc = await getDoc(clubRef);
+
+          // Check if username exists, provide a fallback if it doesn't
+          const username = currentUserInfo.username || currentUser.email || "User_" + currentUser.uid.substring(0, 8);
+
+          await updateDoc(clubRef, {
+            [`members.${currentUser.uid}`]: {
+              username: username,
+              role: "Member",
+              joined: serverTimestamp(),
+            },
+          });
+          await updateDoc(doc(db, "UserClubs", currentUser.uid), {
+            [inputText + ".clubInfo"]: {
+              clubuid: inputText,
+              clubname: clubDoc.data().clubname,
+              joined: serverTimestamp(),
+            },
+          });
+
+          console.log("Successfully added user to club.");
+        } else {
+          alert("Error finding user's UserClubs reference");
+          console.log("Error adding user to club.");
+          return;
+        }
+
+        console.log("Successfully found club.");
+      } catch (error) {
         console.log(error);
       }
     };
@@ -366,7 +450,7 @@ const ChatSidebar = forwardRef(
       if (userClubsDoc.exists()) {
         const userClubsData = userClubsDoc.data();
         const isInClub = club.uid in userClubsData;
-      
+
         if (isInClub) {
           alert("You're already in the club.");
           console.log("User is already in the club!");
@@ -407,7 +491,7 @@ const ChatSidebar = forwardRef(
 
     const handleUserSearch = async () => {
       if (inputText == "") return;
-      
+
       try {
         const inputLower = inputText.toLowerCase();
 
@@ -440,7 +524,7 @@ const ChatSidebar = forwardRef(
           return;
         }
 
-        const users =allDocs.map(doc => ({id: doc.id, ...doc.data() }));
+        const users = allDocs.map(doc => ({ id: doc.id, ...doc.data() }));
 
         setUserSearchResults(users);
 
@@ -456,6 +540,9 @@ const ChatSidebar = forwardRef(
         return;
       }
 
+      // Check if target user has a username, provide a fallback if it doesn't
+      const targetUsername = targetUser.username || targetUser.email || "User_" + targetUser.uid.substring(0, 8);
+
       const combinedUID =
         currentUser.uid > targetUser.uid
           ? currentUser.uid + targetUser.uid
@@ -470,7 +557,7 @@ const ChatSidebar = forwardRef(
           await updateDoc(doc(db, "UserChats", currentUser.uid), {
             [combinedUID + ".userInfo"]: {
               uid: targetUser.uid,
-              username: targetUser.username,
+              username: targetUsername,
             },
             [combinedUID + ".date"]: serverTimestamp(),
           });
@@ -480,10 +567,13 @@ const ChatSidebar = forwardRef(
           const userDoc = await getDoc(userRef);
           const currentUserInfo = userDoc.data();
 
+          // Check if username exists, provide a fallback if it doesn't
+          const username = currentUserInfo.username || currentUser.email || "User_" + currentUser.uid.substring(0, 8);
+
           await updateDoc(doc(db, "UserChats", targetUser.uid), {
             [combinedUID + ".userInfo"]: {
               uid: currentUser.uid,
-              username: currentUserInfo.username,
+              username: username,
             },
             [combinedUID + ".date"]: serverTimestamp(),
           });
@@ -531,8 +621,9 @@ const ChatSidebar = forwardRef(
           {/* Text Channels */}
           <SectionHeader>Channels</SectionHeader>
           <List disablePadding>
-            {currentClub?.channels && Object.values(currentClub.channels).length > 0 ? (
-              Object.entries(currentClub.channels)
+            {currentClub?.channels &&
+              Object.values(currentClub.channels).length > 0
+              ? Object.entries(currentClub.channels)
                 .sort((a, b) => a[1].createdAt - b[1].createdAt)
                 .map((channel) => (
                   <ChannelItem
@@ -550,8 +641,56 @@ const ChatSidebar = forwardRef(
                     />
                   </ChannelItem>
                 ))
-            ) : null}
+              : null}
           </List>
+
+          {/* Features Section */}
+          <Box sx={{ marginTop: "auto" }}>
+            <Divider />
+            <SectionHeader>Features</SectionHeader>
+            <List disablePadding>
+              <ChannelItem
+                onClick={() => {
+                  setSelectedChannel({
+                    id: "book-voting",
+                    name: "Book Voting",
+                    type: "feature",
+                    featureType: "bookVoting",
+                  });
+                }}
+                isSelected={selectedChannel?.id === "book-voting"}
+              >
+                <ChannelText
+                  primary={
+                    <>
+                      <MdBarChart size={16} />
+                      Book Voting
+                    </>
+                  }
+                />
+              </ChannelItem>
+              <ChannelItem
+                onClick={() => {
+                  setSelectedChannel({
+                    id: "challenges",
+                    name: "Challenges",
+                    type: "feature",
+                    featureType: "challenges",
+                  });
+                }}
+                isSelected={selectedChannel?.id === "challenges"}
+              >
+                <ChannelText
+                  primary={
+                    <>
+                      <GiTrophyCup size={16} />
+                      Challenges
+                    </>
+                  }
+                />
+              </ChannelItem>
+            </List>
+          </Box>
         </>
       );
     };
@@ -652,7 +791,7 @@ const ChatSidebar = forwardRef(
                   }}
                 >
                   <Typography variant="body1">
-                    {club.clubname} ({club.createdByUsername? club.createdByUsername : club.createdBy})
+                    {club.clubname} ({club.createdByUsername ? club.createdByUsername : club.createdBy})
                   </Typography>
                 </Box>
               ))}
@@ -743,7 +882,14 @@ const ChatSidebar = forwardRef(
               Cancel
             </Button>
             <Button
-              onClick={handleCreateClub}
+              onClick={() => {
+                try {
+                  handleCreateClub();
+                } catch (error) {
+                  console.error("Error in create club button handler:", error);
+                  alert("Error creating club. Please try again.");
+                }
+              }}
               variant="contained"
               sx={{
                 bgcolor: "#5d4b3d",
