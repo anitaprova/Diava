@@ -97,8 +97,7 @@ export default function ToRead() {
       comment, rating,
       progress: progressVal,
     };
-    
-    //add a function responsible for when a log is edited, use supabase update function to edit in line
+  
     try {
       const userId = auth.currentUser.uid
       if (!userId) return;
