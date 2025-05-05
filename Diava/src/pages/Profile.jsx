@@ -111,7 +111,8 @@ export default function Profile() {
       if (error) throw error;
       const xp = calculateXP(data);
       const level = getLevel(xp);
-      setStats({ ...data, level});
+      const remainingXP = getRemainingXP(xp);
+      setStats({ ...data, level, remainingXP});
     } catch (error) {
       console.error("Error fetching reading stats:", error.message);
     }
@@ -202,6 +203,16 @@ export default function Profile() {
   };
   const getLevel = (xp) => Math.floor(Math.sqrt(xp / 100));
 
+  const getnextXP = (xp) => {
+    const currentLevel = getLevel(xp);
+    const nextLevel = currentLevel + 1;
+    return Math.ceil((nextLevel ** 2) * 100) // reverse of formula to get xp, square nextlevel instead of squarerooting
+  }
+
+  const getRemainingXP = (xp) => {
+    return getnextXP(xp) - xp;
+  }
+
   useEffect(() => {
     getBadges();
   }, [stats]);
@@ -265,9 +276,9 @@ export default function Profile() {
             rows={[
               <div className="flex justify-between w-full">
                 <span>
-                  <TrendingUpIcon /> <span>Current Level Pace</span>
+                  <TrendingUpIcon /> <span>XP to Next Level </span>
                 </span>
-                <span>2 Books Ahead of Schedule</span>
+                <span>{stats.remainingXP ?? 0} XP</span>
               </div>,
               <div className="flex justify-between w-full">
                 <span>
