@@ -5,30 +5,86 @@ import AutoStoriesIcon from "@mui/icons-material/AutoStories";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import Rating from "@mui/material/Rating";
+import { supabase } from "../client";
+import { auth } from "../firebase/firebase";
+import { useRef } from "react";
 
 export default function Recommendations() {
+  const API_KEY = import.meta.env.VITE_HUGGING_FACE_API_KEY;
   const navigate = useNavigate();
-  const [books, setBooks] = useState([
-    {
-      id: "3vo0NQbIN2YC",
-      volumeInfo: {
-        title: "A Thousand Splendid Suns",
-        authors: ["Khaled Hosseini"],
-        publishedDate: "2008-09-18",
-        description:
-          "'A Thousand Splendid Suns' is a chronicle of Afghan history, and a deeply moving story of family, friendship, and the salvation to be found in love.",
-        pageCount: 419,
-        categories: ["Fiction / General"],
-        averageRating: 5,
-        imageLinks: {
-          thumbnail:
-            "http://books.google.com/books/content?id=3vo0NQbIN2YC&printsec=frontcover&img=1&zoom=1&edge=curl&imgtk=AFLRE71jVhNuWmSXykiQxuqgjmnYXICqQKU_xGWgCb8bckuuq2JGVGBufunssx_MEON9cwxnZSVZ7X7gf9btSeZttBEqmw5ANGbrJDpjA_PALpf5beNOV5Gm7NKhu6Tr_cbaajc60bIG&source=gbs_api",
-        },
-      },
-    },
-  ]);
-  const genres = [...new Set(books[0].volumeInfo.categories.flatMap((category) => category.split("/")))];
-  console.log(genres);
+  const [books, setBooks] = useState();
+  const[recommendations, setRecommendations] = useState();
+  const genres = [
+    ...new Set(
+      books?.[0]?.volumeInfo?.categories?.flatMap((category) =>
+        category.split("/")
+      )
+    ),
+  ];
+
+  const hasFetched = useRef(false);
+  useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
+    const getRecent = async () => {
+      try {
+        const userId = auth.currentUser.uid;
+        const { data, error } = await supabase
+          .from("lists")
+          .select("*, list_books(*)")
+          .eq("user_id", userId)
+          .eq("name", "Read")
+          .limit(3);
+
+        const booksRead = data?.[0]?.list_books?.sort(
+          (a, b) => new Date(b.created_at) - new Date(a.created_at)
+        );
+
+        setBooks(booksRead);
+        console.log(data);
+        if (error) throw error;
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    getRecent();
+  }, []);
+
+ const hasFetchedRecs = useRef(false);
+ useEffect(() => {
+   if (!books || books.length === 0 || hasFetchedRecs.current) return;
+
+   hasFetchedRecs.current = true;
+   const fetchRecs = async () => {
+     try {
+       const response = await fetch(
+         "https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2/pipeline/feature-extraction",
+         {
+           headers: {
+             Authorization: `Bearer ${API_KEY}`,
+             "Content-Type": "application/json",
+           },
+           method: "POST",
+           body: JSON.stringify({ inputs: books[0].title }),
+         }
+       );
+       const embedding = await response.json();
+
+       const { data, error } = await supabase.rpc("match_books_by_vector", {
+         query_embedding: embedding,
+       });
+
+       if (error) throw error;
+       console.log("Recommended books:", data);
+       setRecommendations(data);
+     } catch (err) {
+       console.error("Error fetching recommendations:", err);
+     }
+   };
+
+   fetchRecs();
+ }, [books]);
 
   return (
     <div className="font-merriweather text-darkbrown ml-50 mr-50 mt-10 mb-10">
@@ -38,115 +94,34 @@ export default function Recommendations() {
           Based on Your Past History
         </Typography>
         <div>
-          {books.length > 0 ? (
-            books.map((book) => (
+          {recommendations ? (
+            recommendations.map((book) => (
               <div className="bg-vanilla rounded-md p-6 w-fit flex mt-5 ml-5 gap-x-5">
-                <img
-                  src={book.volumeInfo.imageLinks.thumbnail}
-                  onClick={() => navigate(`/book/${book.id}`)}
-                  className="w-fit"
-                />
+                <img src={book?.thumbnail} className="w-fit" />
                 <div className="space-y-4">
                   <div>
-                    <Typography variant="h6">
-                      {book.volumeInfo.title}
-                    </Typography>
+                    <Typography variant="h6">{book?.title}</Typography>
                     <Typography variant="subtitle2">
-                      By {book.volumeInfo.authors}
+                      By {book?.authors}
                     </Typography>
                   </div>
 
                   <Typography variant="body2" className="flex flex-row gap-x-8">
                     <Typography className="flex gap-x-2">
                       <AutoStoriesIcon fontSize="small" />
-                      {book.volumeInfo.pageCount} pages
+                      {book?.num_pages} pages
                     </Typography>
 
                     <Typography className="flex gap-x-2">
                       <AccessTimeIcon fontSize="small" /> ~
-                      {Math.floor(book.volumeInfo.pageCount / 0.6 / 60)} hrs
+                      {Math.floor(book?.num_pages / 0.6 / 60)} hrs
                     </Typography>
                   </Typography>
 
-                  <div className="flex mt-2 mb-4 gap-x-4">
-                    <Rating
-                      value={book.volumeInfo.averageRating}
-                      precision={0.5}
-                      size="large"
-                      readOnly
-                    />
-                    <p className="inline-block align-middle text-lg">
-                      {book.volumeInfo.averageRating}
-                    </p>
-                  </div>
-
-                  <ul className="flex flex-wrap text-sm gap-3">
-                    {genres.map((genre) => (
-                      <li className="bg-sand p-1 text-center rounded-sm w-fit">
-                        <LocalOfferIcon color="secondary" /> {genre}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p>Nothing added yet!</p>
-          )}
-        </div>
-
-        <Typography variant="h5" className="pl-4 pt-2">
-          Based on Interest in Fiction
-        </Typography>
-        <div className="mb-5">
-          {books.length > 0 ? (
-            books.map((book) => (
-              <div className="bg-vanilla rounded-md p-6 w-fit flex mt-5 ml-5 gap-x-5">
-                <img
-                  src={book.volumeInfo.imageLinks.thumbnail}
-                  onClick={() => navigate(`/book/${book.id}`)}
-                  className="w-fit"
-                />
-                <div className="space-y-4">
-                  <div>
-                    <Typography variant="h6">
-                      {book.volumeInfo.title}
-                    </Typography>
-                    <Typography variant="subtitle2">
-                      By {book.volumeInfo.authors}
-                    </Typography>
-                  </div>
-
-                  <Typography variant="body2" className="flex flex-row gap-x-8">
-                    <Typography className="flex gap-x-2">
-                      <AutoStoriesIcon fontSize="small" />
-                      {book.volumeInfo.pageCount} pages
-                    </Typography>
-
-                    <Typography className="flex gap-x-2">
-                      <AccessTimeIcon fontSize="small" /> ~
-                      {Math.floor(book.volumeInfo.pageCount / 0.6 / 60)} hrs
-                    </Typography>
-                  </Typography>
-
-                  <div className="flex mt-2 mb-4 gap-x-4">
-                    <Rating
-                      value={book.volumeInfo.averageRating}
-                      precision={0.5}
-                      size="large"
-                      readOnly
-                    />
-                    <p className="inline-block align-middle text-lg">
-                      {book.volumeInfo.averageRating}
-                    </p>
-                  </div>
-
-                  <ul className="flex flex-wrap text-sm gap-3">
-                    {genres.map((genre) => (
-                      <li className="bg-sand p-1 text-center rounded-sm w-fit">
-                        <LocalOfferIcon color="secondary" /> {genre}
-                      </li>
-                    ))}
+                  <ul className="flex flex-wrap text-sm gap-3 mt-5">
+                    <li className="bg-sand p-1 text-center rounded-sm w-fit">
+                      <LocalOfferIcon color="secondary" /> {book?.categories}
+                    </li>
                   </ul>
                 </div>
               </div>
