@@ -175,7 +175,10 @@ export default function ToRead() {
         user_id: userId,
         author: book?.volumeInfo?.authors?.join(", "),
         pages: book?.volumeInfo?.pageCount,
-        description: book?.volumeInfo?.description,
+        description: book?.volumeInfo?.description.replace(
+          /<\/?[^>]+(>|$)/g,
+          ""
+        ),
         genres: genres.map((genre) => genre.trim()),
       };
 
