@@ -13,7 +13,6 @@ import {
 } from "@mui/material";
 import Add from "@mui/icons-material/Add";
 import ArrowCircleRightIcon from "@mui/icons-material/ArrowCircleRight";
-import axios from "axios";
 import CustomList from "../components/CustomList";
 import { auth } from "../firebase/firebase";
 import { supabase } from "../client";
@@ -124,8 +123,6 @@ export default function Home() {
   
     fetchProgressData();
   }, [currentlyReading]);
-  
-  
   
   return (
     <div className="ml-50 mr-50 mt-10 mb-25 font-merriweather text-darkbrown">

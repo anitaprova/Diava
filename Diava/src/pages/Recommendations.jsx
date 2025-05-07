@@ -66,7 +66,7 @@ export default function Recommendations() {
              "Content-Type": "application/json",
            },
            method: "POST",
-           body: JSON.stringify({ inputs: books[0].title }),
+           body: JSON.stringify({ inputs: books[0].description }),
          }
        );
        const embedding = await response.json();
@@ -89,14 +89,14 @@ export default function Recommendations() {
   return (
     <div className="font-merriweather text-darkbrown ml-50 mr-50 mt-10 mb-10">
       <Typography variant="h4">Recommendations</Typography>
-      <Box className="bg-mocha rounded-lg flex flex-col gap-4 shadow-custom">
-        <Typography variant="h5" className="pl-4 pt-2">
+      <Box className="bg-mocha rounded-lg flex flex-col gap-4 shadow-custom pl-5 pr-5 pb-10">
+        <Typography variant="h5" className="pt-5">
           Based on Your Past History
         </Typography>
-        <div>
+        <div className="grid grid-cols-2 gap-x-5">
           {recommendations ? (
             recommendations.map((book) => (
-              <div className="bg-vanilla rounded-md p-6 w-fit flex mt-5 ml-5 gap-x-5">
+              <div className="bg-vanilla rounded-md p-6 w-full flex mt-5 gap-x-5 ">
                 <img src={book?.thumbnail} className="w-fit" />
                 <div className="space-y-4">
                   <div>
@@ -114,7 +114,7 @@ export default function Recommendations() {
 
                     <Typography className="flex gap-x-2">
                       <AccessTimeIcon fontSize="small" /> ~
-                      {Math.floor(book?.num_pages / 0.6 / 60)} hrs
+                      {Math.floor(book?.num_pages / 45)} hrs
                     </Typography>
                   </Typography>
 

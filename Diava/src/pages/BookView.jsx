@@ -90,6 +90,7 @@ export default function BookDetail() {
           user_id: userId,
           author: book?.volumeInfo?.authors?.join(", "),
           pages: book?.volumeInfo?.pageCount,
+          description: book?.volumeInfo?.description,
           genres: genres?.map((genre) => genre.trim()),
         };
   
@@ -279,7 +280,7 @@ export default function BookDetail() {
     
                 <Typography className="flex gap-x-2">
                   <AccessTimeIcon fontSize="small" /> ~
-                  {Math.floor(book?.volumeInfo?.pageCount / 0.6 / 60) || 0} hrs
+                  {Math.floor(book?.volumeInfo?.pageCount / 45) || 0} hrs
                 </Typography>
               </Typography>
     

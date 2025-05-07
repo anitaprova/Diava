@@ -74,6 +74,7 @@ export default function Review() {
         user_id: userId,
         author: book?.volumeInfo?.authors?.join(", "),
         pages: book?.volumeInfo?.pageCount,
+        description: book?.volumeInfo?.description,
         genres: genres.map((genre) => genre.trim()),
       };
 
