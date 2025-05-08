@@ -117,7 +117,7 @@ export default function ToRead() {
                   <div className="flex items-center gap-2">
                     <AccessTimeIcon fontSize="small" />
                     <Typography variant="body2">
-                      ~{Math.floor((book?.pageCount || 0) / 0.6 / 60)} hrs
+                      ~{Math.floor((book?.pageCount || 0) / 45)} hrs
                     </Typography>
                   </div>
                 </div>
