@@ -26,7 +26,14 @@ export default function Profile() {
   const [editIndex, setEditIndex] = useState(null);
   const [text, setText] = useState("");
   const [username, setUserName] = useState("");
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState({
+    books_read: 0,
+    pages_read: 0,
+    number_of_reviews: 0,
+    number_of_ratings: 0,
+    streak: 0,
+    xp: 0,
+    level: 0,});
   const [achievements, setAchievements] = useState();
   const [badge, setBadge] = useState("");
   const [nextBadge, setNextBadge] = useState("");
@@ -102,13 +109,14 @@ export default function Profile() {
         .single();
 
       if (error) throw error;
-
-      setStats(data);
+      const xp = calculateXP(data);
+      const level = getLevel(xp);
+      const remainingXP = getRemainingXP(xp);
+      setStats({ ...data, level, remainingXP});
     } catch (error) {
       console.error("Error fetching reading stats:", error.message);
     }
   };
-
   const getGoals = async () => {
     try {
       const user_id = auth.currentUser?.uid;
@@ -182,6 +190,29 @@ export default function Profile() {
     getAchievements();
   }, []);
 
+
+ 
+  const calculateXP = (stats) => {
+    return Math.floor(
+      (stats.books_read || 0) * 50 + //maybe change point system?
+      (stats.pages_read || 0) * 1.0 +
+      (stats.number_of_reviews || 0) * 30 +
+      (stats.number_of_ratings || 0) * 10 +
+      (stats.streak || 0) * 5
+    );
+  };
+  const getLevel = (xp) => Math.floor(Math.sqrt(xp / 100));
+
+  const getnextXP = (xp) => {
+    const currentLevel = getLevel(xp);
+    const nextLevel = currentLevel + 1;
+    return Math.ceil((nextLevel ** 2) * 100) // reverse of formula to get xp, square nextlevel instead of squarerooting
+  }
+
+  const getRemainingXP = (xp) => {
+    return getnextXP(xp) - xp;
+  }
+
   useEffect(() => {
     getBadges();
   }, [stats]);
@@ -207,7 +238,7 @@ export default function Profile() {
               <Typography variant="h4">
                 Hello, <span className="font-bold">{username}!</span>
               </Typography>
-              <Typography variant="h7">Level 10</Typography>
+              <Typography variant="h7">Level {stats.level || 0 }</Typography>
             </Box>
           </Box>
 
@@ -245,9 +276,9 @@ export default function Profile() {
             rows={[
               <div className="flex justify-between w-full">
                 <span>
-                  <TrendingUpIcon /> <span>Current Level Pace</span>
+                  <TrendingUpIcon /> <span>XP to Next Level </span>
                 </span>
-                <span>2 Books Ahead of Schedule</span>
+                <span>{stats.remainingXP ?? 0} XP</span>
               </div>,
               <div className="flex justify-between w-full">
                 <span>
@@ -341,7 +372,10 @@ export default function Profile() {
               <span>{stats?.favorite_genre || "Not calulated yet"}</span>
             </div>,
             <div className="flex justify-between w-full">
-              <span>Longest Streak</span> <span>{stats?.longest_streak} Day(s)</span>
+              <span>Longest Streak</span>
+              <span>
+                {stats?.longest_streak ?? 0} Day{stats?.longest_streak === 1 ? '' : 's'}
+              </span>
             </div>,
           ]}
         />
