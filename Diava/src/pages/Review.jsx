@@ -85,7 +85,9 @@ export default function Review() {
 
       const { error: insertError } = await supabase
         .from("list_books")
-        .insert([bookData]);
+        .update([bookData])
+        .eq("user_id", userId)
+        .eq("google_books_id", book.id);
 
       if (insertError) throw insertError;
     } catch (error) {
