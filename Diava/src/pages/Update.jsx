@@ -17,8 +17,11 @@ export default function ToRead() {
   const [totalPages, setTotalPages] = useState(0);
   const [selectedLog, setSelectedLog] = useState(null);
   const [open, setOpen] = useState(false);
-  const userId = auth.currentUser.uid
-
+  const userId = auth.currentUser.uid;
+  const genresRaw = book?.volumeInfo?.categories || [];
+  const genres = [
+    ...new Set(genresRaw.flatMap((category) => category.split("/"))),
+  ];
   
   useEffect(() => {
     const fetchBook = async () => {
@@ -172,6 +175,10 @@ export default function ToRead() {
         user_id: userId,
         author: book?.volumeInfo?.authors?.join(", "),
         pages: book?.volumeInfo?.pageCount,
+        description: book?.volumeInfo?.description.replace(
+          /<\/?[^>]+(>|$)/g,
+          ""
+        ),
         genres: genres.map((genre) => genre.trim()),
       };
 
