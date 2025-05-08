@@ -90,7 +90,7 @@ export default function Recommendations() {
                 "Content-Type": "application/json",
               },
               method: "POST",
-              body: JSON.stringify({ inputs: book.description }),
+              body: JSON.stringify({ inputs: book.description ? book.description : book.title}),
             }
           );
 
@@ -134,7 +134,9 @@ export default function Recommendations() {
                "Content-Type": "application/json",
              },
              method: "POST",
-             body: JSON.stringify({ inputs: book.description }),
+             body: JSON.stringify({
+               inputs: book.description ? book.description : book.title,
+             }),
            }
          );
 
