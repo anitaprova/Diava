@@ -306,10 +306,9 @@ const ChatSidebar = forwardRef(
           logo: {},
           channels: {
             general: {
-              id: "general",
+              id: uuidv4(),
               name: "general",
               createdAt: serverTimestamp(),
-              type: "text"
             }
           },
           members: {
@@ -319,7 +318,9 @@ const ChatSidebar = forwardRef(
               joined: serverTimestamp(),
             },
           },
+          challenges: {},
         });
+
         console.log("Club document created in Firestore");
 
         // Add creator to club

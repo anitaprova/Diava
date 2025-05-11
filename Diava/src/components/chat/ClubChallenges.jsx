@@ -25,6 +25,8 @@ import AddIcon from "@mui/icons-material/Add";
 import UserAvatar from "./UserAvatar";
 import { useAuth } from "../../context/AuthContext";
 import { useClub } from "../../context/ClubContext";
+import { v4 as uuidv4 } from "uuid";
+import { serverTimestamp } from "firebase/firestore";
 
 const WindowContainer = styled(Box)({
   flex: 1,
@@ -203,7 +205,7 @@ const mockChallenges = [
 const ClubChallenges = ({ clubName, isAdmin }) => {
   const { currentUser } = useAuth();
   const { currentClub } = useClub();
-  const [challenges, setChallenges] = useState(mockChallenges);
+  const [challenges, setChallenges] = useState([]);
   const [addChallengeOpen, setAddChallengeOpen] = useState(false);
   const [newChallenge, setNewChallenge] = useState({
     title: "",
@@ -211,7 +213,7 @@ const ClubChallenges = ({ clubName, isAdmin }) => {
     dueDate: ""
   });
 
-  const currentUserId = "u3"; // This would come from your auth context
+  const currentUserId = currentUser.uid;
 
   // Check if the user is an admin or owner based on the club data
   const checkIsAdmin = () => {
@@ -221,6 +223,7 @@ const ClubChallenges = ({ clubName, isAdmin }) => {
     return userRole === "Admin" || userRole === "Owner";
   };
 
+  // To work on
   const handleToggleChallenge = (challengeId) => {
     setChallenges(
       challenges.map((challenge) => {
@@ -270,15 +273,20 @@ const ClubChallenges = ({ clubName, isAdmin }) => {
     setNewChallenge({ ...newChallenge, [name]: value });
   };
 
-  const handleSubmitNewChallenge = () => {
+  const handleSubmitNewChallenge = async () => {
+    const currentTime = serverTimestamp();
+
+
+
     // Create new challenge object
     const challengeToAdd = {
-      id: Date.now().toString(), // Simple id for now
+      id: uuidv4(),
       title: newChallenge.title,
       description: newChallenge.description,
+      createdAt: currentTime,
       dueDate: newChallenge.dueDate,
       completed: false,
-      completedBy: []
+      completedBy: {},
     };
 
     // Add new challenge to the list
