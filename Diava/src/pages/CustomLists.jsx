@@ -1,23 +1,32 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";  // Import useParams to access URL parameters
 import { Typography, Box } from "@mui/material";
 import AutoStoriesIcon from "@mui/icons-material/AutoStories";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import Rating from "@mui/material/Rating";
 import { auth } from "../firebase/firebase";
 import { supabase } from "../client";
 
-export default function ToRead() {
+export default function CustomList() {
   const navigate = useNavigate();
+  const { id: list_id } = useParams();  
   const [books, setBooks] = useState([]);
+  const [listname, setListName] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchToReadBooks = async () => {
+    if (!list_id) {
+      console.error("Error: list_id is undefined.");
+      return;
+    }
+
+    const fetchCustomBooks = async () => {
       try {
         const userId = auth.currentUser?.uid;
-        if (!userId) return;
+        if (!userId || !list_id) return;
+
+        console.log("Fetching books for list_id:", list_id);  
+
         const { data, error } = await supabase
           .from("list_books")
           .select(
@@ -31,10 +40,28 @@ export default function ToRead() {
           `
           )
           .eq("lists.user_id", userId)
-          .eq("lists.name", "Want to Read");
-
-        if (error) throw error;
-
+          .eq("lists.id", list_id);  
+        
+          if (error) {
+            console.error("Error fetching list data: ", error);
+          } else {
+            if (data && data.length > 0) {
+              setListName(data[0].lists?.name || "Untitled List");
+            } else {
+              const { data: listInfo, error: listError } = await supabase
+                .from("lists")
+                .select("name")
+                .eq("id", list_id)
+                .eq("user_id", userId)
+                .single();
+                if (listError) {
+                  console.error("Error fetching list name:", listError);
+                  setListName("Unnamed List");
+                } else {
+                  setListName(listInfo?.name || "Unnamed List");
+                }
+            }
+          }
         const mappedBooks = await Promise.all(
           (data || []).map(async (book) => {
             let pageCount = null;
@@ -75,18 +102,17 @@ export default function ToRead() {
         );
         setBooks(mappedBooks);
       } catch (error) {
-        console.error("Error fetching Want to Read books:", error.message);
+        console.error("Error fetching books for list:", error.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchToReadBooks();
-  }, []);
-
+    fetchCustomBooks();
+  }, [list_id]);  
   return (
     <div className="font-merriweather ml-50 mr-50 mt-10 mb-10">
-      <Typography variant="h4">Want to Read</Typography>
+      <Typography variant="h4">{listname}</Typography>  
       <Box className="bg-mocha shadow-custom w-[1200px] grid grid-cols-2 rounded-lg">
         {loading ? (
           <p>Loading...</p>
@@ -130,7 +156,7 @@ export default function ToRead() {
                     size="small"
                   />
                   <Typography variant="body2">
-                    {book.averageRating ? `${book.averageRating.toFixed(1)}` : "NaN"}
+                    {book.averageRating ? `${book.averageRating.toFixed(1)} ` : "NaN"}
                   </Typography>
                 </div>
               </div>
@@ -143,3 +169,4 @@ export default function ToRead() {
     </div>
   );
 }
+

@@ -17,6 +17,8 @@ export default function ToRead() {
   const [totalPages, setTotalPages] = useState(0);
   const [selectedLog, setSelectedLog] = useState(null);
   const [open, setOpen] = useState(false);
+  const [progressCompleted, setProgressCompleted] = useState(false);
+  const [askToReview, setaskToReview] = useState(false);
   const userId = auth.currentUser.uid
 
   
@@ -65,6 +67,80 @@ export default function ToRead() {
     }
   }, [userId, id]);
   
+const addToReadList = async () => {
+  try {
+    const userId = auth.currentUser.uid;
+    if (!userId || !book?.id) return;
+
+    // Get the "Read" list ID
+    const { data: readList, error: readListError } = await supabase
+      .from("lists")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("name", "Read")
+      .single();
+
+    if (readListError || !readList) {
+      console.error("Could not find 'Read' list:", readListError?.message);
+      return;
+    }
+
+    const readListId = readList.id;
+
+    // Get genres from book data (ensure book.volumeInfo.genres exists)
+    const genres = book?.volumeInfo?.categories || []; // If no genres are available, fallback to an empty array
+
+    // Insert into "Read" list
+    const bookData = {
+      list_id: readListId,
+      google_books_id: book?.id,
+      title: book?.volumeInfo?.title,
+      thumbnail: book?.volumeInfo?.imageLinks?.thumbnail,
+      user_id: userId,
+      author: book?.volumeInfo?.authors?.join(", "),
+      pages: book?.volumeInfo?.pageCount,
+      genres: genres.map((genre) => genre.trim()), 
+    };
+
+    const { data: existing, error: existingError } = await supabase
+      .from("list_books")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("list_id", readListId)
+      .eq("google_books_id", book?.id)
+      .single();
+
+    if (!existing) {
+      const { error: insertError } = await supabase
+        .from("list_books")
+        .insert([bookData]);
+
+      if (insertError) throw insertError;
+    }
+    const { data: currentlyList, error: currListError } = await supabase
+      .from("lists")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("name", "Currently Reading")
+      .single();
+
+    if (currListError || !currentlyList) {
+      console.warn("Could not find 'Currently Reading' list:", currListError?.message);
+    } else {
+      await supabase
+        .from("list_books")
+        .delete()
+        .eq("user_id", userId)
+        .eq("list_id", currentlyList.id)
+        .eq("google_books_id", book?.id);
+    }
+
+    console.log("Moved book to 'Read' list successfully.");
+  } catch (error) {
+    console.error("Error moving book to 'Read' list:", error.message || error);
+  }
+};
+
   const handleOpen = () => {
     setSelectedLog(null);
     setOpen(true);
@@ -143,57 +219,19 @@ export default function ToRead() {
         console.log("New log inserted into database:" , data);
         setLogs((prevState) => [newLog, ...prevState]);
       }
+
+      if (progressVal === 100) {
+        await addToReadList();
+        setaskToReview(true);
+        setProgressCompleted(true);
+      }
       handleClose();
     } catch (error) {
       console.error("Error inserting current user's progress: ", error);
     }
   };
-  const addToReadList = async () => {
-    try {
-      const userId = auth.currentUser.uid;
-      const { data: listData, error: listError } = await supabase
-        .from("lists")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("name", "Read")
-        .single();
-
-      if (listError || !listData) {
-        console.error("Could not find list_id:", listError?.message);
-        return;
-      }
-
-      const list_id = listData.id;
-      const bookData = {
-        list_id,
-        google_books_id: book?.id,
-        title: book?.volumeInfo?.title,
-        thumbnail: book?.volumeInfo?.imageLinks?.thumbnail,
-        user_id: userId,
-        author: book?.volumeInfo?.authors?.join(", "),
-        pages: book?.volumeInfo?.pageCount,
-        genres: genres.map((genre) => genre.trim()),
-      };
-
-      console.log(bookData);
-
-      const { error: insertError } = await supabase
-        .from("list_books")
-        .insert([bookData]);
-
-      if (insertError) throw insertError;
-    } catch (error) {
-      console.error(
-        "Error fetching list books:",
-        error.response?.data || error.message
-      );
-    }
-  };
-
-  const finishedBook = () => {
-    addToReadList();
-    navigate(`/review/${book.id}`);
-  };
+  
+ 
   return (
     <div className="font-merriweather ml-50 mr-50 mt-10 mb-10">
       {book && book.volumeInfo ? (
@@ -252,13 +290,6 @@ export default function ToRead() {
                 onClick={handleOpen}
               >
                 Add Log
-              </Button>
-              <Button
-                variant="dark"
-                className="self-center w-fit"
-                onClick={finishedBook}
-              >
-                Finished?
               </Button>
             </Box>
   
@@ -377,6 +408,34 @@ export default function ToRead() {
           </Box>
         ))}
       </Box>
+      <Dialog open={askToReview} onClose={() => setaskToReview(false)}>
+        <DialogTitle>Finished Reading?</DialogTitle>
+          <DialogContent>
+            <Typography>
+              You’ve reached 100% progress. Would you like to leave a review?
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+              setaskToReview(false);
+              navigate(`/review/${book.id}`);
+              }}
+              variant="coffee"
+            >
+              Yes
+            </Button>
+            <Button
+              onClick={() => {
+              setaskToReview(false);
+              navigate("/");
+            }}
+              variant="dark"
+            >
+            No, go to Home
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 }  

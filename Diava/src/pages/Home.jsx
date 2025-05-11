@@ -125,6 +125,7 @@ export default function Home() {
     fetchProgressData();
   }, [currentlyReading]);
   
+
   
   
   return (
