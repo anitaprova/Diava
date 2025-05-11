@@ -168,7 +168,7 @@ export default function Recommendations() {
         <Typography variant="h5" className="pt-5">
           Based on Your Recent Read
         </Typography>
-        <div className="grid grid-cols-2 gap-x-5 gap-y-5">
+        <div className="grid grid-cols-2 gap-5">
           {recommendations ? (
             recommendations.map((book) => (
               <div className="bg-vanilla rounded-md p-6 w-full flex gap-x-5 ">
