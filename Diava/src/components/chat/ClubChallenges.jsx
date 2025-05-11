@@ -26,7 +26,11 @@ import UserAvatar from "./UserAvatar";
 import { useAuth } from "../../context/AuthContext";
 import { useClub } from "../../context/ClubContext";
 import { v4 as uuidv4 } from "uuid";
-import { serverTimestamp } from "firebase/firestore";
+import { updateDoc, doc, serverTimestamp } from "firebase/firestore";
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { db } from "../../firebase/firebase";
 
 const WindowContainer = styled(Box)({
   flex: 1,
@@ -207,13 +211,13 @@ const ClubChallenges = ({ clubName, isAdmin }) => {
   const { currentClub } = useClub();
   const [challenges, setChallenges] = useState([]);
   const [addChallengeOpen, setAddChallengeOpen] = useState(false);
-  const [newChallenge, setNewChallenge] = useState({
+  const currentUserId = currentUser.uid;
+  const defaultChallenge = {
     title: "",
     description: "",
-    dueDate: ""
-  });
-
-  const currentUserId = currentUser.uid;
+    dueDate: null
+  };
+  const [newChallenge, setNewChallenge] = useState(defaultChallenge);
 
   // Check if the user is an admin or owner based on the club data
   const checkIsAdmin = () => {
@@ -262,10 +266,12 @@ const ClubChallenges = ({ clubName, isAdmin }) => {
 
   const handleAddChallenge = () => {
     setAddChallengeOpen(true);
+    setNewChallenge(defaultChallenge);
   };
 
   const handleCloseAddChallenge = () => {
     setAddChallengeOpen(false);
+    setNewChallenge(defaultChallenge);
   };
 
   const handleInputChange = (e) => {
@@ -274,31 +280,42 @@ const ClubChallenges = ({ clubName, isAdmin }) => {
   };
 
   const handleSubmitNewChallenge = async () => {
-    const currentTime = serverTimestamp();
+    const currentTime = new Date();
 
+    if (!newChallenge.dueDate || new Date(newChallenge.dueDate) < currentTime) {
+      alert("Cannot pick a due date in the past.");
+      return;
+    }
 
+    const challengeId = uuidv4();
 
     // Create new challenge object
     const challengeToAdd = {
-      id: uuidv4(),
+      id: challengeId,
       title: newChallenge.title,
       description: newChallenge.description,
-      createdAt: currentTime,
+      createdAt: serverTimestamp(),
       dueDate: newChallenge.dueDate,
-      completed: false,
       completedBy: {},
     };
 
-    // Add new challenge to the list
-    setChallenges([...challenges, challengeToAdd]);
+    try {
+      // Add challenge to Club Challenges
+      const clubRef = doc(db, "Clubs", currentClub.uid);
 
-    // Reset form and close dialog
-    setNewChallenge({
-      title: "",
-      description: "",
-      dueDate: ""
-    });
-    setAddChallengeOpen(false);
+      await updateDoc(clubRef, {
+        [`challenges.${challengeId}`]: challengeToAdd
+      });
+
+      // Reset form and close dialog
+      setNewChallenge(defaultChallenge);
+      setAddChallengeOpen(false);
+
+      console.log("Added challenge");
+    }
+    catch (error) {
+      console.log(error);
+    }
   };
 
   // Determine if current user has admin privileges
@@ -426,16 +443,29 @@ const ClubChallenges = ({ clubName, isAdmin }) => {
             onChange={handleInputChange}
             sx={{ mb: 2 }}
           />
-          <TextField
-            margin="dense"
-            name="dueDate"
-            label="Due Date"
-            fullWidth
-            variant="outlined"
-            value={newChallenge.dueDate}
-            onChange={handleInputChange}
-            placeholder="May 30, 2023"
-          />
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <DateTimePicker
+              label="Due Date"
+              value={newChallenge.dueDate}
+              onChange={(newValue) => {
+                setNewChallenge((prev) => ({
+                  ...prev,
+                  dueDate: newValue,
+                }));
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  margin="dense"
+                  name="dueDate"
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Enter due date and time"
+                  sx={{ mb: 2 }}
+                />
+              )}
+            />
+          </LocalizationProvider>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseAddChallenge} sx={{ color: "#5d4b3d" }}>
