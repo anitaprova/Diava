@@ -383,65 +383,31 @@ const ChatSidebar = forwardRef(
           startAt(inputText),
           endAt(inputText + "\uf8ff")
         );
+  
+        // Get the query snapshots and combine them
+        const [qClubnameSnap, qUsernameSnap] = await Promise.all([
+          getDocs(qClubname),
+          getDocs(qUsername)
+        ]);
 
-        const clubsDoc = await getDocs(clubsQ);
-        if (clubsDoc.empty) {
-          alert("Club does not exist");
+        const allDocs = [...qClubnameSnap.docs, ...qUsernameSnap.docs];
+
+        if (allDocs.length === 0) {
+          alert("Cannot find club(s).");
           return;
         }
 
-        // Check if user is in club
-        const userClubsRef = doc(db, "UserClubs", currentUser.uid);
-        const userClubsDoc = await getDoc(userClubsRef);
+        const clubs =allDocs.map(doc => ({id: doc.id, ...doc.data() }));
 
-        if (userClubsDoc.exists()) {
-          const userClubsData = userClubsDoc.data();
-          const isInClub = inputText in userClubsData;
+        setClubSearchResults(clubs);
 
-          if (isInClub) {
-            alert("You're already in the club.");
-            console.log("User is already in the club!");
-            return;
-          }
-
-          // Get current user's username and club's name
-          const userRef = doc(db, "Users", currentUser.uid);
-          const userDoc = await getDoc(userRef);
-          const currentUserInfo = userDoc.data();
-          const clubRef = doc(db, "Clubs", inputText);
-          const clubDoc = await getDoc(clubRef);
-
-          // Check if username exists, provide a fallback if it doesn't
-          const username = currentUserInfo.username || currentUser.email || "User_" + currentUser.uid.substring(0, 8);
-
-          await updateDoc(clubRef, {
-            [`members.${currentUser.uid}`]: {
-              username: username,
-              role: "Member",
-              joined: serverTimestamp(),
-            },
-          });
-          await updateDoc(doc(db, "UserClubs", currentUser.uid), {
-            [inputText + ".clubInfo"]: {
-              clubuid: inputText,
-              clubname: clubDoc.data().clubname,
-              joined: serverTimestamp(),
-            },
-          });
-
-          console.log("Successfully added user to club.");
-        } else {
-          alert("Error finding user's UserClubs reference");
-          console.log("Error adding user to club.");
-          return;
-        }
-
-        console.log("Successfully found club.");
-      } catch (error) {
+        console.log("Successfully found club(s).");
+      }
+      catch (error) {
         console.log(error);
       }
     };
-
+    
     const joinClub = async (club) => {
       // Check if user is in club
       const userClubsRef = doc(db, "UserClubs", currentUser.uid);
