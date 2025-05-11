@@ -64,9 +64,14 @@ export default function CustomList({ id, name, list_id }) {
     }
   };
 
+  const handleListClick = () => {
+    navigate(`/customlist/${id}`);
+  };
+  
+
   return (
     <div className="mb-10 w-full">
-      <Typography variant="h5">
+      <Typography variant="h5" onClick={handleListClick} style={{ cursor: "pointer" }}>
         {currName ? currName : name} <EditIcon onClick={handleOpen} />
       </Typography>
       <Dialog
