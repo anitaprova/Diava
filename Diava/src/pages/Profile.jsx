@@ -15,6 +15,7 @@ import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import NotebookCard from "../components/Notebook";
 import { auth } from "../firebase/firebase";
 import { supabase } from "../client";
+import { useLocation } from "react-router-dom";
 
 export default function Profile() {
   const [goals, setGoals] = useState([
@@ -97,6 +98,14 @@ export default function Profile() {
     }
   };
 
+  const location = useLocation();
+  useEffect(() => {
+    if (location.state?.refresh) {
+      getReadingStats();
+    }
+  }, [location.state]);
+
+
   const getReadingStats = async () => {
     try {
       const user_id = auth.currentUser?.uid;
@@ -117,6 +126,8 @@ export default function Profile() {
       console.error("Error fetching reading stats:", error.message);
     }
   };
+  console.log(stats);
+
   const getGoals = async () => {
     try {
       const user_id = auth.currentUser?.uid;

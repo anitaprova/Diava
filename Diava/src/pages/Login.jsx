@@ -3,18 +3,22 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
 import { FaGoogle, FaBook, FaGamepad, FaUsers } from "react-icons/fa";
 import "../styles/Auth.css";
-import { browserSessionPersistence, 
-          browserLocalPersistence, 
-          signInWithEmailAndPassword, 
-          GoogleAuthProvider, 
-          signInWithPopup, 
-          signOut, 
-          sendPasswordResetEmail, 
-          setPersistence, 
-          inMemoryPersistence} from "firebase/auth";
+import {
+  browserSessionPersistence,
+  browserLocalPersistence,
+  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  sendPasswordResetEmail,
+  setPersistence,
+  inMemoryPersistence,
+} from "firebase/auth";
 import { auth, db } from "../firebase/firebase";
 import { getDoc, doc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
+import { supabase } from "../client";
+import { differenceInCalendarDays } from "date-fns";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -41,8 +45,31 @@ const Login = () => {
     const { name, value, type, checked } = e.target;
     setFormData((prevState) => ({
       ...prevState,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === "checkbox" ? checked : value,
     }));
+  };
+
+  const checkStreak = async (user) => {
+    try {
+      const userId = user;
+      const { data, error } = await supabase
+        .from("reading_statistics")
+        .select("last_login")
+        .eq("user_id", userId);
+
+      const today = new Date();
+      const diff = differenceInCalendarDays(today, data?.[0]?.last_login);
+      if (diff > 1) {
+        const { error } = await supabase
+          .from("reading_statistics")
+          .update({ streak: 0 })
+          .eq("user_id", userId);
+
+          if (error) console.log("Error updating data in supabase", error);
+      }
+    } catch (error) {
+      console.log("Error getting last login", error);
+    }
   };
 
   // Handle form submission
@@ -53,23 +80,30 @@ const Login = () => {
       if (formData.rememberMe) {
         await setPersistence(auth, browserLocalPersistence); // stays across tabs/sessions
       } else {
-      await setPersistence(auth, browserSessionPersistence); // reset on tab close
+        await setPersistence(auth, browserSessionPersistence); // reset on tab close
       }
 
-      const userCredentials = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      const userCredentials = await signInWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
       const user = userCredentials.user;
-      
+
       if (!user.emailVerified) {
-        console.log("Email is not verified. Check the provided email's inbox to verify.");
+        console.log(
+          "Email is not verified. Check the provided email's inbox to verify."
+        );
         alert("Please verify your email before trying to log in");
         return;
       }
 
-      navigate(mainpage);
-      console.log("User logged in sucessfully.")
-    }
-    catch (error) {
-      alert("Either email or password was incorrect. Please try again.")
+      // updates streak if its been too long
+      await checkStreak(user.uid);
+      navigate(mainpage, { state: { refresh: true } });
+      console.log("User logged in sucessfully.");
+    } catch (error) {
+      alert("Either email or password was incorrect. Please try again.");
       console.log(error);
     }
 
@@ -85,7 +119,7 @@ const Login = () => {
       if (formData.rememberMe) {
         await setPersistence(auth, browserLocalPersistence); // stays across tabs/sessions
       } else {
-      await setPersistence(auth, browserSessionPersistence); // reset on tab close
+        await setPersistence(auth, browserSessionPersistence); // reset on tab close
       }
 
       const provider = new GoogleAuthProvider();
@@ -99,22 +133,22 @@ const Login = () => {
 
         // Check if gmail exists in database
         if (!userDoc.exists()) {
-          console.log("User is not in database. Signing out.")
+          console.log("User is not in database. Signing out.");
           await signOut(auth);
 
           // Make sure user is logged out first
-          setLoading(false); 
+          setLoading(false);
           navigate("/googlesignup", { replace: true });
           return;
         }
-        
-        setLoading(false); 
+
+        setLoading(false);
+        await checkStreak(result.user.uid);
         navigate(mainpage);
       }
-    }
-    catch (error) {
+    } catch (error) {
       console.log(error);
-      setLoading(false); 
+      setLoading(false);
     }
   };
 
@@ -128,8 +162,7 @@ const Login = () => {
 
       await sendPasswordResetEmail(auth, formData.email);
       alert("Check your email inbox to reset your password and try again.");
-    }
-    catch (error) {
+    } catch (error) {
       console.log(error);
     }
   };
@@ -192,8 +225,8 @@ const Login = () => {
               />
               <label htmlFor="rememberMe"> Remember me</label>
             </div>
-            <Link 
-              to="#" 
+            <Link
+              to="#"
               onClick={(e) => {
                 e.preventDefault();
                 handlePasswordReset();

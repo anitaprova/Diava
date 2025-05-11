@@ -90,6 +90,10 @@ export default function BookDetail() {
           user_id: userId,
           author: book?.volumeInfo?.authors?.join(", "),
           pages: book?.volumeInfo?.pageCount,
+          description: book?.volumeInfo?.description?.replace(
+            /<\/?[^>]+(>|$)/g,
+            ""
+          ),
           genres: genres?.map((genre) => genre.trim()),
         };
   
@@ -279,7 +283,7 @@ export default function BookDetail() {
     
                 <Typography className="flex gap-x-2">
                   <AccessTimeIcon fontSize="small" /> ~
-                  {Math.floor(book?.volumeInfo?.pageCount / 0.6 / 60) || 0} hrs
+                  {Math.floor(book?.volumeInfo?.pageCount / 45) || 0} hrs
                 </Typography>
               </Typography>
     
@@ -458,8 +462,8 @@ export default function BookDetail() {
     
           {/* User Reviews */}
           {userReviews && userReviews.length > 0 && (
-            <div className="mt-10 space-y-5">
-              <Typography variant="h5">User Reviews</Typography>
+            <div className="mt-15 space-y-5">
+              <Typography variant="h5">Other User Reviews</Typography>
     
               {userReviews.map((rev, index) => (
                 <div key={index} className="bg-vanilla rounded-md p-5 space-y-5">

@@ -60,14 +60,14 @@ export default function CurrentlyReading() {
   return (
     <div className="font-merriweather ml-50 mr-50 mt-10 mb-10">
       <Typography variant="h4">Currently Reading</Typography>
-      <Box className="bg-mocha shadow-custom w-fit grid grid-cols-2 rounded-lg">
+      <Box className="bg-mocha shadow-custom w-full grid grid-cols-2 rounded-lg gap-10 p-10">
         {loading ? (
           <p>Loading...</p>
         ) : books.length > 0 ? (
           books.map((book) => (
             <div
               key={book.google_books_id}
-              className="bg-vanilla rounded-md p-6 w-fit flex m-5 gap-x-5"
+              className="bg-vanilla rounded-md p-6 w-full flex gap-x-5"
             >
               <img
                 src={book.thumbnail}

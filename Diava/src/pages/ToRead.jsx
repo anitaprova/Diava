@@ -87,14 +87,14 @@ export default function ToRead() {
   return (
     <div className="font-merriweather ml-50 mr-50 mt-10 mb-10">
       <Typography variant="h4">Want to Read</Typography>
-      <Box className="bg-mocha shadow-custom w-[1200px] grid grid-cols-2 rounded-lg">
+      <Box className="bg-mocha shadow-custom w-full grid grid-cols-2 rounded-lg gap-10 p-10">
         {loading ? (
           <p>Loading...</p>
         ) : books.length > 0 ? (
           books.map((book) => (
             <div
               key={book.google_books_id}
-              className="bg-vanilla rounded-md p-6 w-[550px] flex m-5 gap-x-5"
+              className="bg-vanilla rounded-md p-6 w-full flex gap-x-5"
             >
               <img
                 src={book.thumbnail}
@@ -117,7 +117,7 @@ export default function ToRead() {
                   <div className="flex items-center gap-2">
                     <AccessTimeIcon fontSize="small" />
                     <Typography variant="body2">
-                      ~{Math.floor((book?.pageCount || 0) / 0.6 / 60)} hrs
+                      ~{Math.floor((book?.pageCount || 0) / 45)} hrs
                     </Typography>
                   </div>
                 </div>
@@ -130,7 +130,7 @@ export default function ToRead() {
                     size="small"
                   />
                   <Typography variant="body2">
-                    {book.averageRating ? `${book.averageRating.toFixed(1)}` : "NaN"}
+                    {book.averageRating ? `${book.averageRating.toFixed(1)} / 5` : "Not availble"}
                   </Typography>
                 </div>
               </div>
