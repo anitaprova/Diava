@@ -65,7 +65,7 @@ const SidebarContainer = styled(Box)(({ theme }) => ({
 const TabsContainer = styled(Box)({
   display: "flex",
   alignItems: "center",
-  padding: "10px 16px",
+  padding: "8px 11px",
   borderBottom: "1px solid #ddd",
 });
 
@@ -188,6 +188,8 @@ const ChatSidebar = forwardRef(
         });
 
         console.log("Successfully left Club.");
+        onTabChange("messages");
+
       } catch (error) {
         console.log(error);
       }
