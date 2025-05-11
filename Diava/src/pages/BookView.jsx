@@ -462,8 +462,8 @@ export default function BookDetail() {
     
           {/* User Reviews */}
           {userReviews && userReviews.length > 0 && (
-            <div className="mt-10 space-y-5">
-              <Typography variant="h5">User Reviews</Typography>
+            <div className="mt-15 space-y-5">
+              <Typography variant="h5">Other User Reviews</Typography>
     
               {userReviews.map((rev, index) => (
                 <div key={index} className="bg-vanilla rounded-md p-5 space-y-5">
