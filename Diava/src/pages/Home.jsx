@@ -321,7 +321,7 @@ export default function Home() {
             Recommendations
           </Typography>
           <Box className="bg-sand flex gap-x-2 rounded-lg overflow-x-auto shadow-custom">
-            {recommendation.length > 0 ? (
+            {Array.isArray(recommendation) && recommendation.length > 0 ? (
               recommendation
                 .slice(0, 3)
                 .map((book, index) => (
