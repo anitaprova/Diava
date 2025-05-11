@@ -28,15 +28,14 @@ export default function Recommendations() {
           .from("lists")
           .select("*, list_books(*)")
           .eq("user_id", userId)
-          .eq("name", "Read")
-          .limit(2);
+          .eq("name", "Read");
 
         const booksRead = data?.[0]?.list_books?.sort(
           (a, b) => new Date(b.created_at) - new Date(a.created_at)
-        );
+        ).slice(0, 2);
 
         setBooks(booksRead);
-        console.log(booksRead);
+        console.log("Books read", booksRead);
         if (error) throw error;
       } catch (error) {
         console.log(error);
@@ -57,14 +56,14 @@ export default function Recommendations() {
           .from("lists")
           .select("*, list_books(*)")
           .eq("user_id", userId)
-          .eq("name", "Favorites")
-          .limit(2);
+          .eq("name", "Favorites");
 
-        const booksRead = data?.[0]?.list_books?.sort(
+        const favBooksRead = data?.[0]?.list_books?.sort(
           (a, b) => new Date(b.created_at) - new Date(a.created_at)
-        );
+        ).slice(0,2);
 
-        setFavBooks(booksRead);
+        setFavBooks(favBooksRead);
+        console.log("Fav books", favBooksRead);
         if (error) throw error;
       } catch (error) {
         console.log(error);
@@ -90,7 +89,7 @@ export default function Recommendations() {
                 "Content-Type": "application/json",
               },
               method: "POST",
-              body: JSON.stringify({ inputs: book.description ? book.description : book.title}),
+              body: JSON.stringify({ inputs: book?.description ? book?.description : book?.title}),
             }
           );
 
@@ -110,7 +109,7 @@ export default function Recommendations() {
         console.log("All recommended books for favorites list:", allRecs);
         setFavRecommendations(allRecs);
       } catch (err) {
-        console.error("Error fetching recommendations:", err);
+        console.error("Error fetching favorite recommendations:", err);
       }
     };
 
