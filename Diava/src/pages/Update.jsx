@@ -86,11 +86,7 @@ const addToReadList = async () => {
     }
 
     const readListId = readList.id;
-
-    // Get genres from book data (ensure book.volumeInfo.genres exists)
-    const genres = book?.volumeInfo?.categories || []; // If no genres are available, fallback to an empty array
-
-    // Insert into "Read" list
+    const genres = book?.volumeInfo?.categories || []; 
     const bookData = {
       list_id: readListId,
       google_books_id: book?.id,
@@ -428,7 +424,7 @@ const addToReadList = async () => {
             <Button
               onClick={() => {
               setaskToReview(false);
-              navigate("/");
+              navigate("/home");
             }}
               variant="dark"
             >
