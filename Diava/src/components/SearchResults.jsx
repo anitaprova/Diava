@@ -11,18 +11,18 @@ import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
+import { debounce } from "@mui/material/utils";
 import axios from "axios";
-import { useRef } from "react";
 
 export default function SearchResults() {
   const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
   const [searchParams] = useSearchParams();
   const [query, setQuery] = useState(searchParams.get("q"));
   const [results, setResults] = useState([]);
-  const [searchType, setSearchType] = useState("Title");
+  const [searchType, setSearchType] = useState(searchParams.get("type"));
   const navigate = useNavigate();
 
-  const handleSearch = () => {
+  const handleSearch = debounce(() => {
     if (searchType == "title" && query) {
       axios
         .get(
@@ -30,31 +30,43 @@ export default function SearchResults() {
         )
         .then((response) => setResults(response.data.items || []))
         .catch((error) => console.error("Error fetching books:", error));
-    }
-    else if (searchType == "isbn" && query) {
+    } else if (searchType == "author" && query) {
+      axios
+        .get(
+          `https://www.googleapis.com/books/v1/volumes?q=inauthor:${query}&key=${API_KEY}`
+        )
+        .then((response) => setResults(response.data.items || []))
+        .catch((error) => console.error("Error fetching books:", error));
+    } else if (searchType == "genre" && query) {
+      axios
+        .get(
+          `https://www.googleapis.com/books/v1/volumes?q=subject:${query}&key=${API_KEY}`
+        )
+        .then((response) => setResults(response.data.items || []))
+        .catch((error) => console.error("Error fetching books:", error));
+    } else if (searchType == "isbn" && query) {
       axios
         .get(
           `https://www.googleapis.com/books/v1/volumes?q=isbn:${query}&key=${API_KEY}`
         )
         .then((response) => setResults(response.data.items || []))
         .catch((error) => console.error("Error fetching books:", error));
-    }
-  };
-
-  const gotQuery = useRef(false);
-  useEffect(() => {
-    if (query && !gotQuery) {
-      gotQuery.current = true;
+    } else if (searchType == "publisher" && query) {
       axios
         .get(
-          `https://www.googleapis.com/books/v1/volumes?q=${query}&key=${API_KEY}`
+          `https://www.googleapis.com/books/v1/volumes?q=inpublisher:${query}&key=${API_KEY}`
         )
         .then((response) => setResults(response.data.items || []))
         .catch((error) => console.error("Error fetching books:", error));
-    }
-  }, [query]);
+      }
+  }, 500);
 
-  console.log(query);
+  
+  useEffect(() => {
+    if (query) {
+      handleSearch();
+    }
+  }, []);
 
   return (
     <div className="grid grid-cols-5 font-merriweather gap-x-10">
@@ -67,7 +79,7 @@ export default function SearchResults() {
             <TextField
               variant="outlined"
               size="small"
-              defaultValue={query}
+              value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
             <Button onClick={handleSearch} variant="dark">
@@ -85,7 +97,13 @@ export default function SearchResults() {
               control={<Radio />}
               label="Author"
             />
+            <FormControlLabel value="genre" control={<Radio />} label="Genre" />
             <FormControlLabel value="isbn" control={<Radio />} label="ISBN" />
+            <FormControlLabel
+              value="publisher"
+              control={<Radio />}
+              label="Publisher"
+            />
             <FormControlLabel
               value="book club"
               control={<Radio />}
@@ -98,7 +116,7 @@ export default function SearchResults() {
         <Typography className="text-darkbrown">
           {results.length} results for "{query}"
         </Typography>
-        <ul className="flex flex-wrap gap-15">
+        <ul className="flex flex-wrap gap-10">
           {results.length > 0 ? (
             results.map((book) => (
               <li key={book.id}>
@@ -121,7 +139,7 @@ export default function SearchResults() {
                       {book.volumeInfo.title}
                     </Typography>
                     <Typography variant="body" noWrap>
-                      by {book.volumeInfo.authors?.map((author) => author)}
+                      by {book?.volumeInfo?.authors?.map((author) => author).join(", ")}
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
                       {book.volumeInfo.description?.substring(0, 50)}
