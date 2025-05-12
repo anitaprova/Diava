@@ -233,17 +233,6 @@ const ChatSidebar = forwardRef(
       setSelectedChannel(c);
       setCurrentChannel(c);
 
-      // // Get channel chat
-      // try {
-      //   const clubChatRef = doc(db, "ClubChats", c.id);
-      //   const clubChatDoc = await getDoc(clubChatRef);
-
-      //   setSelectedChat(clubChatDoc.data());
-      // }
-      // catch (error) {
-      //   console.log(error);
-      // }
-
       dispatch({ type: "CHANGE_CHANNEL_CHAT", payload: c });
     };
 
@@ -306,10 +295,9 @@ const ChatSidebar = forwardRef(
           logo: {},
           channels: {
             general: {
-              id: "general",
+              id: uuidv4(),
               name: "general",
               createdAt: serverTimestamp(),
-              type: "text"
             }
           },
           members: {
@@ -319,7 +307,9 @@ const ChatSidebar = forwardRef(
               joined: serverTimestamp(),
             },
           },
+          challenges: {},
         });
+
         console.log("Club document created in Firestore");
 
         // Add creator to club
