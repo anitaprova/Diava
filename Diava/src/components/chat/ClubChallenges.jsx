@@ -199,9 +199,9 @@ const ClubChallenges = ({ clubName, isAdmin }) => {
   }
 
   const handleAddChallenge = () => {
+    handleGetChallenges();
     setAddChallengeOpen(true);
     setNewChallenge(defaultChallenge);
-    handleGetChallenges();
   };
 
   const handleCloseAddChallenge = () => {
