@@ -21,12 +21,13 @@ import {
 } from "@mui/material";
 import { FaHashtag } from "react-icons/fa";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import AddIcon from "@mui/icons-material/Add";
 import UserAvatar from "./UserAvatar";
 import { useAuth } from "../../context/AuthContext";
 import { useClub } from "../../context/ClubContext";
 import { v4 as uuidv4 } from "uuid";
-import { updateDoc, doc, serverTimestamp } from "firebase/firestore";
+import { updateDoc, doc, serverTimestamp, getDoc } from "firebase/firestore";
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
@@ -119,93 +120,6 @@ const StyledAvatarGroup = styled(AvatarGroup)({
   },
 });
 
-// Mock data for challenges
-const mockChallenges = [
-  {
-    id: "1",
-    title: "Share your favorite quote from Chapter 3",
-    description:
-      "Find a quote that resonated with you and share it with the club.",
-    dueDate: "May 15, 2023",
-    completed: true,
-    completedBy: [
-      { id: "u1", name: "Jane", initial: "J" },
-      { id: "u2", name: "Mike", initial: "M" },
-      { id: "u3", name: "Sarah", initial: "S" },
-      { id: "u4", name: "Alex", initial: "A" },
-      { id: "u5", name: "Emma", initial: "E" },
-      { id: "u6", name: "David", initial: "D" },
-      { id: "u7", name: "Lisa", initial: "L" },
-    ],
-  },
-  {
-    id: "2",
-    title: "Discuss the main idea of Chapter 4",
-    description:
-      "What do you think was the author's main point in this chapter?",
-    dueDate: "May 18, 2023",
-    completed: false,
-    completedBy: [
-      { id: "u1", name: "Jane", initial: "J" },
-      { id: "u3", name: "Sarah", initial: "S" },
-    ],
-  },
-  {
-    id: "3",
-    title: "Ask a thought-provoking question",
-    description:
-      "Come up with a question about the book that could spark discussion.",
-    dueDate: "May 20, 2023",
-    completed: false,
-    completedBy: [],
-  },
-  {
-    id: "4",
-    title: "React to at least 3 messages from different users",
-    description:
-      "Engage with other club members by responding to their thoughts.",
-    dueDate: "May 22, 2023",
-    completed: false,
-    completedBy: [{ id: "u2", name: "Mike", initial: "M" }],
-  },
-  {
-    id: "5",
-    title: "Invite a friend to the club",
-    description:
-      "Help our community grow by inviting someone who might enjoy this book.",
-    dueDate: "May 25, 2023",
-    completed: false,
-    completedBy: [
-      { id: "u1", name: "Jane", initial: "J" },
-      { id: "u4", name: "Alex", initial: "A" },
-      { id: "u5", name: "Emma", initial: "E" },
-    ],
-  },
-  {
-    id: "6",
-    title: "Read 100 pages in 7 days",
-    description: "Challenge yourself to read at least 100 pages this week.",
-    dueDate: "May 28, 2023",
-    completed: false,
-    completedBy: [
-      { id: "u3", name: "Sarah", initial: "S" },
-      { id: "u6", name: "David", initial: "D" },
-    ],
-  },
-  {
-    id: "7",
-    title: "Finish Chapter 5 by Sunday",
-    description: "Make sure you're caught up with the reading schedule.",
-    dueDate: "May 30, 2023",
-    completed: false,
-    completedBy: [
-      { id: "u1", name: "Jane", initial: "J" },
-      { id: "u2", name: "Mike", initial: "M" },
-      { id: "u7", name: "Lisa", initial: "L" },
-    ],
-  },
-];
-
 const ClubChallenges = ({ clubName, isAdmin }) => {
   const { currentUser } = useAuth();
   const { currentClub } = useClub();
@@ -227,46 +141,67 @@ const ClubChallenges = ({ clubName, isAdmin }) => {
     return userRole === "Admin" || userRole === "Owner";
   };
 
-  // To work on
-  const handleToggleChallenge = (challengeId) => {
-    setChallenges(
-      challenges.map((challenge) => {
-        if (challenge.id === challengeId) {
-          const isCompleted = challenge.completedBy.some(
-            (user) => user.id === currentUserId
-          );
+  const handleToggleChallenge = async (challengeId) => {
+    const userId = currentUser.uid;
+    const clubRef = doc(db, "Clubs", currentClub.uid);
+    const clubSnap = await getDoc(clubRef);
 
-          if (isCompleted) {
-            // Remove user from completedBy
-            return {
-              ...challenge,
-              completedBy: challenge.completedBy.filter(
-                (user) => user.id !== currentUserId
-              ),
-              completed: challenge.id === "1" ? false : challenge.completed, // Only for demo purposes
-            };
-          } else {
-            // Add user to completedBy
-            const currentUser = {
-              id: currentUserId,
-              name: "Sarah",
-              initial: "S",
-            };
-            return {
-              ...challenge,
-              completedBy: [...challenge.completedBy, currentUser],
-              completed: challenge.id === "1" ? true : challenge.completed, // Only for demo purposes
-            };
-          }
-        }
-        return challenge;
-      })
-    );
+    if (!clubSnap.exists()) return;
+
+    const data = clubSnap.data();
+    const challenges = data.challenges || {};
+    const challenge = challenges[challengeId];
+
+    if (!challenge) return;
+
+    const completedBy = challenge.completedBy || {};
+
+    if (completedBy[userId]) {
+      delete completedBy[userId];
+    } else {
+      completedBy[userId] = {
+        uid: userId,
+        name: currentUser.displayName || "Unknown",
+        initial: currentUser.displayName?.[0] || "?",
+      };
+    }
+
+    await updateDoc(clubRef, {
+      [`challenges.${challengeId}.completedBy`]: completedBy
+    });
+
+    handleGetChallenges();
   };
+
+  const handleGetChallenges = async () => {
+    try {
+      const clubRef = doc(db, "Clubs", currentClub.uid);
+      const clubSnap = await getDoc(clubRef);
+
+      if (!clubSnap.exists()) {
+        console.log("No such club exists.");
+        return;
+      }
+
+      const clubData = clubSnap.data();
+      const challenges = clubData.challenges || {};
+
+      // May be used with sorting filter to get certain variations
+      const sortedChallenges = Object.values(challenges).sort((a, b) => {
+        return a.dueDate - b.dueDate;
+      })
+
+      setChallenges(sortedChallenges);
+    }
+    catch (error) {
+      console.log(error);
+    }
+  }
 
   const handleAddChallenge = () => {
     setAddChallengeOpen(true);
     setNewChallenge(defaultChallenge);
+    handleGetChallenges();
   };
 
   const handleCloseAddChallenge = () => {
@@ -350,20 +285,31 @@ const ClubChallenges = ({ clubName, isAdmin }) => {
           }}
         >
           <Typography variant="h6">Weekly Reading Challenges</Typography>
-          {/* Admin button for adding challenges */}
-          {isUserAdmin && (
-            <Tooltip title="Add new challenge">
-              <IconButton size="small" sx={{ color: "#5d4b3d" }} onClick={handleAddChallenge}>
-                <AddIcon />
+
+          <Box sx={{
+            display: "flex",
+            gap: 1
+          }}>
+            {/* Refresh button to grab latest challenges */}
+            <Tooltip title="Refresh challenges">
+              <IconButton size="small" sx={{ color: "#5d4b3d" }} onClick={handleGetChallenges}>
+                <RefreshIcon/ >
               </IconButton>
             </Tooltip>
-          )}
+
+            {/* Admin button for adding challenges */}
+            {isUserAdmin && (
+              <Tooltip title="Add new challenge">
+                <IconButton size="small" sx={{ color: "#5d4b3d" }} onClick={handleAddChallenge}>
+                  <AddIcon />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
         </Box>
 
         {challenges.map((challenge) => {
-          const isUserCompleted = challenge.completedBy.some(
-            (user) => user.id === currentUserId
-          );
+          const isUserCompleted = challenge.completedBy.hasOwnProperty(currentUser.uid);
 
           return (
             <ChallengeItem key={challenge.id} completed={isUserCompleted}>
@@ -384,23 +330,23 @@ const ClubChallenges = ({ clubName, isAdmin }) => {
               <Divider sx={{ my: 1 }} />
 
               <ChallengeFooter>
-                <ChallengeDueDate>Due: {challenge.dueDate}</ChallengeDueDate>
+                <ChallengeDueDate>Due: {challenge.dueDate.toDate().toLocaleString()}</ChallengeDueDate>
 
                 <CompletedBy>
-                  {challenge.completedBy.length > 0 && (
+                  {Object.keys(challenge.completedBy || {}).length > 0 && (
                     <>
                       <CompletedText>Completed by:</CompletedText>
                       <StyledAvatarGroup max={5}>
-                        {challenge.completedBy.map((user) => (
-                          <Tooltip key={user.id} title={user.name}>
+                        {Object.entries(challenge.completedBy).map(([uid, user]) => (
+                          <Tooltip key={uid} title={user.name}>
                             <Avatar>{user.initial}</Avatar>
                           </Tooltip>
                         ))}
                       </StyledAvatarGroup>
-                      {challenge.completedBy.length > 5 && (
+                      {Object.keys(challenge.completedBy).length > 5 && (
                         <Chip
                           size="small"
-                          label={`+${challenge.completedBy.length - 5} more`}
+                          label={`+${Object.keys(challenge.completedBy).length - 5} more`}
                           sx={{ backgroundColor: "#cec1a8", color: "#5d4b3d" }}
                         />
                       )}
