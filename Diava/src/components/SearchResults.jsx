@@ -24,6 +24,20 @@ export default function SearchResults() {
 
   const handleSearch = debounce(() => {
     if (searchType == "title" && query) {
+      navigate(`/search?q=${encodeURIComponent(query)}&type=title`);
+    } else if (searchType == "author" && query) {
+      navigate(`/search?q=${encodeURIComponent(query)}&type=author`);
+    } else if (searchType == "genre" && query) {
+      navigate(`/search?q=${encodeURIComponent(query)}&type=genre`);
+    } else if (searchType == "isbn" && query) {
+      navigate(`/search?q=${encodeURIComponent(query)}&type=isbn`);
+    } else if (searchType == "publisher" && query) {
+      navigate(`/search?q=${encodeURIComponent(query)}&type=publisher`);
+    }
+  }, 500);
+
+  useEffect(() => {
+    if (searchType == "title" && query) {
       axios
         .get(
           `https://www.googleapis.com/books/v1/volumes?q=${query}&key=${API_KEY}`
@@ -58,15 +72,8 @@ export default function SearchResults() {
         )
         .then((response) => setResults(response.data.items || []))
         .catch((error) => console.error("Error fetching books:", error));
-      }
-  }, 500);
-
-  
-  useEffect(() => {
-    if (query) {
-      handleSearch();
     }
-  }, []);
+  }, [searchParams]);
 
   return (
     <div className="grid grid-cols-5 font-merriweather gap-x-10">
@@ -139,7 +146,10 @@ export default function SearchResults() {
                       {book.volumeInfo.title}
                     </Typography>
                     <Typography variant="body" noWrap>
-                      by {book?.volumeInfo?.authors?.map((author) => author).join(", ")}
+                      by{" "}
+                      {book?.volumeInfo?.authors
+                        ?.map((author) => author)
+                        .join(", ")}
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
                       {book.volumeInfo.description?.substring(0, 50)}
