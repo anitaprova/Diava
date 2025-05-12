@@ -15,12 +15,15 @@ import {
   DialogContentText,
   DialogActions,
   TextField,
+  Autocomplete,
 } from "@mui/material";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import { FaHashtag } from "react-icons/fa";
 import AddIcon from "@mui/icons-material/Add";
+import SearchIcon from "@mui/icons-material/Search";
 import { useAuth } from "../../context/AuthContext";
 import { useClub } from "../../context/ClubContext";
+import axios from "axios";
 
 const WindowContainer = styled(Box)({
   flex: 1,
@@ -161,15 +164,9 @@ const BookVoting = ({ clubName, isAdmin }) => {
   const { currentClub } = useClub();
   const [books, setBooks] = useState(mockBooks);
   const [addBookOpen, setAddBookOpen] = useState(false);
-  const [newBook, setNewBook] = useState({
-    title: "",
-    author: "",
-    pages: "",
-    readTime: "",
-    rating: "",
-    image: "",
-    genres: ""
-  });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
 
   // Check if the user is an admin or owner based on the club data
   const checkIsAdmin = () => {
@@ -193,43 +190,40 @@ const BookVoting = ({ clubName, isAdmin }) => {
 
   const handleCloseAddBook = () => {
     setAddBookOpen(false);
+    setSearchQuery("");
+    setSearchResults([]);
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewBook({ ...newBook, [name]: value });
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+
+    try {
+      const response = await axios.get(
+        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&key=${API_KEY}`
+      );
+      setSearchResults(response.data.items || []);
+    } catch (error) {
+      console.error("Error searching books:", error);
+    }
   };
 
-  const handleSubmitNewBook = () => {
-    // Create new book object
-    const genresArray = newBook.genres.split(',').map(genre => genre.trim());
+  const handleSelectBook = (selectedBook) => {
+    if (!selectedBook) return;
 
     const bookToAdd = {
-      id: Date.now().toString(), // Simple id for now
-      title: newBook.title,
-      author: newBook.author,
-      pages: parseInt(newBook.pages) || 0,
-      readTime: newBook.readTime || "~5 Hours",
-      rating: parseFloat(newBook.rating) || 0,
-      genres: genresArray,
-      image: newBook.image || "https://via.placeholder.com/80x120?text=No+Image",
+      id: selectedBook.id,
+      title: selectedBook.volumeInfo.title,
+      author: selectedBook.volumeInfo.authors?.join(", ") || "Unknown Author",
+      pages: selectedBook.volumeInfo.pageCount || 0,
+      readTime: `~${Math.floor((selectedBook.volumeInfo.pageCount || 0) / 0.6 / 60)} Hours`,
+      rating: selectedBook.volumeInfo.averageRating || 0,
+      genres: selectedBook.volumeInfo.categories || [],
+      image: selectedBook.volumeInfo.imageLinks?.thumbnail || "https://via.placeholder.com/80x120?text=No+Image",
       votes: 0
     };
 
-    // Add new book to the list
     setBooks([...books, bookToAdd]);
-
-    // Reset form and close dialog
-    setNewBook({
-      title: "",
-      author: "",
-      pages: "",
-      readTime: "",
-      rating: "",
-      image: "",
-      genres: ""
-    });
-    setAddBookOpen(false);
+    handleCloseAddBook();
   };
 
   // Determine if current user has admin privileges
@@ -318,100 +312,72 @@ const BookVoting = ({ clubName, isAdmin }) => {
       </ContentContainer>
 
       {/* Add Book Dialog */}
-      <Dialog open={addBookOpen} onClose={handleCloseAddBook}>
+      <Dialog open={addBookOpen} onClose={handleCloseAddBook} maxWidth="md" fullWidth>
         <DialogTitle>Add a Book for Voting</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Add a book to the voting list. Club members will be able to vote for this book.
+          <DialogContentText sx={{ mb: 2 }}>
+            Search for a book to add to the voting list. Club members will be able to vote for this book.
           </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
-            name="title"
-            label="Book Title"
-            fullWidth
-            variant="outlined"
-            value={newBook.title}
-            onChange={handleInputChange}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            name="author"
-            label="Author"
-            fullWidth
-            variant="outlined"
-            value={newBook.author}
-            onChange={handleInputChange}
-            sx={{ mb: 2 }}
-          />
-          <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+
+          <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
             <TextField
-              margin="dense"
-              name="pages"
-              label="Pages"
-              type="number"
-              variant="outlined"
-              value={newBook.pages}
-              onChange={handleInputChange}
+              fullWidth
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search for a book..."
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             />
-            <TextField
-              margin="dense"
-              name="readTime"
-              label="Read Time"
-              variant="outlined"
-              value={newBook.readTime}
-              onChange={handleInputChange}
-              placeholder="~5 Hours"
-            />
-            <TextField
-              margin="dense"
-              name="rating"
-              label="Rating"
-              type="number"
-              variant="outlined"
-              value={newBook.rating}
-              onChange={handleInputChange}
-              inputProps={{ min: 0, max: 5, step: 0.1 }}
-            />
+            <Button
+              variant="contained"
+              onClick={handleSearch}
+              startIcon={<SearchIcon />}
+              sx={{
+                bgcolor: "#5d4b3d",
+                color: "white",
+                "&:hover": { bgcolor: "#433422" },
+              }}
+            >
+              Search
+            </Button>
           </Box>
-          <TextField
-            margin="dense"
-            name="genres"
-            label="Genres (comma separated)"
-            fullWidth
-            variant="outlined"
-            value={newBook.genres}
-            onChange={handleInputChange}
-            placeholder="Fiction, Fantasy, Adventure"
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            name="image"
-            label="Book Cover URL"
-            fullWidth
-            variant="outlined"
-            value={newBook.image}
-            onChange={handleInputChange}
-            placeholder="https://example.com/book-cover.jpg"
-          />
+
+          {searchResults.length > 0 && (
+            <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
+              {searchResults.map((book) => (
+                <Paper
+                  key={book.id}
+                  sx={{
+                    p: 2,
+                    mb: 2,
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: '#f5f5f5' }
+                  }}
+                  onClick={() => handleSelectBook(book)}
+                >
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <img
+                      src={book.volumeInfo.imageLinks?.thumbnail || "https://via.placeholder.com/80x120?text=No+Image"}
+                      alt={book.volumeInfo.title}
+                      style={{ width: 80, height: 120, objectFit: 'cover' }}
+                    />
+                    <Box>
+                      <Typography variant="h6">{book.volumeInfo.title}</Typography>
+                      <Typography variant="subtitle1">
+                        by {book.volumeInfo.authors?.join(", ") || "Unknown Author"}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {book.volumeInfo.pageCount} pages • {book.volumeInfo.averageRating ? `${book.volumeInfo.averageRating}⭐` : "No rating"}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Paper>
+              ))}
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseAddBook} sx={{ color: "#5d4b3d" }}>
             Cancel
-          </Button>
-          <Button
-            onClick={handleSubmitNewBook}
-            variant="contained"
-            sx={{
-              bgcolor: "#5d4b3d",
-              color: "white",
-              "&:hover": { bgcolor: "#433422" },
-            }}
-            disabled={!newBook.title || !newBook.author}
-          >
-            Add Book
           </Button>
         </DialogActions>
       </Dialog>

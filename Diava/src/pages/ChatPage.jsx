@@ -21,6 +21,7 @@ const ChatContainer = styled("div")({
 const ChatPage = () => {
   const { currentUser } = useAuth();
   const { setCurrentClub } = useClub();
+  const { dispatch } = useChat();
   const [viewMode, setViewMode] = useState("messages"); // "messages" or "clubs"
   const [selectedChat, setSelectedChat] = useState(null);
   const [selectedClub, setSelectedClub] = useState(null);
@@ -68,8 +69,18 @@ const ChatPage = () => {
       if (clubDoc.exists()) {
         const clubData = clubDoc.data();
 
+        // Clear the current chat when switching clubs
+        setSelectedChat(null);
         setCurrentClub(clubData);
         setSelectedClub(clubData);
+
+        // Automatically select the general channel
+        const generalChannel = Object.values(clubData.channels).find(channel => channel.name === "general");
+        if (generalChannel) {
+          setSelectedChannel(generalChannel);
+          // Update chat context to trigger content refresh
+          dispatch({ type: "CHANGE_CHANNEL_CHAT", payload: generalChannel });
+        }
 
         // Check if the current user is an admin of this club
         const userClubInfo = clubData.members[currentUser.uid];
