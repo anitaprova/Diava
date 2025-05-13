@@ -1,62 +1,124 @@
-import React, { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useEffect, useState } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardMedia from "@mui/material/CardMedia";
-import { Typography } from "@mui/material";
+import Typography from "@mui/material/Typography";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import { debounce } from "@mui/material/utils";
+import axios from "axios";
 
 export default function SearchResults() {
   const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
   const [searchParams] = useSearchParams();
-  const query = searchParams.get("q");
+  const [query, setQuery] = useState(searchParams.get("q"));
   const [results, setResults] = useState([]);
+  const [searchType, setSearchType] = useState(searchParams.get("type"));
   const navigate = useNavigate();
 
+  const handleSearch = debounce(() => {
+    if (searchType == "title" && query) {
+      navigate(`/search?q=${encodeURIComponent(query)}&type=title`);
+    } else if (searchType == "author" && query) {
+      navigate(`/search?q=${encodeURIComponent(query)}&type=author`);
+    } else if (searchType == "genre" && query) {
+      navigate(`/search?q=${encodeURIComponent(query)}&type=genre`);
+    } else if (searchType == "isbn" && query) {
+      navigate(`/search?q=${encodeURIComponent(query)}&type=isbn`);
+    } else if (searchType == "publisher" && query) {
+      navigate(`/search?q=${encodeURIComponent(query)}&type=publisher`);
+    }
+  }, 500);
+
   useEffect(() => {
-    if (query) {
+    if (searchType == "title" && query) {
       axios
         .get(
           `https://www.googleapis.com/books/v1/volumes?q=${query}&key=${API_KEY}`
         )
         .then((response) => setResults(response.data.items || []))
         .catch((error) => console.error("Error fetching books:", error));
+    } else if (searchType == "author" && query) {
+      axios
+        .get(
+          `https://www.googleapis.com/books/v1/volumes?q=inauthor:${query}&key=${API_KEY}`
+        )
+        .then((response) => setResults(response.data.items || []))
+        .catch((error) => console.error("Error fetching books:", error));
+    } else if (searchType == "genre" && query) {
+      axios
+        .get(
+          `https://www.googleapis.com/books/v1/volumes?q=subject:${query}&key=${API_KEY}`
+        )
+        .then((response) => setResults(response.data.items || []))
+        .catch((error) => console.error("Error fetching books:", error));
+    } else if (searchType == "isbn" && query) {
+      axios
+        .get(
+          `https://www.googleapis.com/books/v1/volumes?q=isbn:${query}&key=${API_KEY}`
+        )
+        .then((response) => setResults(response.data.items || []))
+        .catch((error) => console.error("Error fetching books:", error));
+    } else if (searchType == "publisher" && query) {
+      axios
+        .get(
+          `https://www.googleapis.com/books/v1/volumes?q=inpublisher:${query}&key=${API_KEY}`
+        )
+        .then((response) => setResults(response.data.items || []))
+        .catch((error) => console.error("Error fetching books:", error));
     }
-  }, [query]);
+  }, [searchParams]);
 
   return (
-    <div className="flex font-merriweather mr-10 gap-x-20">
-      <div className="bg-sand p-5 pr-20">
+    <div className="grid grid-cols-5 font-merriweather gap-x-10">
+      <div className="col-span-1 bg-sand p-5 h-full">
         <FormControl>
           <FormLabel>
             <p className="font-merriweather text-black text-lg">Search by</p>
           </FormLabel>
-          <RadioGroup defaultValue="title">
+          <div className="flex">
+            <TextField
+              variant="outlined"
+              size="small"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+            <Button onClick={handleSearch} variant="dark">
+              Search
+            </Button>
+          </div>
+
+          <RadioGroup
+            defaultValue="title"
+            onChange={(event, newValue) => setSearchType(newValue)}
+          >
             <FormControlLabel value="title" control={<Radio />} label="Title" />
             <FormControlLabel
               value="author"
               control={<Radio />}
               label="Author"
             />
+            <FormControlLabel value="genre" control={<Radio />} label="Genre" />
+            <FormControlLabel value="isbn" control={<Radio />} label="ISBN" />
             <FormControlLabel
-              value="book club"
+              value="publisher"
               control={<Radio />}
-              label="Book Club"
+              label="Publisher"
             />
           </RadioGroup>
         </FormControl>
       </div>
-      <div className="mt-5">
-        <h2 className="text-darkbrown">
+      <div className="col-span-4 mt-5">
+        <Typography className="text-darkbrown">
           {results.length} results for "{query}"
-        </h2>
-        <ul className="flex flex-wrap gap-15">
+        </Typography>
+        <ul className="flex flex-wrap gap-10">
           {results.length > 0 ? (
             results.map((book) => (
               <li key={book.id}>
@@ -79,7 +141,10 @@ export default function SearchResults() {
                       {book.volumeInfo.title}
                     </Typography>
                     <Typography variant="body" noWrap>
-                      by {book.volumeInfo.authors?.map((author) => author)}
+                      by{" "}
+                      {book?.volumeInfo?.authors
+                        ?.map((author) => author)
+                        .join(", ")}
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
                       {book.volumeInfo.description?.substring(0, 50)}
