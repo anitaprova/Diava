@@ -69,7 +69,7 @@ const SidebarContainer = styled(Box)(({ theme }) => ({
 const TabsContainer = styled(Box)({
   display: "flex",
   alignItems: "center",
-  padding: "10px 16px",
+  padding: "8px 11px",
   borderBottom: "1px solid #ddd",
 });
 
@@ -212,6 +212,8 @@ const ChatSidebar = forwardRef(
         });
 
         console.log("Successfully left Club.");
+        onTabChange("messages");
+
       } catch (error) {
         console.log(error);
       }
@@ -232,17 +234,6 @@ const ChatSidebar = forwardRef(
     const handleSelectChannel = async (c) => {
       setSelectedChannel(c);
       setCurrentChannel(c);
-
-      // // Get channel chat
-      // try {
-      //   const clubChatRef = doc(db, "ClubChats", c.id);
-      //   const clubChatDoc = await getDoc(clubChatRef);
-
-      //   setSelectedChat(clubChatDoc.data());
-      // }
-      // catch (error) {
-      //   console.log(error);
-      // }
 
       dispatch({ type: "CHANGE_CHANNEL_CHAT", payload: c });
     };
@@ -306,10 +297,9 @@ const ChatSidebar = forwardRef(
           logo: {},
           channels: {
             general: {
-              id: "general",
+              id: uuidv4(),
               name: "general",
               createdAt: serverTimestamp(),
-              type: "text"
             }
           },
           members: {
@@ -319,7 +309,9 @@ const ChatSidebar = forwardRef(
               joined: serverTimestamp(),
             },
           },
+          challenges: {},
         });
+
         console.log("Club document created in Firestore");
 
         // Add creator to club
