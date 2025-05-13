@@ -111,11 +111,6 @@ export default function SearchResults() {
               control={<Radio />}
               label="Publisher"
             />
-            <FormControlLabel
-              value="book club"
-              control={<Radio />}
-              label="Book Club"
-            />
           </RadioGroup>
         </FormControl>
       </div>
