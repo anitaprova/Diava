@@ -360,7 +360,7 @@ const BookVoting = ({ clubName, isAdmin }) => {
                   <span role="img" aria-label="rating">
                     ⭐
                   </span>{" "}
-                  {book.rating? book.rating : "No ratings yet"}
+                  {book.rating? book.rating : "0.0"}
                 </BookDetail>
               </BookDetails>
 
