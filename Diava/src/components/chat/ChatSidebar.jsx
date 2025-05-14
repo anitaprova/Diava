@@ -1,6 +1,7 @@
 import React, {
   useState,
   useEffect,
+  useRef,
   forwardRef,
   useImperativeHandle,
 } from "react";
@@ -33,6 +34,9 @@ import { FaHashtag } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import {
   collection,
+  orderBy,
+  startAt,
+  endAt,
   query,
   where,
   getDocs,
@@ -48,8 +52,10 @@ import {
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useChat } from "../../context/ChatContext";
-import { useClub } from "../../context/ClubContext"
-import { v4 as uuidv4 } from "uuid"
+import { MdBarChart } from "react-icons/md";
+import { GiTrophyCup } from "react-icons/gi";
+import { useClub } from "../../context/ClubContext";
+import { v4 as uuidv4 } from "uuid";
 
 const SidebarContainer = styled(Box)(({ theme }) => ({
   width: 300,
@@ -63,7 +69,7 @@ const SidebarContainer = styled(Box)(({ theme }) => ({
 const TabsContainer = styled(Box)({
   display: "flex",
   alignItems: "center",
-  padding: "10px 16px",
+  padding: "8px 11px",
   borderBottom: "1px solid #ddd",
 });
 
@@ -130,10 +136,13 @@ const ChatSidebar = forwardRef(
     const [clubMenuAnchor, setClubMenuAnchor] = useState(null);
     const [showInput, setShowInput] = useState(false);
     const [inputText, setInputText] = useState("");
+    const [userSearchResults, setUserSearchResults] = useState([]);
+    const [clubSearchResults, setClubSearchResults] = useState([]);
     const [user, setUser] = useState(null);
     const { currentUser } = useAuth();
     const { dispatch } = useChat();
     const { currentClub, setCurrentChannel } = useClub();
+    const searchResultsRef = useRef(null);
 
     // Create Club Dialog state
     const [createClubOpen, setCreateClubOpen] = useState(false);
@@ -146,6 +155,23 @@ const ChatSidebar = forwardRef(
         setCreateClubOpen(open);
       },
     }));
+
+    // Check if user clicks outside of search event
+    useEffect(() => {
+      const handleClickOutside = (event) => {
+        if (searchResultsRef.current && !searchResultsRef.current.contains(event.target)) {
+          setUserSearchResults([]);
+          setClubSearchResults([]);
+          setInputText("");
+        }
+      };
+
+      document.addEventListener("mousedown", handleClickOutside);
+
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }, []);
 
     // Update tab value when viewMode changes
     useEffect(() => {
@@ -172,22 +198,23 @@ const ChatSidebar = forwardRef(
 
     const handleLeaveClub = async () => {
       handleClubMenuClose();
-      
+
       try {
         const userClubRef = doc(db, "UserClubs", currentUser.uid);
         const clubRef = doc(db, "Clubs", selectedClub.uid);
-        
+
         await updateDoc(userClubRef, {
-          [selectedClub.uid]: deleteField()
+          [selectedClub.uid]: deleteField(),
         });
 
         await updateDoc(clubRef, {
-          [`members.${currentUser.uid}`]: deleteField()
+          [`members.${currentUser.uid}`]: deleteField(),
         });
 
         console.log("Successfully left Club.");
-      }
-      catch (error) {
+        onTabChange("messages");
+
+      } catch (error) {
         console.log(error);
       }
     };
@@ -208,19 +235,8 @@ const ChatSidebar = forwardRef(
       setSelectedChannel(c);
       setCurrentChannel(c);
 
-      // // Get channel chat
-      // try {
-      //   const clubChatRef = doc(db, "ClubChats", c.id);
-      //   const clubChatDoc = await getDoc(clubChatRef);
-
-      //   setSelectedChat(clubChatDoc.data());
-      // }
-      // catch (error) {
-      //   console.log(error);
-      // }
-
-      dispatch({ type: "CHANGE_CHANNEL_CHAT", payload: c })
-    }
+      dispatch({ type: "CHANGE_CHANNEL_CHAT", payload: c });
+    };
 
     const handleSelectedChat = (c) => {
       setSelectedChat(c);
@@ -242,143 +258,235 @@ const ChatSidebar = forwardRef(
     const handleCreateClub = async () => {
       if (!newClubName.trim()) return;
 
-      const clubUid = uuidv4();
+      try {
+        console.log("Creating club with name:", newClubName);
 
-      // Get current user's username
-      const userRef = doc(db, "Users", currentUser.uid);
-      const userDoc = await getDoc(userRef);
-      const currentUserInfo = userDoc.data();
-      const clubRef = doc(db, "Clubs", clubUid);
-
-      // Create a club
-      await setDoc(clubRef, {
-        uid: clubUid,
-        clubname: newClubName,
-        description: newClubDescription,
-        createdBy: currentUser.uid,
-        createdAt: serverTimestamp(),
-        initial: newClubName[0].toUpperCase(),
-        logo: {},
-        channels: {},
-        members: {
-          [currentUser.uid]: {
-            username: currentUserInfo.username,
-            role: "Admin",
-            joined: serverTimestamp()
-          }
+        if (!currentUser || !currentUser.uid) {
+          console.error("Current user not found or missing UID");
+          return;
         }
-      });
 
-      // Add creator to club
-      await updateDoc(doc(db, "UserClubs", currentUser.uid), {
-        [clubUid + ".clubInfo"]: {
-          clubuid: clubUid,
+        const clubUid = uuidv4();
+        console.log("Generated club UID:", clubUid);
+
+        // Get current user's username
+        const userRef = doc(db, "Users", currentUser.uid);
+        const userDoc = await getDoc(userRef);
+
+        if (!userDoc.exists()) {
+          console.error("User document not found in Firestore");
+          return;
+        }
+
+        const currentUserInfo = userDoc.data();
+        console.log("Retrieved user info:", currentUserInfo);
+
+        // Check if username exists, provide a fallback if it doesn't
+        const username = currentUserInfo.username || currentUser.email || "User_" + currentUser.uid.substring(0, 8);
+
+        const clubRef = doc(db, "Clubs", clubUid);
+
+        // Create a club
+        await setDoc(clubRef, {
+          uid: clubUid,
           clubname: newClubName,
-          joined: serverTimestamp()
+          description: newClubDescription,
+          createdBy: currentUser.uid,
+          createdAt: serverTimestamp(),
+          initial: newClubName[0].toUpperCase(),
+          logo: {},
+          channels: {
+            general: {
+              id: uuidv4(),
+              name: "general",
+              createdAt: serverTimestamp(),
+            }
+          },
+          members: {
+            [currentUser.uid]: {
+              username: username,
+              role: "Admin",
+              joined: serverTimestamp(),
+            },
+          },
+          challenges: {},
+        });
+
+        console.log("Club document created in Firestore");
+
+        // Add creator to club
+        const userClubRef = doc(db, "UserClubs", currentUser.uid);
+        const userClubDoc = await getDoc(userClubRef);
+
+        if (userClubDoc.exists()) {
+          // Update the existing document
+          await updateDoc(userClubRef, {
+            [clubUid + ".clubInfo"]: {
+              clubuid: clubUid,
+              clubname: newClubName,
+              joined: serverTimestamp(),
+            },
+          });
+        } else {
+          // Create a new document if it doesn't exist
+          await setDoc(userClubRef, {
+            [clubUid + ".clubInfo"]: {
+              clubuid: clubUid,
+              clubname: newClubName,
+              joined: serverTimestamp(),
+            },
+          });
         }
-      })
+        console.log("User added to club in UserClubs");
 
-      // Call the parent component's handler
-      if (onCreateClub) {
-        onCreateClub();
+        // Call the parent component's handler
+        if (onCreateClub) {
+          onCreateClub();
+        }
+
+        // Reset form and close dialog
+        setNewClubName("");
+        setNewClubDescription("");
+        setCreateClubOpen(false);
+
+        console.log("Club creation completed successfully");
+      } catch (error) {
+        console.error("Error creating club:", error);
+        alert("Error creating club: " + error.message);
       }
-
-      // Reset form and close dialog
-      setNewClubName("");
-      setNewClubDescription("");
-      setCreateClubOpen(false);
     };
 
     const handleClubSearch = async () => {
       if (inputText == "") return;
 
       try {
-        // Check if club exists
-        const clubsQ = query(
+        // Search by clubname or partial match
+        const qClubname = query(
           collection(db, "Clubs"),
-          where("uid", "==", inputText) // In the future "uid" should be replaced with "clubname"
+          orderBy("clubname"),
+          startAt(inputText),
+          endAt(inputText + "\uf8ff")
+        );
+
+        // Search by username or partial match
+        const qUsername = query(
+          collection(db, "Clubs"),
+          orderBy("createdByUsername"),
+          startAt(inputText),
+          endAt(inputText + "\uf8ff")
         );
   
-        const clubsDoc = await getDocs(clubsQ);
-        if (clubsDoc.empty) {
-          alert("Club does not exist");
+        // Get the query snapshots and combine them
+        const [qClubnameSnap, qUsernameSnap] = await Promise.all([
+          getDocs(qClubname),
+          getDocs(qUsername)
+        ]);
+
+        const allDocs = [...qClubnameSnap.docs, ...qUsernameSnap.docs];
+
+        if (allDocs.length === 0) {
+          alert("Cannot find club(s).");
           return;
         }
-  
-        // Check if user is in club
-        const userClubsRef = doc(db, "UserClubs", currentUser.uid);
-        const userClubsDoc = await getDoc(userClubsRef);
 
-        if (userClubsDoc.exists()) {
-          const userClubsData = userClubsDoc.data();
-          const isInClub = inputText in userClubsData;
-        
-          if (isInClub) {
-            alert("You're already in the club.");
-            console.log("User is already in the club!");
-            return;
-          }
+        const clubs =allDocs.map(doc => ({id: doc.id, ...doc.data() }));
 
-          // Add user to club
+        setClubSearchResults(clubs);
 
-          // Get current user's username and club's name
-          const userRef = doc(db, "Users", currentUser.uid);
-          const userDoc = await getDoc(userRef);
-          const currentUserInfo = userDoc.data();
-          const clubRef = doc(db, "Clubs", inputText);
-          const clubDoc = await getDoc(clubRef);
-
-          await updateDoc(clubRef, {
-            [`members.${currentUser.uid}`]: {
-              username: currentUserInfo.username,
-              role: "Member",
-              joined: serverTimestamp()
-            }
-          });
-          await updateDoc(doc(db, "UserClubs", currentUser.uid), {
-            [inputText + ".clubInfo"]: {
-              clubuid: inputText,
-              clubname: clubDoc.data().clubname,
-              joined: serverTimestamp()
-            }
-          });
-
-          console.log("Successfully added user to club.");
-        }
-        else {
-          alert("Error finding user's UserClubs reference");
-          console.log("Error adding user to club.");
-          return;
-        }
-  
-        console.log("Successfully found club.");
-      } catch (error) {
+        console.log("Successfully found club(s).");
+      }
+      catch (error) {
         console.log(error);
+      }
+    };
+    
+    const joinClub = async (club) => {
+      // Check if user is in club
+      const userClubsRef = doc(db, "UserClubs", currentUser.uid);
+      const userClubsDoc = await getDoc(userClubsRef);
+
+      if (userClubsDoc.exists()) {
+        const userClubsData = userClubsDoc.data();
+        const isInClub = club.uid in userClubsData;
+
+        if (isInClub) {
+          alert("You're already in the club.");
+          console.log("User is already in the club!");
+          return;
+        }
+
+        // Add user to club
+
+        // Get current user's username and club's name
+        const userRef = doc(db, "Users", currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        const currentUserInfo = userDoc.data();
+        const clubRef = doc(db, "Clubs", club.uid);
+
+        await updateDoc(clubRef, {
+          [`members.${currentUser.uid}`]: {
+            username: currentUserInfo.username,
+            role: "Member",
+            joined: serverTimestamp()
+          }
+        });
+        await updateDoc(doc(db, "UserClubs", currentUser.uid), {
+          [club.uid + ".clubInfo"]: {
+            clubuid: club.uid,
+            clubname: club.clubname,
+            joined: serverTimestamp()
+          }
+        });
+
+        console.log("Successfully added user to club.");
+      }
+      else {
+        alert("Error finding user's UserClubs reference");
+        console.log("Error adding user to club.");
+        return;
       }
     };
 
     const handleUserSearch = async () => {
       if (inputText == "") return;
-      
+
       try {
-        // Check if user exists
-        const q = query(
+        const inputLower = inputText.toLowerCase();
+
+        // Search by username or partial match
+        const qUsername = query(
           collection(db, "Users"),
-          where("uid", "==", inputText) // In the future "uid" should be replaced with "username"
+          orderBy("username"),
+          startAt(inputText),
+          endAt(inputText + "\uf8ff")
         );
 
-        const querySnapshot = await getDocs(q);
-        if (querySnapshot.empty) {
+        // Search by fullname or partial match
+        const qFullname = query(
+          collection(db, "Users"),
+          orderBy("fullname"),
+          startAt(inputLower),
+          endAt(inputLower + "\uf8ff")
+        );
+
+        // Get the query snapshots and combine them
+        const [qUsernameSnap, qFullnameSnap] = await Promise.all([
+          getDocs(qUsername),
+          getDocs(qFullname)
+        ]);
+
+        const allDocs = [...qUsernameSnap.docs, ...qFullnameSnap.docs];
+
+        if (allDocs.length === 0) {
           alert("User does not exist");
           return;
         }
 
-        querySnapshot.forEach((doc) => {
-          setUser(doc.data());
-          createPrivateChat(doc.data());
-        });
+        const users = allDocs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        console.log("Successfully found user.");
+        setUserSearchResults(users);
+
+        console.log("Successfully found user(s).");
       } catch (error) {
         console.log(error);
       }
@@ -389,6 +497,9 @@ const ChatSidebar = forwardRef(
         console.log("A user was null");
         return;
       }
+
+      // Check if target user has a username, provide a fallback if it doesn't
+      const targetUsername = targetUser.username || targetUser.email || "User_" + targetUser.uid.substring(0, 8);
 
       const combinedUID =
         currentUser.uid > targetUser.uid
@@ -404,7 +515,7 @@ const ChatSidebar = forwardRef(
           await updateDoc(doc(db, "UserChats", currentUser.uid), {
             [combinedUID + ".userInfo"]: {
               uid: targetUser.uid,
-              username: targetUser.username,
+              username: targetUsername,
             },
             [combinedUID + ".date"]: serverTimestamp(),
           });
@@ -414,10 +525,13 @@ const ChatSidebar = forwardRef(
           const userDoc = await getDoc(userRef);
           const currentUserInfo = userDoc.data();
 
+          // Check if username exists, provide a fallback if it doesn't
+          const username = currentUserInfo.username || currentUser.email || "User_" + currentUser.uid.substring(0, 8);
+
           await updateDoc(doc(db, "UserChats", targetUser.uid), {
             [combinedUID + ".userInfo"]: {
               uid: currentUser.uid,
-              username: currentUserInfo.username,
+              username: username,
             },
             [combinedUID + ".date"]: serverTimestamp(),
           });
@@ -465,8 +579,9 @@ const ChatSidebar = forwardRef(
           {/* Text Channels */}
           <SectionHeader>Channels</SectionHeader>
           <List disablePadding>
-            {currentClub?.channels && Object.values(currentClub.channels).length > 0 ? (
-              Object.entries(currentClub.channels)
+            {currentClub?.channels &&
+              Object.values(currentClub.channels).length > 0
+              ? Object.entries(currentClub.channels)
                 .sort((a, b) => a[1].createdAt - b[1].createdAt)
                 .map((channel) => (
                   <ChannelItem
@@ -484,8 +599,56 @@ const ChatSidebar = forwardRef(
                     />
                   </ChannelItem>
                 ))
-            ) : null}
+              : null}
           </List>
+
+          {/* Features Section */}
+          <Box sx={{ marginTop: "auto" }}>
+            <Divider />
+            <SectionHeader>Features</SectionHeader>
+            <List disablePadding>
+              <ChannelItem
+                onClick={() => {
+                  setSelectedChannel({
+                    id: "book-voting",
+                    name: "Book Voting",
+                    type: "feature",
+                    featureType: "bookVoting",
+                  });
+                }}
+                isSelected={selectedChannel?.id === "book-voting"}
+              >
+                <ChannelText
+                  primary={
+                    <>
+                      <MdBarChart size={16} />
+                      Book Voting
+                    </>
+                  }
+                />
+              </ChannelItem>
+              <ChannelItem
+                onClick={() => {
+                  setSelectedChannel({
+                    id: "challenges",
+                    name: "Challenges",
+                    type: "feature",
+                    featureType: "challenges",
+                  });
+                }}
+                isSelected={selectedChannel?.id === "challenges"}
+              >
+                <ChannelText
+                  primary={
+                    <>
+                      <GiTrophyCup size={16} />
+                      Challenges
+                    </>
+                  }
+                />
+              </ChannelItem>
+            </List>
+          </Box>
         </>
       );
     };
@@ -552,6 +715,86 @@ const ChatSidebar = forwardRef(
             // Show channels for the selected club
             renderChannels()
           )}
+
+          {/* Search results overlayed on club channels */}
+          {clubSearchResults.length > 0 && (
+            <Box
+              ref={searchResultsRef}
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                background: "white",
+                border: "1px solid #ccc",
+                maxHeight: "300px",
+                overflowY: "auto",
+                zIndex: 10,
+              }}
+            >
+              {clubSearchResults.map((club) => (
+                <Box
+                  key={club.id}
+                  sx={{
+                    padding: "8px",
+                    borderBottom: "1px solid #eee",
+                    cursor: "pointer",
+                    "&:hover": { backgroundColor: "#f5f5f5" },
+                  }}
+                  onClick={() => {
+                    joinClub(club);
+                    setClubSearchResults([]);
+                    setInputText("");
+                    setShowInput(false);
+                  }}
+                >
+                  <Typography variant="body1">
+                    {club.clubname} ({club.createdByUsername ? club.createdByUsername : club.createdBy})
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          )}
+
+          {/* Search results overlayed on user chats */}
+          {userSearchResults.length > 0 && (
+            <Box
+              ref={searchResultsRef}
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                background: "white",
+                border: "1px solid #ccc",
+                maxHeight: "300px",
+                overflowY: "auto",
+                zIndex: 10,
+              }}
+            >
+              {userSearchResults.map((user) => (
+                <Box
+                  key={user.id}
+                  sx={{
+                    padding: "8px",
+                    borderBottom: "1px solid #eee",
+                    cursor: "pointer",
+                    "&:hover": { backgroundColor: "#f5f5f5" },
+                  }}
+                  onClick={() => {
+                    createPrivateChat(user);
+                    setUserSearchResults([]);
+                    setInputText("");
+                    setShowInput(false);
+                  }}
+                >
+                  <Typography variant="body1">
+                    {user.firstName} {user.lastName} ({user.username})
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          )}
         </ContentContainer>
 
         {/* Create Club Dialog */}
@@ -597,7 +840,14 @@ const ChatSidebar = forwardRef(
               Cancel
             </Button>
             <Button
-              onClick={handleCreateClub}
+              onClick={() => {
+                try {
+                  handleCreateClub();
+                } catch (error) {
+                  console.error("Error in create club button handler:", error);
+                  alert("Error creating club. Please try again.");
+                }
+              }}
               variant="contained"
               sx={{
                 bgcolor: "#5d4b3d",

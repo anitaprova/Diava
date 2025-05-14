@@ -18,6 +18,7 @@ import Profile from "./pages/Profile.jsx";
 import GoogleSignUp from "./pages/GoogleSignUp.jsx";
 import ClubSettings from "./pages/ClubSettings.jsx";
 import CustomList from "./components/CustomList.jsx";
+import CustomLists from "./pages/CustomLists.jsx";
 import EditReview from "./pages/EditReview.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import "./index.css";
@@ -138,10 +139,18 @@ function App() {
             }
           />
           <Route
-            path="/list/:name"
+            path="/list/:id"
             element={
               <ProtectedRoute>
                 <CustomList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/customlist/:id"
+            element={
+              <ProtectedRoute>
+                <CustomLists />
               </ProtectedRoute>
             }
           />

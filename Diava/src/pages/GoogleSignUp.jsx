@@ -55,6 +55,7 @@ const GoogleSignUp = () => {
             firstName: formData.firstName,
             lastName: formData.lastName,
             username: formData.username,
+            fullName: formData.firstName.toLowerCase() + " " + formData.lastName.toLowerCase(),
             uid: result.user.uid,
           });
 
