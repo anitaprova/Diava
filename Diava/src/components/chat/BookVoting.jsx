@@ -140,13 +140,37 @@ const BookVoting = ({ clubName, isAdmin }) => {
   useEffect(() => {
     const fetchBooks = async () => {
       if (!currentClub) return;
-      const { data, error } = await supabase
+      const { data: booksData, error } = await supabase
         .from("voting_books")
         .select("*")
         .eq("club_uid", currentClub.uid)
         .eq("voting_month", voteMonth);
-      if (!error) setBooks(data);
+
+      if (error || !booksData) {
+        console.error("Error fetching books:", error);
+        return;
+      }
+      const booksWithRatings = await Promise.all(
+        booksData.map(async (book) => {
+          const { data: ratingsData, error: ratingError } = await supabase
+            .from("reviews")
+            .select("rating")
+            .eq("book_id", book.google_book_id);
+          const averageRating =
+            ratingsData?.length > 0
+              ? (
+                  ratingsData.reduce((acc, r) => acc + r.rating, 0) /
+                  ratingsData.length
+                ).toFixed(1)
+              : null;
+
+          return { ...book, rating: averageRating };
+        })
+      );
+
+      setBooks(booksWithRatings);
     };
+
     fetchBooks();
   }, [currentClub]);
 
@@ -158,8 +182,8 @@ const BookVoting = ({ clubName, isAdmin }) => {
     return userRole === "Admin" || userRole === "Owner";
   };
 
-  const handleVote = async (bookId) => {
-     const { data: existingVotes } = await supabase
+  const handleVote = async (book) => {
+    const { data: existingVotes } = await supabase
       .from("voting")
       .select("*")
       .eq("user_id", currentUser.uid)
@@ -179,20 +203,22 @@ const BookVoting = ({ clubName, isAdmin }) => {
       },
     ]);
 
-    const {error} = await supabase
-      .from("voting_books")
-      .update({votes: bookId.votes + 1})
-      .eq("google_book_id", bookId.id);
+    const currentVotes = book.votes ?? 0;
 
-      if(!error){
-        setBooks(
-          books.map((book) =>
-            book.id === bookId ? { ...book, votes: book.votes + 1 } : book
+    const { error } = await supabase
+      .from("voting_books")
+      .update({ votes: currentVotes + 1 })
+      .eq("id", book.id);
+      console.log("Vote added successfully:", book);
+    if (!error) {
+      setBooks((prev) =>
+        prev.map((b) =>
+          b.id === book.id ? { ...b, votes: currentVotes + 1 } : b
         )
       );
-      }
-    
+    }
   };
+
 
   const handleAddBook = () => {
     setAddBookOpen(true);
@@ -334,7 +360,7 @@ const BookVoting = ({ clubName, isAdmin }) => {
                   <span role="img" aria-label="rating">
                     ⭐
                   </span>{" "}
-                  {book.rating}
+                  {book.rating? book.rating : "No ratings yet"}
                 </BookDetail>
               </BookDetails>
 
@@ -346,7 +372,7 @@ const BookVoting = ({ clubName, isAdmin }) => {
             </BookInfo>
 
             <Tooltip title="Vote for this book">
-              <VoteButton onClick={() => handleVote(book.id)} color="primary">
+              <VoteButton onClick={() => handleVote(book)} color="primary">
                 <Badge badgeContent={book.votes} color="primary">
                   <ThumbUpIcon />
                 </Badge>
