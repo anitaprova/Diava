@@ -9,6 +9,7 @@ import DialogContent from "@mui/material/DialogContent";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import { auth } from "../firebase/firebase";
 import { supabase } from "../client";
+
 export default function ToRead() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -24,7 +25,6 @@ export default function ToRead() {
   const genres = [
     ...new Set(genresRaw.flatMap((category) => category.split("/"))),
   ];
-
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -71,76 +71,80 @@ export default function ToRead() {
     }
   }, [userId, id]);
 
-  
-const addToReadList = async () => {
-  try {
-    const userId = auth.currentUser.uid;
-    if (!userId || !book?.id) return;
+  const addToReadList = async () => {
+    try {
+      const userId = auth.currentUser.uid;
+      if (!userId || !book?.id) return;
 
-    const { data: readList, error: readListError } = await supabase
-      .from("lists")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("name", "Read")
-      .single();
-
-    if (readListError || !readList) {
-      console.error("Could not find 'Read' list:", readListError?.message);
-      return;
-    }
-
-    const readListId = readList.id;
-    const genres = book?.volumeInfo?.categories || []; 
-    const bookData = {
-      list_id: readListId,
-      google_books_id: book?.id,
-      title: book?.volumeInfo?.title,
-      thumbnail: book?.volumeInfo?.imageLinks?.thumbnail,
-      user_id: userId,
-      author: book?.volumeInfo?.authors?.join(", "),
-      pages: book?.volumeInfo?.pageCount,
-      genres: genres.map((genre) => genre.trim()), 
-    };
-
-    const { data: existing, error: existingError } = await supabase
-      .from("list_books")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("list_id", readListId)
-      .eq("google_books_id", book?.id)
-      .single();
-
-    if (!existing) {
-      const { error: insertError } = await supabase
-        .from("list_books")
-        .insert([bookData]);
-
-      if (insertError) throw insertError;
-    }
-    const { data: currentlyList, error: currListError } = await supabase
-      .from("lists")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("name", "Currently Reading")
-      .single();
-
-    if (currListError || !currentlyList) {
-      console.warn("Could not find 'Currently Reading' list:", currListError?.message);
-    } else {
-      await supabase
-        .from("list_books")
-        .delete()
+      const { data: readList, error: readListError } = await supabase
+        .from("lists")
+        .select("id")
         .eq("user_id", userId)
-        .eq("list_id", currentlyList.id)
-        .eq("google_books_id", book?.id);
+        .eq("name", "Read")
+        .single();
+
+      if (readListError || !readList) {
+        console.error("Could not find 'Read' list:", readListError?.message);
+        return;
+      }
+
+      const readListId = readList.id;
+      const genres = book?.volumeInfo?.categories || [];
+      const bookData = {
+        list_id: readListId,
+        google_books_id: book?.id,
+        title: book?.volumeInfo?.title,
+        thumbnail: book?.volumeInfo?.imageLinks?.thumbnail,
+        user_id: userId,
+        author: book?.volumeInfo?.authors?.join(", "),
+        pages: book?.volumeInfo?.pageCount,
+        genres: genres.map((genre) => genre.trim()),
+      };
+
+      const { data: existing, error: existingError } = await supabase
+        .from("list_books")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("list_id", readListId)
+        .eq("google_books_id", book?.id)
+        .single();
+
+      if (!existing) {
+        const { error: insertError } = await supabase
+          .from("list_books")
+          .insert([bookData]);
+
+        if (insertError) throw insertError;
+      }
+      const { data: currentlyList, error: currListError } = await supabase
+        .from("lists")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("name", "Currently Reading")
+        .single();
+
+      if (currListError || !currentlyList) {
+        console.warn(
+          "Could not find 'Currently Reading' list:",
+          currListError?.message
+        );
+      } else {
+        await supabase
+          .from("list_books")
+          .delete()
+          .eq("user_id", userId)
+          .eq("list_id", currentlyList.id)
+          .eq("google_books_id", book?.id);
+      }
+
+      console.log("Moved book to 'Read' list successfully.");
+    } catch (error) {
+      console.error(
+        "Error moving book to 'Read' list:",
+        error.message || error
+      );
     }
-
-    console.log("Moved book to 'Read' list successfully.");
-  } catch (error) {
-    console.error("Error moving book to 'Read' list:", error.message || error);
-  }
-};
-
+  };
 
   const handleOpen = () => {
     setSelectedLog(null);
@@ -155,6 +159,32 @@ const addToReadList = async () => {
   const handleClose = () => {
     setSelectedLog(null);
     setOpen(false);
+  };
+
+  const handleDelete = async (entry) => {
+    if (!entry?.id) {
+      console.error("Invalid entry: missing id", entry);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("progress")
+        .delete()
+        .eq("user_id", userId)
+        .eq("google_books_id", id)
+        .eq("id", entry.id);
+
+      if (error) {
+        throw error;
+      }
+
+      console.log(data);
+
+      setLogs((prevLogs) => prevLogs.filter((log) => log.id !== entry.id));
+    } catch (error) {
+      console.error("Error fetching logs:", error);
+    }
   };
 
   const handleSubmit = async (event) => {
@@ -235,13 +265,11 @@ const addToReadList = async () => {
         setProgressCompleted(true);
       }
       handleClose();
-
     } catch (error) {
       console.error("Error inserting current user's progress: ", error);
     }
   };
-  
- 
+
   return (
     <div className="font-merriweather ml-50 mr-50 mt-10 mb-10">
       {book && book.volumeInfo ? (
@@ -389,7 +417,7 @@ const addToReadList = async () => {
       )}
 
       <Box className="flex flex-col gap-y-10 mt-10">
-        {logs.map((entry, index) => (
+        {logs?.map((entry, index) => (
           <Box
             key={index}
             className="bg-vanilla flex flex-row justify-between items-start p-6 rounded-lg shadow-small"
@@ -423,7 +451,7 @@ const addToReadList = async () => {
                 <Button
                   variant="dark"
                   size="small"
-                  onClick={() => setLogs(logs.filter((item) => item !== entry))}
+                  onClick={() => handleDelete(entry)}
                 >
                   Delete
                 </Button>
@@ -434,28 +462,28 @@ const addToReadList = async () => {
       </Box>
       <Dialog open={askToReview} onClose={() => setaskToReview(false)}>
         <DialogTitle>Finished Reading?</DialogTitle>
-          <DialogContent>
-            <Typography>
-              You’ve reached 100% progress. Would you like to leave a review?
-            </Typography>
-          </DialogContent>
-          <DialogActions>
-            <Button
-              onClick={() => {
+        <DialogContent>
+          <Typography>
+            You’ve reached 100% progress. Would you like to leave a review?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
               setaskToReview(false);
               navigate(`/review/${book.id}`);
-              }}
-              variant="coffee"
-            >
-              Yes
-            </Button>
-            <Button
-              onClick={() => {
+            }}
+            variant="coffee"
+          >
+            Yes
+          </Button>
+          <Button
+            onClick={() => {
               setaskToReview(false);
               navigate("/home");
             }}
-              variant="dark"
-            >
+            variant="dark"
+          >
             No, go to Home
           </Button>
         </DialogActions>
