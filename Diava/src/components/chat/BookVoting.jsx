@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { styled } from "@mui/material/styles";
 import {
   Box,
@@ -14,6 +14,8 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Snackbar,
+  Alert,
   TextField,
   Autocomplete,
 } from "@mui/material";
@@ -23,6 +25,7 @@ import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import { useAuth } from "../../context/AuthContext";
 import { useClub } from "../../context/ClubContext";
+import { supabase } from "../../client";
 import axios from "axios";
 
 const WindowContainer = styled(Box)({
@@ -119,54 +122,57 @@ const VoteButton = styled(IconButton)({
   alignSelf: "center",
 });
 
-// Mock data for books
-const mockBooks = [
-  {
-    id: "1",
-    title: "A Thousand Splendid Suns",
-    author: "Khaled Hosseini",
-    pages: 372,
-    readTime: "~6 Hours",
-    rating: 4.67,
-    genres: ["Historical Fiction", "Fiction"],
-    image:
-      "https://books.google.com/books/content?id=3vo0NQbIN2YC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-    votes: 5,
-  },
-  {
-    id: "2",
-    title: "They Both Die at the End",
-    author: "Adam Silvera",
-    pages: 389,
-    readTime: "~5 Hours",
-    rating: 4.14,
-    genres: ["Young Adult", "Fiction", "Romance", "Fantasy"],
-    image:
-      "https://books.google.com/books/content?id=Im2JDwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
-    votes: 3,
-  },
-  {
-    id: "3",
-    title: "Wuthering Heights",
-    author: "Emily Bronte",
-    pages: 416,
-    readTime: "~6 Hours",
-    rating: 3.85,
-    genres: ["Gothic Novel", "Classic"],
-    image:
-      "https://books.google.com/books/content?id=4RVWAAAAYAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
-    votes: 2,
-  },
-];
+
 
 const BookVoting = ({ clubName, isAdmin }) => {
   const { currentUser } = useAuth();
   const { currentClub } = useClub();
-  const [books, setBooks] = useState(mockBooks);
+  const [books, setBooks] = useState([]);
   const [addBookOpen, setAddBookOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("")
   const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
+  const voteMonth = new Date().toLocaleString("default", { month: "long" });
+
+
+  useEffect(() => {
+    const fetchBooks = async () => {
+      if (!currentClub) return;
+      const { data: booksData, error } = await supabase
+        .from("voting_books")
+        .select("*")
+        .eq("club_uid", currentClub.uid)
+        .eq("voting_month", voteMonth);
+
+      if (error || !booksData) {
+        console.error("Error fetching books:", error);
+        return;
+      }
+      const booksWithRatings = await Promise.all(
+        booksData.map(async (book) => {
+          const { data: ratingsData, error: ratingError } = await supabase
+            .from("reviews")
+            .select("rating")
+            .eq("book_id", book.google_book_id);
+          const averageRating =
+            ratingsData?.length > 0
+              ? (
+                  ratingsData.reduce((acc, r) => acc + r.rating, 0) /
+                  ratingsData.length
+                ).toFixed(1)
+              : null;
+
+          return { ...book, rating: averageRating };
+        })
+      );
+
+      setBooks(booksWithRatings);
+    };
+
+    fetchBooks();
+  }, [currentClub]);
 
   // Check if the user is an admin or owner based on the club data
   const checkIsAdmin = () => {
@@ -176,13 +182,43 @@ const BookVoting = ({ clubName, isAdmin }) => {
     return userRole === "Admin" || userRole === "Owner";
   };
 
-  const handleVote = (bookId) => {
-    setBooks(
-      books.map((book) =>
-        book.id === bookId ? { ...book, votes: book.votes + 1 } : book
-      )
-    );
+  const handleVote = async (book) => {
+    const { data: existingVotes } = await supabase
+      .from("voting")
+      .select("*")
+      .eq("user_id", currentUser.uid)
+      .eq("club_id", currentClub.uid)
+      .eq("vote_month", voteMonth);
+
+    if (existingVotes?.length) {
+      setSnackbarMessage("You've already voted this month!");
+      setSnackbarOpen(true);
+      return;
+    }
+    await supabase.from("voting").insert([
+      {
+        club_id: currentClub.uid,
+        user_id: currentUser.uid,
+        vote_month: voteMonth,
+      },
+    ]);
+
+    const currentVotes = book.votes ?? 0;
+
+    const { error } = await supabase
+      .from("voting_books")
+      .update({ votes: currentVotes + 1 })
+      .eq("id", book.id);
+      console.log("Vote added successfully:", book);
+    if (!error) {
+      setBooks((prev) =>
+        prev.map((b) =>
+          b.id === book.id ? { ...b, votes: currentVotes + 1 } : b
+        )
+      );
+    }
   };
+
 
   const handleAddBook = () => {
     setAddBookOpen(true);
@@ -207,23 +243,58 @@ const BookVoting = ({ clubName, isAdmin }) => {
     }
   };
 
-  const handleSelectBook = (selectedBook) => {
+ const handleSelectBook = async (selectedBook) => {
     if (!selectedBook) return;
+    const voteMonth = new Date().toLocaleString("default", { month: "long" });
 
-    const bookToAdd = {
-      id: selectedBook.id,
-      title: selectedBook.volumeInfo.title,
-      author: selectedBook.volumeInfo.authors?.join(", ") || "Unknown Author",
-      pages: selectedBook.volumeInfo.pageCount || 0,
-      readTime: `~${Math.floor((selectedBook.volumeInfo.pageCount || 0) / 0.6 / 60)} Hours`,
-      rating: selectedBook.volumeInfo.averageRating || 0,
-      genres: selectedBook.volumeInfo.categories || [],
-      image: selectedBook.volumeInfo.imageLinks?.thumbnail || "https://via.placeholder.com/80x120?text=No+Image",
-      votes: 0
-    };
+    const { data: existing } = await supabase
+      .from("voting_books")
+      .select("id")
+      .eq("google_book_id", selectedBook.id)
+      .eq("club_uid", currentClub.uid)
+      .eq("voting_month", voteMonth);
 
-    setBooks([...books, bookToAdd]);
-    handleCloseAddBook();
+    if (existing?.length) {
+      setSnackbarMessage("This book is already added for this month's vote.");
+      setSnackbarOpen(true);
+      return;
+    } else {
+      const bookToAdd = {
+        title: selectedBook.volumeInfo.title,
+        author: selectedBook.volumeInfo.authors?.join(", ") || "Unknown Author",
+        pages: selectedBook.volumeInfo.pageCount || 0,
+        image:
+          selectedBook.volumeInfo.imageLinks?.thumbnail ||
+          "https://via.placeholder.com/80x120?text=No+Image",
+        genres: selectedBook.volumeInfo.categories || [],
+        votes: 0,
+        google_book_id: selectedBook.id,
+        read_time: `~${Math.floor(
+          (selectedBook.volumeInfo.pageCount || 0) / 0.6 / 60
+        )} Hours`,
+        club_uid: currentClub.uid,
+        voting_month: voteMonth,
+        rating: selectedBook.volumeInfo.averageRating || 0,
+      };
+
+      const { data, error } = await supabase
+        .from("voting_books")
+        .insert([bookToAdd])
+        .select();
+
+      console.log(error);
+
+      if (!error && data?.[0]) {
+        setBooks([...books, bookToAdd]);
+        setSnackbarMessage("Book added successfully!");
+        setSnackbarOpen(true);
+      } else {
+        setSnackbarMessage("Failed to add the book. Please try again.");
+        setSnackbarOpen(true);
+      }
+
+      setAddBookOpen(false);
+    }
   };
 
   // Determine if current user has admin privileges
@@ -283,13 +354,13 @@ const BookVoting = ({ clubName, isAdmin }) => {
                   <span role="img" aria-label="time">
                     ⏱️
                   </span>{" "}
-                  {book.readTime}
+                  {book.read_time}
                 </BookDetail>
                 <BookDetail>
                   <span role="img" aria-label="rating">
                     ⭐
                   </span>{" "}
-                  {book.rating}
+                  {book.rating? book.rating : "No ratings yet"}
                 </BookDetail>
               </BookDetails>
 
@@ -301,7 +372,7 @@ const BookVoting = ({ clubName, isAdmin }) => {
             </BookInfo>
 
             <Tooltip title="Vote for this book">
-              <VoteButton onClick={() => handleVote(book.id)} color="primary">
+              <VoteButton onClick={() => handleVote(book)} color="primary">
                 <Badge badgeContent={book.votes} color="primary">
                   <ThumbUpIcon />
                 </Badge>
@@ -381,6 +452,16 @@ const BookVoting = ({ clubName, isAdmin }) => {
           </Button>
         </DialogActions>
       </Dialog>
+       <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={() => setSnackbarOpen(false)} severity="info" sx={{ width: "100%" }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </WindowContainer>
   );
 };
