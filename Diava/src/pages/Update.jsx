@@ -252,11 +252,25 @@ export default function ToRead() {
             total_pages: totalPages,
             progress: progressVal,
           },
-        ]);
+        ]).select();
         console.log(progressVal);
         if (error) throw error;
+        const insertedLog = data[0];
         console.log("New log inserted into database:", data);
-        setLogs((prevState) => [newLog, ...prevState]);
+        
+        setLogs((prevState) => [
+        {
+          id: insertedLog.id,              
+          created_at: insertedLog.created_at,
+          comment,
+          rating,
+          page,
+          google_books_id: id,
+          total_pages: totalPages,
+          progress: progressVal,
+        },
+        ...prevState,
+        ]);
       }
 
       if (progressVal === 100) {
@@ -462,14 +476,14 @@ export default function ToRead() {
       </Box>
       <Dialog open={askToReview} onClose={() => setaskToReview(false)}>
         <DialogTitle>Finished Reading?</DialogTitle>
-        <DialogContent>
-          <Typography>
-            You’ve reached 100% progress. Would you like to leave a review?
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
+          <DialogContent>
+            <Typography>
+              🎉 Congratulations! You’ve reached 100% progress on this book.🎉  Would you like to leave a review?
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
               setaskToReview(false);
               navigate(`/review/${book.id}`);
             }}
