@@ -20,6 +20,7 @@ import {
   Autocomplete,
 } from "@mui/material";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { FaHashtag } from "react-icons/fa";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
@@ -122,20 +123,19 @@ const VoteButton = styled(IconButton)({
   alignSelf: "center",
 });
 
-
-
 const BookVoting = ({ clubName, isAdmin }) => {
   const { currentUser } = useAuth();
   const { currentClub } = useClub();
   const [books, setBooks] = useState([]);
   const [addBookOpen, setAddBookOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bookToDelete, setBookToDelete] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("")
+  const [snackbarMessage, setSnackbarMessage] = useState("");
   const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
   const voteMonth = new Date().toLocaleString("default", { month: "long" });
-
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -209,7 +209,7 @@ const BookVoting = ({ clubName, isAdmin }) => {
       .from("voting_books")
       .update({ votes: currentVotes + 1 })
       .eq("id", book.id);
-      console.log("Vote added successfully:", book);
+    console.log("Vote added successfully:", book);
     if (!error) {
       setBooks((prev) =>
         prev.map((b) =>
@@ -218,7 +218,6 @@ const BookVoting = ({ clubName, isAdmin }) => {
       );
     }
   };
-
 
   const handleAddBook = () => {
     setAddBookOpen(true);
@@ -235,7 +234,9 @@ const BookVoting = ({ clubName, isAdmin }) => {
 
     try {
       const response = await axios.get(
-        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&key=${API_KEY}`
+        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
+          searchQuery
+        )}&key=${API_KEY}`
       );
       setSearchResults(response.data.items || []);
     } catch (error) {
@@ -243,7 +244,7 @@ const BookVoting = ({ clubName, isAdmin }) => {
     }
   };
 
- const handleSelectBook = async (selectedBook) => {
+  const handleSelectBook = async (selectedBook) => {
     if (!selectedBook) return;
     const voteMonth = new Date().toLocaleString("default", { month: "long" });
 
@@ -297,6 +298,40 @@ const BookVoting = ({ clubName, isAdmin }) => {
     }
   };
 
+  const handleDeleteClick = (book) => {
+    setBookToDelete(book);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!bookToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from("voting_books")
+        .delete()
+        .eq("id", bookToDelete.id);
+
+      if (error) throw error;
+
+      setBooks((prev) => prev.filter((b) => b.id !== bookToDelete.id));
+      setSnackbarMessage("Book removed from voting list");
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error("Error deleting book:", error);
+      setSnackbarMessage("Failed to remove book");
+      setSnackbarOpen(true);
+    }
+
+    setDeleteDialogOpen(false);
+    setBookToDelete(null);
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setBookToDelete(null);
+  };
+
   // Determine if current user has admin privileges
   const isUserAdmin = isAdmin || checkIsAdmin();
 
@@ -320,16 +355,20 @@ const BookVoting = ({ clubName, isAdmin }) => {
       </Header>
 
       <ContentContainer>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+          }}
+        >
           <Typography variant="h6">Vote for next month's book</Typography>
 
           {/* Admin Add Book Button */}
           {isUserAdmin && (
             <Tooltip title="Add book for voting">
-              <IconButton
-                onClick={handleAddBook}
-                sx={{ color: "#5d4b3d" }}
-              >
+              <IconButton onClick={handleAddBook} sx={{ color: "#5d4b3d" }}>
                 <AddIcon />
               </IconButton>
             </Tooltip>
@@ -360,7 +399,7 @@ const BookVoting = ({ clubName, isAdmin }) => {
                   <span role="img" aria-label="rating">
                     ⭐
                   </span>{" "}
-                  {book.rating? book.rating : "0.0"}
+                  {book.rating ? book.rating : "0.0"}
                 </BookDetail>
               </BookDetails>
 
@@ -371,32 +410,51 @@ const BookVoting = ({ clubName, isAdmin }) => {
               </BookGenres>
             </BookInfo>
 
-            <Tooltip title="Vote for this book">
-              <VoteButton onClick={() => handleVote(book)} color="primary">
-                <Badge badgeContent={book.votes} color="primary">
-                  <ThumbUpIcon />
-                </Badge>
-              </VoteButton>
-            </Tooltip>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Tooltip title="Vote for this book">
+                <VoteButton onClick={() => handleVote(book)} color="primary">
+                  <Badge badgeContent={book.votes} color="primary">
+                    <ThumbUpIcon />
+                  </Badge>
+                </VoteButton>
+              </Tooltip>
+
+              {isUserAdmin && (
+                <Tooltip title="Remove book from voting">
+                  <IconButton
+                    onClick={() => handleDeleteClick(book)}
+                    sx={{ color: "#d32f2f" }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
           </BookItem>
         ))}
       </ContentContainer>
 
       {/* Add Book Dialog */}
-      <Dialog open={addBookOpen} onClose={handleCloseAddBook} maxWidth="md" fullWidth>
+      <Dialog
+        open={addBookOpen}
+        onClose={handleCloseAddBook}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>Add a Book for Voting</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 2 }}>
-            Search for a book to add to the voting list. Club members will be able to vote for this book.
+            Search for a book to add to the voting list. Club members will be
+            able to vote for this book.
           </DialogContentText>
 
-          <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
+          <Box sx={{ display: "flex", gap: 1, mb: 3 }}>
             <TextField
               fullWidth
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search for a book..."
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
             />
             <Button
               variant="contained"
@@ -413,31 +471,41 @@ const BookVoting = ({ clubName, isAdmin }) => {
           </Box>
 
           {searchResults.length > 0 && (
-            <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
+            <Box sx={{ maxHeight: 400, overflowY: "auto" }}>
               {searchResults.map((book) => (
                 <Paper
                   key={book.id}
                   sx={{
                     p: 2,
                     mb: 2,
-                    cursor: 'pointer',
-                    '&:hover': { bgcolor: '#f5f5f5' }
+                    cursor: "pointer",
+                    "&:hover": { bgcolor: "#f5f5f5" },
                   }}
                   onClick={() => handleSelectBook(book)}
                 >
-                  <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Box sx={{ display: "flex", gap: 2 }}>
                     <img
-                      src={book.volumeInfo.imageLinks?.thumbnail || "https://via.placeholder.com/80x120?text=No+Image"}
+                      src={
+                        book.volumeInfo.imageLinks?.thumbnail ||
+                        "https://via.placeholder.com/80x120?text=No+Image"
+                      }
                       alt={book.volumeInfo.title}
-                      style={{ width: 80, height: 120, objectFit: 'cover' }}
+                      style={{ width: 80, height: 120, objectFit: "cover" }}
                     />
                     <Box>
-                      <Typography variant="h6">{book.volumeInfo.title}</Typography>
+                      <Typography variant="h6">
+                        {book.volumeInfo.title}
+                      </Typography>
                       <Typography variant="subtitle1">
-                        by {book.volumeInfo.authors?.join(", ") || "Unknown Author"}
+                        by{" "}
+                        {book.volumeInfo.authors?.join(", ") ||
+                          "Unknown Author"}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {book.volumeInfo.pageCount} pages • {book.volumeInfo.averageRating ? `${book.volumeInfo.averageRating}⭐` : "No rating"}
+                        {book.volumeInfo.pageCount} pages •{" "}
+                        {book.volumeInfo.averageRating
+                          ? `${book.volumeInfo.averageRating}⭐`
+                          : "No rating"}
                       </Typography>
                     </Box>
                   </Box>
@@ -452,13 +520,40 @@ const BookVoting = ({ clubName, isAdmin }) => {
           </Button>
         </DialogActions>
       </Dialog>
-       <Snackbar
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
+        <DialogTitle>Remove Book from Voting</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to remove "{bookToDelete?.title}" from the
+            voting list? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel} sx={{ color: "#5d4b3d" }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+          >
+            Remove
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Snackbar
         open={snackbarOpen}
         autoHideDuration={4000}
         onClose={() => setSnackbarOpen(false)}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert onClose={() => setSnackbarOpen(false)} severity="info" sx={{ width: "100%" }}>
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity="info"
+          sx={{ width: "100%" }}
+        >
           {snackbarMessage}
         </Alert>
       </Snackbar>

@@ -70,10 +70,21 @@ export default function CustomList({ id, name, list_id }) {
   
 
   return (
-    <div className="mb-10 w-full">
-      <Typography variant="h5" onClick={handleListClick} style={{ cursor: "pointer" }}>
-        {currName ? currName : name} <EditIcon onClick={handleOpen} />
+  <div className="mb-10 w-full">
+    <div className="flex items-center mb-2">
+      <Typography
+        variant="h5"
+        onClick={handleListClick}
+        className="cursor-pointer mr-2"
+      >
+        {currName ? currName : name}
       </Typography>
+      <EditIcon
+        onClick={handleOpen}
+        className="text-gray-600 cursor-pointer hover:text-black"
+        />
+      </div>
+
       <Dialog
         open={open}
         onClose={handleClose}
@@ -91,7 +102,6 @@ export default function CustomList({ id, name, list_id }) {
                 name: newName,
                 id: id,
               });
-
               handleClose();
             },
           },
@@ -119,20 +129,21 @@ export default function CustomList({ id, name, list_id }) {
           </Button>
         </DialogActions>
       </Dialog>
+
       <Box className="bg-vanilla shadow-custom w-full rounded-md overflow-x-auto">
         <Box className="flex gap-x-4 p-4">
           {books?.length > 0 ? (
             books.map((book, idx) => (
-          <img
-            key={idx}
-            src={book.thumbnail}
-            onClick={() => navigate(`/book/${book.google_books_id}`)}
-            className="w-[120px] h-auto cursor-pointer flex-shrink-0"
-          />
-        ))
-      ) : (
-      <p className="p-5">Nothing added yet!</p>
-       )}
+              <img
+                key={idx}
+                src={book.thumbnail}
+                onClick={() => navigate(`/book/${book.google_books_id}`)}
+                className="w-[120px] h-auto cursor-pointer flex-shrink-0"
+              />
+            ))
+          ) : (
+            <p className="p-5">Nothing added yet!</p>
+          )}
         </Box>
       </Box>
     </div>

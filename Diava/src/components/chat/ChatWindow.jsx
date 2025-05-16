@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { styled } from "@mui/material/styles";
 import { Box, Typography, InputBase, IconButton } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
@@ -6,10 +6,18 @@ import UserAvatar from "./UserAvatar";
 import ChatMessage from "./ChatMessage";
 import { FaHashtag } from "react-icons/fa";
 import { useChat } from "../../context/ChatContext";
-import { arrayUnion, doc, onSnapshot, updateDoc, Timestamp, serverTimestamp, getDoc } from "firebase/firestore";
+import {
+  arrayUnion,
+  doc,
+  onSnapshot,
+  updateDoc,
+  Timestamp,
+  serverTimestamp,
+  getDoc,
+} from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
-import { v4 as uuidv4 } from "uuid"
+import { v4 as uuidv4 } from "uuid";
 
 const WindowContainer = styled(Box)({
   flex: 1,
@@ -54,6 +62,11 @@ const ChatWindow = ({ selectedChat, isClubChannel = false, clubName = "" }) => {
   const { data } = useChat();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+  };
 
   // Update messages when selected chat changes
   useEffect(() => {
@@ -64,18 +77,21 @@ const ChatWindow = ({ selectedChat, isClubChannel = false, clubName = "" }) => {
       unsubscribe = onSnapshot(doc(db, "ClubChats", data.chatId), (doc) => {
         doc.exists() && setMessages(doc.data().messages);
       });
-    }
-    else {
+    } else {
       unsubscribe = onSnapshot(doc(db, "Chats", data.chatId), (doc) => {
         doc.exists() && setMessages(doc.data().messages);
       });
     }
-    
 
     return () => {
       unsubscribe();
     };
   }, [data.chatId]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const handleSendMessage = async () => {
     try {
@@ -92,17 +108,19 @@ const ChatWindow = ({ selectedChat, isClubChannel = false, clubName = "" }) => {
 
       const msgRef = isClubChannel
         ? doc(db, "ClubChats", data.chatId)
-        : doc(db, "Chats", data.chatId)
+        : doc(db, "Chats", data.chatId);
 
       await updateDoc(msgRef, {
-        messages: arrayUnion(msgObj)
+        messages: arrayUnion(msgObj),
       });
+
+      setMessage(""); // Clear the input after sending
+      scrollToBottom(); // Scroll to bottom after sending
 
       if (!isClubChannel) {
         updateSideBar();
       }
-    }
-    catch (error) {
+    } catch (error) {
       console.log(error);
     }
   };
@@ -111,22 +129,21 @@ const ChatWindow = ({ selectedChat, isClubChannel = false, clubName = "" }) => {
     try {
       await updateDoc(doc(db, "UserChats", currentUser.uid), {
         [data.chatId + ".lastMessage"]: {
-          message
+          message,
         },
         [data.chatId + ".date"]: serverTimestamp(),
       });
 
       await updateDoc(doc(db, "UserChats", data.user.uid), {
         [data.chatId + ".lastMessage"]: {
-          message
+          message,
         },
         [data.chatId + ".date"]: serverTimestamp(),
       });
-    }
-    catch (error) {
+    } catch (error) {
       console.log(error);
     }
-  }
+  };
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
@@ -167,9 +184,11 @@ const ChatWindow = ({ selectedChat, isClubChannel = false, clubName = "" }) => {
           </Box>
         ) : (
           <>
-            <UserAvatar initial={ data.user? (data.user.username[0]).toUpperCase() : ""} />
+            <UserAvatar
+              initial={data.user ? data.user.username[0].toUpperCase() : ""}
+            />
             <Typography variant="h6" sx={{ marginLeft: 2 }}>
-              {data.user? data.user.username : ""}
+              {data.user ? data.user.username : ""}
             </Typography>
           </>
         )}
@@ -179,6 +198,7 @@ const ChatWindow = ({ selectedChat, isClubChannel = false, clubName = "" }) => {
         {messages.map((msg) => (
           <ChatMessage key={msg.uid} message={msg} />
         ))}
+        <div ref={messagesEndRef} />
       </MessagesContainer>
 
       <InputContainer>
