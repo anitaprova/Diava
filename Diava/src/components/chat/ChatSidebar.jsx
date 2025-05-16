@@ -335,13 +335,7 @@ const ChatSidebar = forwardRef(
           createdAt: serverTimestamp(),
           initial: newClubName[0].toUpperCase(),
           logo: {},
-          channels: {
-            general: {
-              id: uuidv4(),
-              name: "general",
-              createdAt: serverTimestamp(),
-            },
-          },
+          channels: {},
           members: {
             [currentUser.uid]: {
               username: username,
