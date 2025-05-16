@@ -339,7 +339,7 @@ const ChatSidebar = forwardRef(
           members: {
             [currentUser.uid]: {
               username: username,
-              role: "Admin",
+              role: "Owner",
               joined: serverTimestamp(),
             },
           },
@@ -606,7 +606,8 @@ const ChatSidebar = forwardRef(
               open={Boolean(clubMenuAnchor)}
               onClose={handleClubMenuClose}
             >
-              {isAdmin ? (
+              {isAdmin ||
+              currentClub?.members[currentUser?.uid]?.role === "Owner" ? (
                 <MenuItem onClick={handleEditSettings}>Edit Settings</MenuItem>
               ) : (
                 <MenuItem onClick={handleLeaveClub}>Leave Club</MenuItem>

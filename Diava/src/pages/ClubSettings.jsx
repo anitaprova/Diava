@@ -20,15 +20,25 @@ import {
   DialogActions,
   Tab,
   Tabs,
+  Chip,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { FaHashtag } from "react-icons/fa";
 import { useClub } from "../context/ClubContext";
+import { useAuth } from "../context/AuthContext";
 import { db } from "../firebase/firebase";
-import { updateDoc, doc, getDoc, setDoc, serverTimestamp, deleteDoc, deleteField } from "firebase/firestore";
-import { v4 as uuidv4 } from 'uuid';
+import {
+  updateDoc,
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+  deleteDoc,
+  deleteField,
+} from "firebase/firestore";
+import { v4 as uuidv4 } from "uuid";
 
 export default function ClubSettings() {
   const { clubId } = useParams();
@@ -37,6 +47,7 @@ export default function ClubSettings() {
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
   const { currentClub, setCurrentClub } = useClub();
+  const { currentUser } = useAuth();
 
   // Form states
   const [clubName, setClubName] = useState("");
@@ -46,6 +57,9 @@ export default function ClubSettings() {
   // Dialog states
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [addChannelDialogOpen, setAddChannelDialogOpen] = useState(false);
+  const [roleChangeDialogOpen, setRoleChangeDialogOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [removeMemberDialogOpen, setRemoveMemberDialogOpen] = useState(false);
 
   useEffect(() => {
     setClub(currentClub);
@@ -74,7 +88,7 @@ export default function ClubSettings() {
 
       await updateDoc(clubRef, {
         clubname: clubName,
-        description: clubDescription
+        description: clubDescription,
       });
 
       // Update the data for all members
@@ -87,17 +101,15 @@ export default function ClubSettings() {
           const userClubRef = doc(db, "UserClubs", member);
 
           await updateDoc(userClubRef, {
-            [`${currentClub.uid}.clubInfo.clubname`]: clubName
+            [`${currentClub.uid}.clubInfo.clubname`]: clubName,
           });
         }
 
         alert("Club settings saved successfully!");
-      }
-      else {
+      } else {
         console.log("There was an error.");
       }
-    }
-    catch (error) {
+    } catch (error) {
       console.log(error);
     }
   };
@@ -108,12 +120,11 @@ export default function ClubSettings() {
 
     if (clubDoc.exists()) {
       setCurrentClub(clubDoc.data());
-    }
-    else {
+    } else {
       console.log("Error getting club data");
       return;
     }
-  }
+  };
 
   const handleAddChannel = async () => {
     if (!newChannelName.trim()) return;
@@ -127,8 +138,8 @@ export default function ClubSettings() {
         [`channels.${channelId}`]: {
           name: newChannelName,
           id: channelId,
-          createdAt: serverTimestamp()
-        }
+          createdAt: serverTimestamp(),
+        },
       });
       // Add channel to club chats
       await setDoc(doc(db, "ClubChats", channelId), { messages: [] });
@@ -137,8 +148,7 @@ export default function ClubSettings() {
       updateClub();
 
       alert("Channel added successfully!");
-    }
-    catch (error) {
+    } catch (error) {
       console.log(error);
     }
   };
@@ -150,28 +160,26 @@ export default function ClubSettings() {
       // Remove from clubs channel
       if (removeInClub) {
         await updateDoc(clubRef, {
-          [`channels.${channelId}`]: deleteField()
-        });        
+          [`channels.${channelId}`]: deleteField(),
+        });
       }
 
       // Remove from club chats
       await deleteDoc(doc(db, "ClubChats", channelId));
-    }
-    catch (error) {
+    } catch (error) {
       console.log(error);
     }
-  }
+  };
 
   const handleDeleteChannel = async (channelId) => {
     try {
       await deleteChannel(channelId, true);
-      
+
       // Update club context
       updateClub();
 
       alert("Successfully deleted channel.");
-    }
-    catch (error) {
+    } catch (error) {
       console.log(error);
     }
   };
@@ -185,7 +193,7 @@ export default function ClubSettings() {
         const clubData = clubDoc.data();
         const membersList = clubData.members;
         const channelList = clubData.channels;
-        
+
         // Delete all club channels in ClubChats
         for (const channel in channelList) {
           deleteChannel(channel, false);
@@ -194,9 +202,9 @@ export default function ClubSettings() {
         // Delete club in UserClubs
         for (const member in membersList) {
           const userClubRef = doc(db, "UserClubs", member);
-          
+
           await updateDoc(userClubRef, {
-            [`${currentClub.uid}`]: deleteField()
+            [`${currentClub.uid}`]: deleteField(),
           });
         }
 
@@ -205,18 +213,78 @@ export default function ClubSettings() {
 
         alert("Club deleted successfully!");
         navigate("/chats");
-      }
-      else {
+      } else {
         console.log("There was an error deleting the club.");
       }
-    }
-    catch (error) {
+    } catch (error) {
       console.log(error);
     }
   };
 
   const handleBack = () => {
     navigate(-1);
+  };
+
+  const handleRoleChangeClick = (member) => {
+    setSelectedMember(member);
+    setRoleChangeDialogOpen(true);
+  };
+
+  const handleRemoveMemberClick = (member) => {
+    setSelectedMember(member);
+    setRemoveMemberDialogOpen(true);
+  };
+
+  const handleRoleChange = async (newRole) => {
+    if (!selectedMember) return;
+
+    try {
+      const clubRef = doc(db, "Clubs", currentClub.uid);
+
+      // Update member's role
+      await updateDoc(clubRef, {
+        [`members.${selectedMember[0]}.role`]: newRole,
+      });
+
+      // Update the club context
+      updateClub();
+      setRoleChangeDialogOpen(false);
+      setSelectedMember(null);
+
+      alert("Member role updated successfully!");
+    } catch (error) {
+      console.error("Error updating member role:", error);
+      alert("Failed to update member role");
+    }
+  };
+
+  const handleRemoveMember = async () => {
+    if (!selectedMember) return;
+
+    try {
+      const clubRef = doc(db, "Clubs", currentClub.uid);
+      const userClubRef = doc(db, "UserClubs", selectedMember[0]);
+
+      // Remove member from club
+      await updateDoc(clubRef, {
+        [`members.${selectedMember[0]}`]: deleteField(),
+      });
+
+      // Remove club from user's clubs
+      await updateDoc(userClubRef, {
+        [currentClub.uid]: deleteField(),
+      });
+
+      // Update the club context
+      updateClub();
+      setRemoveMemberDialogOpen(false);
+      setSelectedMember(null);
+
+      alert("Member removed successfully!");
+    } catch (error) {
+      console.error("Error removing member:", error);
+      alert("Failed to remove member");
+    }
   };
 
   if (loading) {
@@ -316,33 +384,34 @@ export default function ClubSettings() {
               </Button>
             </Box>
             <List>
-            {currentClub?.channels && Object.values(currentClub.channels).length > 0 ? (
-              Object.entries(currentClub.channels)
-                .sort((a, b) => a[1].createdAt - b[1].createdAt)
-                .map((channel) => (
-                  <ListItem
-                    key={channel[0]}
-                    secondaryAction={
-                      <IconButton
-                        edge="end"
-                        onClick={() => handleDeleteChannel(channel[0])}
-                        sx={{ color: "#5d4b3d" }}
+              {currentClub?.channels &&
+              Object.values(currentClub.channels).length > 0
+                ? Object.entries(currentClub.channels)
+                    .sort((a, b) => a[1].createdAt - b[1].createdAt)
+                    .map((channel) => (
+                      <ListItem
+                        key={channel[0]}
+                        secondaryAction={
+                          <IconButton
+                            edge="end"
+                            onClick={() => handleDeleteChannel(channel[0])}
+                            sx={{ color: "#5d4b3d" }}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        }
                       >
-                        <DeleteIcon />
-                      </IconButton>
-                    }
-                  >
-                    <ListItemText
-                      primary={
-                        <Box sx={{ display: "flex", alignItems: "center" }}>
-                          <FaHashtag size={14} style={{ marginRight: 8 }} />
-                          {channel[1].name}
-                        </Box>
-                      }
-                    />
-                  </ListItem>
-                ))
-            ) : null}
+                        <ListItemText
+                          primary={
+                            <Box sx={{ display: "flex", alignItems: "center" }}>
+                              <FaHashtag size={14} style={{ marginRight: 8 }} />
+                              {channel[1].name}
+                            </Box>
+                          }
+                        />
+                      </ListItem>
+                    ))
+                : null}
             </List>
           </Box>
         )}
@@ -354,27 +423,77 @@ export default function ClubSettings() {
               Members
             </Typography>
             <List>
-            {currentClub?.members && Object.values(currentClub.members).length > 0 ? (
-              Object.entries(currentClub.members)
-                .sort((a, b) => a[1].joined - b[1].joined)
-                .map((member) => (
-                  <ListItem key={member[0]}>
-                    <ListItemAvatar>
-                      <Avatar sx={{ bgcolor: "#5d4b3d" }}>
-                        {member[1].username?.[0]?.toUpperCase() || "?"}
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={member[1].username}
-                      secondary={
-                        member[1].role
-                          ? member[1].role.charAt(0).toUpperCase() + member[1].role.slice(1)
-                          : ""
-                      }
-                    />
-                  </ListItem>
-                ))
-              ) : null}
+              {currentClub?.members &&
+              Object.values(currentClub.members).length > 0
+                ? Object.entries(currentClub.members)
+                    .sort((a, b) => a[1].joined - b[1].joined)
+                    .map((member) => (
+                      <ListItem
+                        key={member[0]}
+                        secondaryAction={
+                          currentClub.members[currentUser?.uid]?.role ===
+                            "Owner" &&
+                          member[0] !== currentUser?.uid && (
+                            <Box sx={{ display: "flex", gap: 1 }}>
+                              <Button
+                                size="small"
+                                onClick={() => handleRoleChangeClick(member)}
+                                sx={{ color: "#5d4b3d" }}
+                              >
+                                Change Role
+                              </Button>
+                              <Button
+                                size="small"
+                                color="error"
+                                onClick={() => handleRemoveMemberClick(member)}
+                              >
+                                Remove
+                              </Button>
+                            </Box>
+                          )
+                        }
+                      >
+                        <ListItemAvatar>
+                          <Avatar sx={{ bgcolor: "#5d4b3d" }}>
+                            {member[1].username?.[0]?.toUpperCase() || "?"}
+                          </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={member[1].username}
+                          secondary={
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                              }}
+                            >
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {member[1].role
+                                  ? member[1].role.charAt(0).toUpperCase() +
+                                    member[1].role.slice(1)
+                                  : ""}
+                              </Typography>
+                              {member[1].role === "Owner" && (
+                                <Chip
+                                  size="small"
+                                  label="Owner"
+                                  sx={{
+                                    bgcolor: "#5d4b3d",
+                                    color: "white",
+                                    fontSize: "0.75rem",
+                                  }}
+                                />
+                              )}
+                            </Box>
+                          }
+                        />
+                      </ListItem>
+                    ))
+                : null}
             </List>
           </Box>
         )}
@@ -506,6 +625,74 @@ export default function ClubSettings() {
             }}
           >
             Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Role Change Dialog */}
+      <Dialog
+        open={roleChangeDialogOpen}
+        onClose={() => setRoleChangeDialogOpen(false)}
+      >
+        <DialogTitle>Change Member Role</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Select a new role for {selectedMember?.[1]?.username}
+          </DialogContentText>
+          <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+            <Button
+              variant="outlined"
+              onClick={() => handleRoleChange("Admin")}
+              disabled={selectedMember?.[1]?.role === "Admin"}
+              sx={{ color: "#5d4b3d", borderColor: "#5d4b3d" }}
+            >
+              Make Admin
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => handleRoleChange("Member")}
+              disabled={selectedMember?.[1]?.role === "Member"}
+              sx={{ color: "#5d4b3d", borderColor: "#5d4b3d" }}
+            >
+              Make Member
+            </Button>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setRoleChangeDialogOpen(false)}
+            sx={{ color: "#5d4b3d" }}
+          >
+            Cancel
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Remove Member Dialog */}
+      <Dialog
+        open={removeMemberDialogOpen}
+        onClose={() => setRemoveMemberDialogOpen(false)}
+      >
+        <DialogTitle>Remove Member</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to remove {selectedMember?.[1]?.username} from
+            the club? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setRemoveMemberDialogOpen(false)}
+            sx={{ color: "#5d4b3d" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleRemoveMember}
+            color="error"
+            variant="contained"
+          >
+            Remove
           </Button>
         </DialogActions>
       </Dialog>
