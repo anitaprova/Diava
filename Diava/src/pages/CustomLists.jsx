@@ -184,7 +184,7 @@ export default function CustomList() {
                     size="small"
                   />
                   <Typography variant="body2">
-                    {book.averageRating ? `${book.averageRating.toFixed(1)} ` : "NaN"}
+                    {book.averageRating ? `${book.averageRating.toFixed(1)} ` : "No rating available"}
                   </Typography>
                 </div>
               </div>
