@@ -75,7 +75,9 @@ const ChatPage = () => {
         setSelectedClub(clubData);
 
         // Automatically select the general channel
-        const generalChannel = Object.values(clubData.channels).find(channel => channel.name === "general");
+        const generalChannel = Object.values(clubData.channels).find(
+          (channel) => channel.name === "general"
+        );
         if (generalChannel) {
           setSelectedChannel(generalChannel);
           // Update chat context to trigger content refresh
@@ -113,7 +115,9 @@ const ChatPage = () => {
         if (selectedChannel.featureType === "bookVoting") {
           return <BookVoting clubName={selectedClub?.name} isAdmin={isAdmin} />;
         } else if (selectedChannel.featureType === "challenges") {
-          return <ClubChallenges clubName={selectedClub?.name} isAdmin={isAdmin} />;
+          return (
+            <ClubChallenges clubName={selectedClub?.name} isAdmin={isAdmin} />
+          );
         }
       }
 

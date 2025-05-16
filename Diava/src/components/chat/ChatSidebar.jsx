@@ -29,6 +29,7 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import SearchIcon from "@mui/icons-material/Search";
+import ChatIcon from "@mui/icons-material/Chat";
 import ChatConversation from "./ChatConversation";
 import { FaHashtag } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
@@ -114,6 +115,35 @@ const ChannelText = styled(ListItemText)(({ theme }) => ({
   },
 }));
 
+const EmptyStateContainer = styled(Box)(({ theme }) => ({
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "32px 16px",
+  textAlign: "center",
+  height: "100%",
+  color: "#5d4b3d",
+}));
+
+const EmptyStateIcon = styled(ChatIcon)(({ theme }) => ({
+  fontSize: "64px",
+  color: "#cec1a8",
+  marginBottom: "16px",
+}));
+
+const EmptyStateTitle = styled(Typography)(({ theme }) => ({
+  fontSize: "1.25rem",
+  fontWeight: 600,
+  marginBottom: "8px",
+}));
+
+const EmptyStateDescription = styled(Typography)(({ theme }) => ({
+  fontSize: "0.875rem",
+  color: "#5d4b3d",
+  maxWidth: "240px",
+}));
+
 const ChatSidebar = forwardRef(
   (
     {
@@ -159,7 +189,10 @@ const ChatSidebar = forwardRef(
     // Check if user clicks outside of search event
     useEffect(() => {
       const handleClickOutside = (event) => {
-        if (searchResultsRef.current && !searchResultsRef.current.contains(event.target)) {
+        if (
+          searchResultsRef.current &&
+          !searchResultsRef.current.contains(event.target)
+        ) {
           setUserSearchResults([]);
           setClubSearchResults([]);
           setInputText("");
@@ -213,14 +246,18 @@ const ChatSidebar = forwardRef(
 
         console.log("Successfully left Club.");
         onTabChange("messages");
-
       } catch (error) {
         console.log(error);
       }
     };
 
     const handleAddButtonClick = () => {
-      setShowInput(true);
+      setShowInput(!showInput);
+      if (!showInput) {
+        setInputText("");
+        setUserSearchResults([]);
+        setClubSearchResults([]);
+      }
     };
 
     const handleAddClick = () => {
@@ -282,7 +319,10 @@ const ChatSidebar = forwardRef(
         console.log("Retrieved user info:", currentUserInfo);
 
         // Check if username exists, provide a fallback if it doesn't
-        const username = currentUserInfo.username || currentUser.email || "User_" + currentUser.uid.substring(0, 8);
+        const username =
+          currentUserInfo.username ||
+          currentUser.email ||
+          "User_" + currentUser.uid.substring(0, 8);
 
         const clubRef = doc(db, "Clubs", clubUid);
 
@@ -295,13 +335,7 @@ const ChatSidebar = forwardRef(
           createdAt: serverTimestamp(),
           initial: newClubName[0].toUpperCase(),
           logo: {},
-          channels: {
-            general: {
-              id: uuidv4(),
-              name: "general",
-              createdAt: serverTimestamp(),
-            }
-          },
+          channels: {},
           members: {
             [currentUser.uid]: {
               username: username,
@@ -375,11 +409,11 @@ const ChatSidebar = forwardRef(
           startAt(inputText),
           endAt(inputText + "\uf8ff")
         );
-  
+
         // Get the query snapshots and combine them
         const [qClubnameSnap, qUsernameSnap] = await Promise.all([
           getDocs(qClubname),
-          getDocs(qUsername)
+          getDocs(qUsername),
         ]);
 
         const allDocs = [...qClubnameSnap.docs, ...qUsernameSnap.docs];
@@ -389,17 +423,16 @@ const ChatSidebar = forwardRef(
           return;
         }
 
-        const clubs =allDocs.map(doc => ({id: doc.id, ...doc.data() }));
+        const clubs = allDocs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
         setClubSearchResults(clubs);
 
         console.log("Successfully found club(s).");
-      }
-      catch (error) {
+      } catch (error) {
         console.log(error);
       }
     };
-    
+
     const joinClub = async (club) => {
       // Check if user is in club
       const userClubsRef = doc(db, "UserClubs", currentUser.uid);
@@ -427,20 +460,19 @@ const ChatSidebar = forwardRef(
           [`members.${currentUser.uid}`]: {
             username: currentUserInfo.username,
             role: "Member",
-            joined: serverTimestamp()
-          }
+            joined: serverTimestamp(),
+          },
         });
         await updateDoc(doc(db, "UserClubs", currentUser.uid), {
           [club.uid + ".clubInfo"]: {
             clubuid: club.uid,
             clubname: club.clubname,
-            joined: serverTimestamp()
-          }
+            joined: serverTimestamp(),
+          },
         });
 
         console.log("Successfully added user to club.");
-      }
-      else {
+      } else {
         alert("Error finding user's UserClubs reference");
         console.log("Error adding user to club.");
         return;
@@ -472,7 +504,7 @@ const ChatSidebar = forwardRef(
         // Get the query snapshots and combine them
         const [qUsernameSnap, qFullnameSnap] = await Promise.all([
           getDocs(qUsername),
-          getDocs(qFullname)
+          getDocs(qFullname),
         ]);
 
         const allDocs = [...qUsernameSnap.docs, ...qFullnameSnap.docs];
@@ -482,7 +514,7 @@ const ChatSidebar = forwardRef(
           return;
         }
 
-        const users = allDocs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const users = allDocs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
         setUserSearchResults(users);
 
@@ -499,7 +531,10 @@ const ChatSidebar = forwardRef(
       }
 
       // Check if target user has a username, provide a fallback if it doesn't
-      const targetUsername = targetUser.username || targetUser.email || "User_" + targetUser.uid.substring(0, 8);
+      const targetUsername =
+        targetUser.username ||
+        targetUser.email ||
+        "User_" + targetUser.uid.substring(0, 8);
 
       const combinedUID =
         currentUser.uid > targetUser.uid
@@ -526,7 +561,10 @@ const ChatSidebar = forwardRef(
           const currentUserInfo = userDoc.data();
 
           // Check if username exists, provide a fallback if it doesn't
-          const username = currentUserInfo.username || currentUser.email || "User_" + currentUser.uid.substring(0, 8);
+          const username =
+            currentUserInfo.username ||
+            currentUser.email ||
+            "User_" + currentUser.uid.substring(0, 8);
 
           await updateDoc(doc(db, "UserChats", targetUser.uid), {
             [combinedUID + ".userInfo"]: {
@@ -580,25 +618,25 @@ const ChatSidebar = forwardRef(
           <SectionHeader>Channels</SectionHeader>
           <List disablePadding>
             {currentClub?.channels &&
-              Object.values(currentClub.channels).length > 0
+            Object.values(currentClub.channels).length > 0
               ? Object.entries(currentClub.channels)
-                .sort((a, b) => a[1].createdAt - b[1].createdAt)
-                .map((channel) => (
-                  <ChannelItem
-                    key={channel[0]}
-                    isSelected={selectedChannel?.id === channel[0]}
-                    onClick={() => handleSelectChannel(channel[1])}
-                  >
-                    <ChannelText
-                      primary={
-                        <>
-                          <FaHashtag size={14} />
-                          {channel[1].name}
-                        </>
-                      }
-                    />
-                  </ChannelItem>
-                ))
+                  .sort((a, b) => a[1].createdAt - b[1].createdAt)
+                  .map((channel) => (
+                    <ChannelItem
+                      key={channel[0]}
+                      isSelected={selectedChannel?.id === channel[0]}
+                      onClick={() => handleSelectChannel(channel[1])}
+                    >
+                      <ChannelText
+                        primary={
+                          <>
+                            <FaHashtag size={14} />
+                            {channel[1].name}
+                          </>
+                        }
+                      />
+                    </ChannelItem>
+                  ))
               : null}
           </List>
 
@@ -675,19 +713,40 @@ const ChatSidebar = forwardRef(
         </TabsContainer>
 
         {showInput && (
-          <Box sx={{ padding: "8px", display: "flex", alignItems: "center" }}>
-            <input
-              type="text"
-              placeholder={viewMode === "clubs" ? "Enter Club" : "Enter User"}
+          <Box
+            sx={{
+              padding: "8px 16px",
+              backgroundColor: "#aaa396",
+              transition: "all 0.3s ease",
+            }}
+          >
+            <TextField
+              fullWidth
+              size="small"
+              placeholder={
+                viewMode === "clubs"
+                  ? "Search for clubs..."
+                  : "Search for users..."
+              }
               value={inputText}
               onChange={handleInputChange}
               onKeyDown={handleInputSubmit}
-              style={{
-                width: "100%",
-                padding: "8px",
-                borderRadius: "4px",
-                border: "1px solid #ccc",
+              sx={{
+                backgroundColor: "white",
+                borderRadius: "20px",
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": {
+                    borderColor: "transparent",
+                  },
+                  "&:hover fieldset": {
+                    borderColor: "#5d4b3d",
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#5d4b3d",
+                  },
+                },
               }}
+              autoFocus
             />
           </Box>
         )}
@@ -707,9 +766,14 @@ const ChatSidebar = forwardRef(
                   />
                 ))
             ) : (
-              <Typography variant="body2">
-                No conversations available
-              </Typography> // Default view if chats are empty
+              <EmptyStateContainer>
+                <EmptyStateIcon />
+                <EmptyStateTitle>No Conversations Yet</EmptyStateTitle>
+                <EmptyStateDescription>
+                  Use the search icon above to find and start chatting with
+                  other users.
+                </EmptyStateDescription>
+              </EmptyStateContainer>
             )
           ) : (
             // Show channels for the selected club
@@ -749,7 +813,11 @@ const ChatSidebar = forwardRef(
                   }}
                 >
                   <Typography variant="body1">
-                    {club.clubname} ({club.createdByUsername ? club.createdByUsername : club.createdBy})
+                    {club.clubname} (
+                    {club.createdByUsername
+                      ? club.createdByUsername
+                      : club.createdBy}
+                    )
                   </Typography>
                 </Box>
               ))}
