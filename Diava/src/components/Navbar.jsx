@@ -4,7 +4,7 @@ import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import SearchIcon from "@mui/icons-material/Search";
-import { InputBase, IconButton, Avatar } from "@mui/material";
+import { IconButton } from "@mui/material";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import ChatBubbleIcon from "@mui/icons-material/ChatBubble";
 import Logout from "@mui/icons-material/Logout";
@@ -49,8 +49,9 @@ export default function Navbar() {
   };
 
   const searchBook = (event) => {
-    if (event.key === "Enter" && query.trim()) {
-      navigate(`/search?q=${encodeURIComponent(query)}`);
+    if (event.key === "Enter" && query?.trim()) {
+      navigate(`/search?q=${encodeURIComponent(query)}&type=title`)
+      window.location.reload();
     }
   };
 

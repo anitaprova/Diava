@@ -265,28 +265,28 @@ export default function BookDetail() {
                   ))}
               </ul>
             </div>
-    
+
             <Box className="col-span-3">
               <Typography variant="title" component="div" fontWeight="bold">
                 {book.volumeInfo.title}
               </Typography>
-    
+
               <Typography variant="subtitle" color="text.secondary">
                 by {book.volumeInfo.authors?.join(", ")}
               </Typography>
-    
+
               <Typography variant="body" className="flex flex-row gap-x-8">
                 <Typography className="flex gap-x-2">
                   <AutoStoriesIcon fontSize="small" />
                   {book?.volumeInfo?.pageCount || 0} pages
                 </Typography>
-    
+
                 <Typography className="flex gap-x-2">
                   <AccessTimeIcon fontSize="small" /> ~
                   {Math.floor(book?.volumeInfo?.pageCount / 45) || 0} hrs
                 </Typography>
               </Typography>
-    
+
               <div className="flex mt-2 mb-4 gap-x-4">
                 <Rating
                   value={averageRating || 0}
@@ -298,7 +298,7 @@ export default function BookDetail() {
                   {averageRating}
                 </p>
               </div>
-    
+
               <Box className="rounded-lg border p-3 border-grey">
                 <Typography variant="h5">Description</Typography>
                 {seeMore ? (
@@ -308,7 +308,10 @@ export default function BookDetail() {
                         __html: book?.volumeInfo?.description,
                       }}
                     />
-                    <span className="underline" onClick={() => setSeeMore(false)}>
+                    <span
+                      className="underline"
+                      onClick={() => setSeeMore(false)}
+                    >
                       See Less
                     </span>
                   </div>
@@ -320,14 +323,17 @@ export default function BookDetail() {
                           book?.volumeInfo?.description?.substr(0, 650) + "...",
                       }}
                     />
-                    <span className="underline" onClick={() => setSeeMore(true)}>
+                    <span
+                      className="underline"
+                      onClick={() => setSeeMore(true)}
+                    >
                       See More
                     </span>
                   </div>
                 )}
               </Box>
             </Box>
-    
+
             <div className="flex flex-col gap-y-5 h-fit w-fit">
               <ButtonGroup>
                 <Button variant="soft" ref={anchorRef} onClick={handleToggle}>
@@ -344,7 +350,7 @@ export default function BookDetail() {
                   <ArrowDropDownIcon />
                 </Button>
               </ButtonGroup>
-    
+
               <Popper
                 sx={{ zIndex: 1 }}
                 open={open}
@@ -381,7 +387,7 @@ export default function BookDetail() {
                   </Grow>
                 )}
               </Popper>
-    
+
               <Button
                 variant="dark"
                 onClick={() => navigate(`/review/${book.id}`)}
@@ -394,14 +400,14 @@ export default function BookDetail() {
           <Stack spacing={1}>
             <div className="grid grid-cols-5 gap-x-8">
               <Skeleton variant="rounded" width={250} height={400} />
-    
+
               <div className="col-span-3">
                 <Skeleton variant="text" width={500} height={60} />
                 <Skeleton variant="text" width={100} height={40} />
                 <Skeleton variant="text" width={150} height={40} />
                 <Skeleton variant="text" width={550} height={350} />
               </div>
-    
+
               <div className="flex flex-col gap-y-5 h-fit">
                 <Skeleton variant="rectangular" width={250} height={40} />
                 <Skeleton variant="rectangular" width={250} height={40} />
@@ -409,34 +415,38 @@ export default function BookDetail() {
             </div>
           </Stack>
         )}
-    
+
         <Divider />
-    
+
         <div className="mt-15">
           <Typography variant="h4" sx={{ marginBottom: "10px" }}>
             Ratings and Reviews
           </Typography>
-    
+
           {/* Your Review */}
           {review && review.length > 0 ? (
             <div className="bg-vanilla rounded-md p-5 space-y-5">
               <Typography variant="h5">
                 Your Review{" "}
-                <EditIcon onClick={() => navigate(`/review/edit/${book?.id}`)} />{" "}
+                <EditIcon
+                  onClick={() => navigate(`/review/edit/${book?.id}`)}
+                />{" "}
               </Typography>
               <span className="flex justify-between">
                 <Rating value={review[0]?.rating} precision={0.5} readOnly />
                 <Typography>{review[0]?.format}</Typography>
               </span>
-    
+
               <Typography>{review[0]?.review_text}</Typography>
               <span className="flex justify-between">
                 <Typography>
                   Start: {review[0]?.start_date?.split("T")[0]}
                 </Typography>
-                <Typography>End: {review[0]?.end_date?.split("T")[0]}</Typography>
+                <Typography>
+                  End: {review[0]?.end_date?.split("T")[0]}
+                </Typography>
               </span>
-    
+
               <ul className="flex flex-wrap text-sm gap-3">
                 {review[0]?.tags &&
                   review[0]?.tags.map((tag) => (
@@ -459,21 +469,24 @@ export default function BookDetail() {
               </Button>
             </div>
           )}
-    
+
           {/* User Reviews */}
           {userReviews && userReviews.length > 0 && (
             <div className="mt-15 space-y-5">
               <Typography variant="h5">Other User Reviews</Typography>
-    
+
               {userReviews.map((rev, index) => (
-                <div key={index} className="bg-vanilla rounded-md p-5 space-y-5">
+                <div
+                  key={index}
+                  className="bg-vanilla rounded-md p-5 space-y-5"
+                >
                   <Typography variant="h6">{rev.username}</Typography>
-    
+
                   <span className="flex justify-between">
                     <Rating value={rev.rating} precision={0.5} readOnly />
                     <Typography>{rev.format}</Typography>
                   </span>
-    
+
                   <Typography>{rev.review_text}</Typography>
                   <span className="flex justify-between">
                     <Typography>
