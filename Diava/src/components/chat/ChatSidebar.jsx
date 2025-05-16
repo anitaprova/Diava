@@ -252,7 +252,12 @@ const ChatSidebar = forwardRef(
     };
 
     const handleAddButtonClick = () => {
-      setShowInput(true);
+      setShowInput(!showInput);
+      if (!showInput) {
+        setInputText("");
+        setUserSearchResults([]);
+        setClubSearchResults([]);
+      }
     };
 
     const handleAddClick = () => {
@@ -714,19 +719,40 @@ const ChatSidebar = forwardRef(
         </TabsContainer>
 
         {showInput && (
-          <Box sx={{ padding: "8px", display: "flex", alignItems: "center" }}>
-            <input
-              type="text"
-              placeholder={viewMode === "clubs" ? "Enter Club" : "Enter User"}
+          <Box
+            sx={{
+              padding: "8px 16px",
+              backgroundColor: "#aaa396",
+              transition: "all 0.3s ease",
+            }}
+          >
+            <TextField
+              fullWidth
+              size="small"
+              placeholder={
+                viewMode === "clubs"
+                  ? "Search for clubs..."
+                  : "Search for users..."
+              }
               value={inputText}
               onChange={handleInputChange}
               onKeyDown={handleInputSubmit}
-              style={{
-                width: "100%",
-                padding: "8px",
-                borderRadius: "4px",
-                border: "1px solid #ccc",
+              sx={{
+                backgroundColor: "white",
+                borderRadius: "20px",
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": {
+                    borderColor: "transparent",
+                  },
+                  "&:hover fieldset": {
+                    borderColor: "#5d4b3d",
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#5d4b3d",
+                  },
+                },
               }}
+              autoFocus
             />
           </Box>
         )}
