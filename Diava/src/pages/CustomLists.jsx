@@ -111,32 +111,6 @@ export default function CustomList() {
     fetchCustomBooks();
   }, [list_id]);  
 
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
-
-  const updateList = async () => {
-    const { data, error } = await supabase
-      .from("lists")
-      .update({ name: currName })
-      .eq("id", list_id)
-      .select("*");
-
-    if (error) {
-      console.error("Error updating list:", error);
-    } else {
-      setListName(data[0].name);
-      handleClose();
-    }
-  };
-
-  const deleteList = async () => {
-    const { error } = await supabase.from("lists").delete().eq("id", list_id);
-    if (error) {
-      console.error("Error deleting list:", error);
-    } else {
-      navigate("/home"); // redirect after deletion
-    }
-  };
 
   return (
     <div className="font-merriweather ml-50 mr-50 mt-10 mb-10">
