@@ -4,9 +4,9 @@ import SearchResults from "./components/SearchResults.jsx";
 import { ThemeProvider } from "@mui/material/styles";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import theme from "./theme";
-import ChatPage from "./pages/ChatPage.jsx";
 import Home from "./pages/Home.jsx";
 import Navbar from "./components/Navbar.jsx";
+import ChatPage from "./pages/ChatPage.jsx";
 import Login from "./pages/Login.jsx";
 import SignUp from "./pages/SignUp.jsx";
 import Review from "./pages/Review.jsx";
@@ -16,7 +16,11 @@ import Recommendations from "./pages/Recommendations.jsx";
 import Update from "./pages/Update.jsx";
 import Profile from "./pages/Profile.jsx";
 import GoogleSignUp from "./pages/GoogleSignUp.jsx";
+import ClubSettings from "./pages/ClubSettings.jsx";
 import CustomList from "./components/CustomList.jsx";
+import CustomLists from "./pages/CustomLists.jsx";
+import EditReview from "./pages/EditReview.jsx";
+import { AuthProvider } from "./context/AuthContext.jsx";
 import "./index.css";
 
 function App() {
@@ -46,10 +50,26 @@ function App() {
             }
           />
           <Route
+            path="/club-settings/:clubId"
+            element={
+              <ProtectedRoute>
+                <ClubSettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/review/:id"
             element={
               <ProtectedRoute>
                 <Review />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/review/edit/:id"
+            element={
+              <ProtectedRoute>
+                <EditReview />
               </ProtectedRoute>
             }
           />
@@ -119,10 +139,18 @@ function App() {
             }
           />
           <Route
-            path="/list/:name"
+            path="/list/:id"
             element={
               <ProtectedRoute>
                 <CustomList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/customlist/:id"
+            element={
+              <ProtectedRoute>
+                <CustomLists />
               </ProtectedRoute>
             }
           />

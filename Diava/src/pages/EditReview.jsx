@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Typography, Box } from "@mui/material";
+import { Box } from "@mui/material";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import Rating from "@mui/material/Rating";
@@ -25,128 +25,32 @@ import { supabase } from "../client";
 export default function Review() {
   const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
   const [book, setBook] = useState(null);
-  const genresRaw = book?.volumeInfo?.categories || [];
-  const genres = [
-    ...new Set(genresRaw.flatMap((category) => category.split("/"))),
-  ];
   const { id } = useParams();
   const navigate = useNavigate();
   const [rating, setRating] = useState(0);
-  const [format, setFormat] = useState();
+  const [format, setFormat] = useState("");
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
   const [tagsText, setTagsText] = useState("");
   const [tags, setTags] = useState([]);
   const [notes, setNotes] = useState("");
-  const [favorite, setFavorite] = useState(false);
 
   const handleTags = (event) => {
     if (event.key === "Enter") {
       if (tags.includes(tagsText)) {
-        console.log("duplicate");
         return;
       }
       setTags([...tags, tagsText]);
     }
   };
 
-  const addToFavorites = async () => {
-    try {
-      const userId = auth.currentUser.uid;
-      const { data: listData, error: listError } = await supabase
-        .from("lists")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("name", "Favorites")
-        .single();
-
-      if (listError || !listData) {
-        console.error("Could not find list_id:", listError?.message);
-        return;
-      }
-
-      const list_id = listData.id;
-      const bookData = {
-        list_id,
-        google_books_id: book?.id,
-        title: book?.volumeInfo?.title,
-        thumbnail: book?.volumeInfo?.imageLinks?.thumbnail,
-        user_id: userId,
-        author: book?.volumeInfo?.authors?.join(", "),
-        pages: book?.volumeInfo?.pageCount,
-        description: book?.volumeInfo?.description.replace(
-          /<\/?[^>]+(>|$)/g,
-          ""
-        ),
-        genres: genres.map((genre) => genre.trim()),
-      };
-
-      console.log(bookData);
-
-      const { error: insertError } = await supabase
-        .from("list_books")
-        .update([bookData])
-        .eq("user_id", userId)
-        .eq("google_books_id", book.id);
-
-      if (insertError) throw insertError;
-    } catch (error) {
-      console.error(
-        "Error fetching list books:",
-        error.response?.data || error.message
-      );
-    }
-  };
-
-  const addToReadList = async () => {
-    try {
-      const userId = auth.currentUser.uid;
-      const { data: listData, error: listError } = await supabase
-        .from("lists")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("name", "Read")
-        .single();
-
-      if (listError || !listData) {
-        console.error("Could not find list_id:", listError?.message);
-        return;
-      }
-
-      const list_id = listData.id;
-      const bookData = {
-        list_id,
-        google_books_id: book?.id,
-        title: book?.volumeInfo?.title,
-        thumbnail: book?.volumeInfo?.imageLinks?.thumbnail,
-        user_id: userId,
-        author: book?.volumeInfo?.authors?.join(", "),
-        pages: book?.volumeInfo?.pageCount,
-        genres: genres.map((genre) => genre.trim()),
-      };
-
-      console.log(bookData);
-
-      const { error: insertError } = await supabase
-        .from("list_books")
-        .insert([bookData]);
-
-      if (insertError) throw insertError;
-    } catch (error) {
-      console.error(
-        "Error fetching list books:",
-        error.response?.data || error.message
-      );
-    }
-  };
-
   const saveReview = async (listData) => {
-    try {
-      const { data } = await supabase.from("reviews").insert(listData);
-      addToReadList();
-      if(favorite){
-        addToFavorites();
-      }
+		try {
+      const { data } = await supabase
+        .from("reviews")
+        .update(listData)
+        .eq("book_id", id)
+        .eq("user_id", auth.currentUser.uid);
       navigate(`/book/${book.id}`);
     } catch (error) {
       console.error(
@@ -156,6 +60,22 @@ export default function Review() {
     }
   };
 
+	const deleteReview = async () =>{
+		try {
+      const { data } = await supabase
+        .from("reviews")
+        .delete()
+        .eq("book_id", id)
+        .eq("user_id", auth.currentUser.uid);
+      navigate(`/book/${book.id}`);
+    } catch (error) {
+      console.error(
+        "Error fetching list books:",
+        error.response?.data || error.message
+      );
+    }
+	};
+
   useEffect(() => {
     if (id) {
       axios
@@ -163,6 +83,33 @@ export default function Review() {
         .then((response) => setBook(response.data || []))
         .catch((error) => console.error("Error fetching books:", error));
     }
+
+  }, [id]);
+
+	useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const userId = auth.currentUser.uid;
+        const { data } = await supabase
+          .from("reviews")
+          .select()
+          .eq("user_id", userId)
+          .eq("book_id", id);
+        setRating(data[0].rating);
+        setFormat(data[0].format);
+        setStartDate(data[0].start_date);
+        setEndDate(data[0].end_date);
+        setTags(data[0].tags);
+        setNotes(data[0].review_text);
+        console.log("reviews", data);
+      } catch (error) {
+        console.error(
+          "Error fetching list books:",
+          error.response?.data || error.message
+        );
+      }
+    };
+    fetchData();
   }, [id]);
 
   return (
@@ -188,8 +135,9 @@ export default function Review() {
                     <span>
                       <StarsIcon /> Rating
                     </span>
+
                     <Rating
-                      defaultValue={0.0}
+                      value={rating || 0}
                       precision={0.5}
                       size="large"
                       onChange={(event, newValue) => {
@@ -201,6 +149,7 @@ export default function Review() {
                     <RadioGroup
                       row
                       onChange={(event, newValue) => setFormat(newValue)}
+                      value={format}
                     >
                       <FormControlLabel
                         value="ebook"
@@ -233,25 +182,44 @@ export default function Review() {
                 <p>
                   <CalendarMonthIcon /> Start Date
                 </p>
-                <TextField
-                  fullWidth
-                  size="small"
-                  type="date"
-                  onChange={(event) => setStartDate(event.target.value)}
-                />
+                {startDate ? (
+                  <TextField
+                    fullWidth
+                    size="small"
+                    type="date"
+                    defaultValue={startDate}
+                    onChange={(event) => setStartDate(event.target.value)}
+                  />
+                ) : (
+                  <TextField
+                    fullWidth
+                    size="small"
+                    type="date"
+                    onChange={(event) => setStartDate(event.target.value)}
+                  />
+                )}
               </span>
 
               <span className="w-full">
                 <p>
                   <CalendarMonthIcon /> End Date
                 </p>
-                <TextField
-                  fullWidth
-                  size="small"
-                  variant="outlined"
-                  type="date"
-                  onChange={(event) => setEndDate(event.target.value)}
-                />
+                {endDate ? (
+                  <TextField
+                    fullWidth
+                    size="small"
+                    type="date"
+                    defaultValue={endDate}
+                    onChange={(event) => setEndDate(event.target.value)}
+                  />
+                ) : (
+                  <TextField
+                    fullWidth
+                    size="small"
+                    type="date"
+                    onChange={(event) => setEndDate(event.target.value)}
+                  />
+                )}
               </span>
             </div>
             <Button variant="dark">Add Read Date</Button>
@@ -271,7 +239,7 @@ export default function Review() {
               />
             </div>
             <div className="flex gap-4 mt-1 text-darkbrown">
-              {tags.length > 0 ? (
+              {tags?.length > 0 ? (
                 tags.map((tag, index) => (
                   <p key={index} className="bg-brown rounded-sm p-1 pl-2 pr-2">
                     {tag}{" "}
@@ -295,26 +263,40 @@ export default function Review() {
             <div>
               <CoffeeIcon /> Notes and Thoughts
             </div>
-            <TextField
-              size="large"
-              variant="outlined"
-              minRows={8}
-              multiline
-              onChange={(event) => setNotes(event.target.value)}
-            />
+            {notes ? (
+              <TextField
+                size="large"
+                variant="outlined"
+                defaultValue={notes}
+                minRows={8}
+                multiline
+                onChange={(event) => setNotes(event.target.value)}
+              />
+            ) : (
+              <TextField
+                size="large"
+                variant="outlined"
+                minRows={8}
+                multiline
+                onChange={(event) => setNotes(event.target.value)}
+              />
+            )}
+
             <div className="flex gap-x-2 mt-2">
               <Rating
                 icon={<FavoriteIcon fontSize="inherit" />}
                 emptyIcon={<FavoriteBorderIcon fontSize="inherit" />}
                 max={1}
                 variant="heart"
-                onChange={() => favorite ? setFavorite(false) : setFavorite(true)}
               />{" "}
               <p className="text-md ">Add to Favorites</p>
             </div>
           </div>
 
-          <div className="flex justify-center">
+          <div className="flex justify-around">
+            <Button variant="outline" onClick={deleteReview}>
+              Delete Review
+            </Button>
             <Button
               variant="dark"
               onClick={() =>

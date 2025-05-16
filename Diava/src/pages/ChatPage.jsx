@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { styled } from "@mui/material/styles";
 import ChatSidebar from "../components/chat/ChatSidebar";
 import ChatWindow from "../components/chat/ChatWindow";
 import ClubSidebar from "../components/chat/ClubSidebar";
 import "../styles/Chat.css";
-import { onSnapshot, doc } from "firebase/firestore";
+import { onSnapshot, doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
+import BookVoting from "../components/chat/BookVoting";
+import ClubChallenges from "../components/chat/ClubChallenges";
+import { useClub } from "../context/ClubContext";
 
 const ChatContainer = styled("div")({
   display: "flex",
@@ -17,33 +20,115 @@ const ChatContainer = styled("div")({
 
 const ChatPage = () => {
   const { currentUser } = useAuth();
+  const { setCurrentClub } = useClub();
   const { dispatch } = useChat();
   const [viewMode, setViewMode] = useState("messages"); // "messages" or "clubs"
   const [selectedChat, setSelectedChat] = useState(null);
   const [selectedClub, setSelectedClub] = useState(null);
   const [selectedChannel, setSelectedChannel] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(true); // Set to true to see admin view by default
   const [chats, setChats] = useState([]);
-
-  // TODO: Get club chats
-  useEffect(() => {
-    const getChats = () => {
-      const unsubscribe = onSnapshot(doc(db, "UserChats", currentUser.uid), (doc) => {
-        setChats(doc.data());
-      });
-
-      return () => {
-        unsubscribe();
-      };
-    };
-    
-    currentUser.uid && getChats();
-  }, [currentUser.uid]);
-
-  // Mock data for clubs
   const [clubs, setClubs] = useState([]);
+  const chatSidebarRef = useRef(null);
+
+  useEffect(() => {
+    setChats(null);
+    setClubs(null);
+    let unsubscribe;
+
+    if (viewMode === "messages") {
+      unsubscribe = onSnapshot(
+        doc(db, "UserChats", currentUser.uid),
+        (docSnap) => {
+          setChats(docSnap.data());
+        }
+      );
+    } else if (viewMode === "clubs") {
+      unsubscribe = onSnapshot(
+        doc(db, "UserClubs", currentUser.uid),
+        (docSnap) => {
+          setClubs(docSnap.data());
+        }
+      );
+    }
+
+    return () => {
+      unsubscribe();
+    };
+  }, [currentUser?.uid, viewMode]);
 
   const handleTabChange = (newMode) => {
     setViewMode(newMode);
+  };
+
+  const handleSelectClub = async (club) => {
+    try {
+      const clubRef = doc(db, "Clubs", club.clubInfo.clubuid);
+      const clubDoc = await getDoc(clubRef);
+
+      if (clubDoc.exists()) {
+        const clubData = clubDoc.data();
+
+        // Clear the current chat when switching clubs
+        setSelectedChat(null);
+        setCurrentClub(clubData);
+        setSelectedClub(clubData);
+
+        // Automatically select the general channel
+        const generalChannel = Object.values(clubData.channels).find(channel => channel.name === "general");
+        if (generalChannel) {
+          setSelectedChannel(generalChannel);
+          // Update chat context to trigger content refresh
+          dispatch({ type: "CHANGE_CHANNEL_CHAT", payload: generalChannel });
+        }
+
+        // Check if the current user is an admin of this club
+        const userClubInfo = clubData.members[currentUser.uid];
+        const isUserAdmin = userClubInfo.role === "Admin";
+
+        setIsAdmin(isUserAdmin);
+      } else {
+        console.log("Error finding club.");
+        return;
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleCreateClub = (newClub) => {
+    // Implemented in ChatSidebar.jsx as 'handleCreateClub'
+  };
+
+  const handleShowCreateClubDialog = () => {
+    if (chatSidebarRef.current) {
+      chatSidebarRef.current.setCreateClubOpen(true);
+    }
+  };
+
+  const renderMainContent = () => {
+    if (viewMode === "clubs" && selectedChannel) {
+      // Check if it's a feature type channel
+      if (selectedChannel.type === "feature") {
+        if (selectedChannel.featureType === "bookVoting") {
+          return <BookVoting clubName={selectedClub?.name} isAdmin={isAdmin} />;
+        } else if (selectedChannel.featureType === "challenges") {
+          return <ClubChallenges clubName={selectedClub?.name} isAdmin={isAdmin} />;
+        }
+      }
+
+      // Regular channel
+      return (
+        <ChatWindow
+          selectedChat={selectedChannel}
+          isClubChannel={true}
+          clubName={selectedClub?.name}
+        />
+      );
+    } else {
+      // Direct messages
+      return <ChatWindow selectedChat={selectedChat} isClubChannel={false} />;
+    }
   };
 
   return (
@@ -52,11 +137,13 @@ const ChatPage = () => {
         <ClubSidebar
           clubs={clubs}
           selectedClub={selectedClub}
-          setSelectedClub={setSelectedClub}
+          setSelectedClub={handleSelectClub}
+          onCreateClub={handleShowCreateClubDialog}
         />
       )}
 
       <ChatSidebar
+        ref={chatSidebarRef}
         chats={chats}
         selectedChat={selectedChat}
         setSelectedChat={setSelectedChat}
@@ -65,13 +152,11 @@ const ChatPage = () => {
         selectedClub={selectedClub}
         selectedChannel={selectedChannel}
         setSelectedChannel={setSelectedChannel}
+        isAdmin={isAdmin}
+        onCreateClub={handleCreateClub}
       />
 
-      <ChatWindow
-        selectedChat={viewMode === "messages" ? selectedChat : selectedChannel}
-        isClubChannel={viewMode === "clubs"}
-        clubName={selectedClub?.name}
-      />
+      {renderMainContent()}
     </ChatContainer>
   );
 };

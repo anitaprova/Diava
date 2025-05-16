@@ -1,35 +1,19 @@
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import bookBackground from "../assets/book-background.jpg";
 import { FaBook, FaGamepad, FaUsers, FaGoogle } from "react-icons/fa";
 import "../styles/Auth.css";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+} from "firebase/auth";
 import { auth, db } from "../firebase/firebase";
 import { setDoc, doc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
+import { supabase } from "../client";
 
 const SignUp = () => {
-  const navigate = useNavigate();
-  const { currentUser } = useAuth();
-  const mainpage = "/profile";
-
-
-  // Check if user is logged in
-  useEffect(() => {
-      if (currentUser && currentUser.emailVerified) {
-        navigate(mainpage, { replace: true });
-      }
-    }, [currentUser, navigate]);
-
-  useEffect(() => {
-    if (currentUser && currentUser.emailVerified) {
-      navigate(mainpage, { replace: true });
-    }
-  }, [currentUser, navigate]);
-
-
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -38,9 +22,24 @@ const SignUp = () => {
     password: "",
     confirmPassword: "",
   });
-
   const [error, setError] = useState("");
   const [usernameMessage, setUsernameMessage] = useState("");
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const mainpage = "/profile";
+
+  // Check if current user is logged in
+  useEffect(() => {
+    if (currentUser && currentUser.emailVerified) {
+      navigate(mainpage, { replace: true });
+    }
+  }, [currentUser, navigate]);
+
+  useEffect(() => {
+    if (currentUser && currentUser.emailVerified) {
+      navigate(mainpage, { replace: true });
+    }
+  }, [currentUser, navigate]);
 
   const handleChange = async (e) => {
     const { name, value } = e.target;
@@ -51,88 +50,158 @@ const SignUp = () => {
 
     if (name === "username") {
       const exists = await checkUsernameExists(value);
-      setUsernameMessage(exists ? "Username already taken. Please choose another." : "Username available.");
+      setUsernameMessage(
+        exists
+          ? "Username already taken. Please choose another."
+          : "Username available."
+      );
     }
   };
 
   // Handle form submission
-
   const checkUsernameExists = async (username) => {
     if (!username) {
       console.error("Username cannot be empty.");
-      return false; 
+      return false;
     }
     try {
-      const response = await axios.get(`http://localhost:5001/users?name=${username}`);
-      if(response.data == null) {
-        return false;
-      } else {
-        return true;
-      }
+      const { data, error } = await supabase
+        .from("users")
+        .select("name")
+        .eq("name", username)
+        .single();
+
+      return !!data;
     } catch (error) {
       console.error("Error checking username:", error);
       return false;
     }
   };
-  const createUser = async (userData) => {
+
+  async function getAllUsers() {
+    const { data, error } = await supabase.from("lists").select("*");
+
+    if (error) {
+      console.error("Error fetching users:", error);
+      return [];
+    }
+
+    return data;
+  }
+
+  getAllUsers().then((lists) => {
+    console.log("Users:", lists);
+  });
+
+  const createDefaultLists = async (user_id) => {
+    const defaultLists = [
+      { user_id, name: "Want to Read" },
+      { user_id, name: "Currently Reading" },
+      { user_id, name: "Read" },
+      { user_id, name: "Favorites" },
+    ];
+
     try {
-      await axios.post("http://localhost:5001/allusers", userData);
-    } catch (error) {
-      console.error("Error creating user:", error);
+      const { error } = await supabase.from("lists").insert(defaultLists);
+      if (error) throw error;
+      console.log("Default lists created");
+    } catch (err) {
+      console.error("Error creating user's default lists:", err.message);
     }
   };
 
+  const createUserStatistic = async (user_id) => {
+    const stat = [{ user_id }];
+
+    try {
+      const { error } = await supabase.from("reading_statistics").insert(stat);
+      if (error) throw error;
+      console.log("Default stat created");
+    } catch (err) {
+      console.error("Error creating user's stats", err.message);
+    }
+  };
+
+  const createAchievement = async (user_id) => {
+    const achievement = [{ user_id, achievement_key: "login" }];
+
+    try {
+      const { error } = await supabase
+        .from("user_achievements")
+        .insert(achievement);
+      if (error) throw error;
+      console.log("Default achievement created");
+    } catch (err) {
+      console.error("Error creating user's achievement", err.message);
+    }
+  };
+
+  const createUser = async (userData) => {
+    try {
+      const { error } = await supabase.from("users").insert([userData]);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error creating user:", error.message);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
       const usernameAvailabe = await checkUsernameExists(formData.username);
-      if(usernameAvailabe){
+      if (usernameAvailabe) {
         alert("Username is already taken. Please pick another one.");
         return;
       }
-      await createUserWithEmailAndPassword(auth, formData.email, formData.password)
-        .then( async (userCredentials) => {
-          const user = userCredentials.user;
-          await sendEmailVerification(user);
-          alert("Go to your email and verify your account.");
-          
-        // Store user in database.
-          if (user) {
-            await setDoc(doc(db, "Users", user.uid), {
-              email: user.email,
-              firstName: formData.firstName,
-              lastName: formData.lastName,
-              username: formData.username,
-              uid: user.uid,
-            });
 
-            await setDoc(doc(db, "UserChats", user.uid), {});
-            
-            // Store username in postgres
-            const newUser = {name:formData.username};
-            createUser(newUser);
-            console.log("New user created");
-          }
+      await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      ).then(async (userCredentials) => {
+        const user = userCredentials.user;
+        await sendEmailVerification(user);
+        alert("Go to your email and verify your account.");
 
-          navigate("/login");
-          console.log("User signed up successfully.");
-        });
-    }
-    catch (error) {
+        if (user) {
+          await setDoc(doc(db, "Users", user.uid), {
+            email: user.email,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            username: formData.username,
+            fullName: formData.firstName.toLowerCase() + " " + formData.lastName.toLowerCase(),
+            uid: user.uid,
+          });
+
+          await setDoc(doc(db, "UserChats", user.uid), {});
+          await setDoc(doc(db, "UserClubs", user.uid), {});
+
+          // Store username in database
+          const newUser = { user_id: user.uid, name: formData.username };
+          await createUser(newUser);
+          await createDefaultLists(user.uid);
+          await createUserStatistic(user.uid);
+          await createAchievement(user.uid);
+          console.log("New user created in Supabase");
+        }
+
+        navigate("/login");
+        console.log("User signed up successfully.");
+      });
+    } catch (error) {
       console.log(error.message);
     }
 
     console.log("Form submitted:", formData);
-    // Navigate to home page after successful signup
     navigate("/");
   };
+
   // Handle Google Sign Up
   const handleGoogleSignUp = () => {
-    // Google authentication will be implemented here
-    // Seperate page will be needed
     console.log("Google sign up clicked");
+    navigate("/googlesignup");
   };
 
   return (

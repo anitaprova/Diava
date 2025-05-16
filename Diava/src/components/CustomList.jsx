@@ -8,30 +8,28 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import { auth } from "../firebase/firebase";
 import axios from "axios";
+import { supabase } from "../client";
 
 export default function CustomList({ id, name, list_id }) {
   const navigate = useNavigate();
   const [currName, setCurrName] = useState(name);
-  const [books, setBooks] = useState([
-    {
-      id: "3vo0NQbIN2YC",
-      volumeInfo: {
-        title: "A Thousand Splendid Suns",
-        authors: ["Khaled Hosseini"],
-        publishedDate: "2008-09-18",
-        description:
-          "'A Thousand Splendid Suns' is a chronicle of Afghan history, and a deeply moving story of family, friendship, and the salvation to be found in love.",
-        pageCount: 419,
-        categories: ["Fiction / General"],
-        averageRating: 5,
-        imageLinks: {
-          thumbnail:
-            "http://books.google.com/books/content?id=3vo0NQbIN2YC&printsec=frontcover&img=1&zoom=1&edge=curl&imgtk=AFLRE71jVhNuWmSXykiQxuqgjmnYXICqQKU_xGWgCb8bckuuq2JGVGBufunssx_MEON9cwxnZSVZ7X7gf9btSeZttBEqmw5ANGbrJDpjA_PALpf5beNOV5Gm7NKhu6Tr_cbaajc60bIG&source=gbs_api",
-        },
-      },
-    },
-  ]);
+  const [books, setBooks] = useState([]);
+  useEffect(() => {
+    const fetchBooks = async () => {
+      const { data, error } = await supabase
+        .from("list_books")
+        .select("*")
+        .eq("list_id", list_id);
 
+      if (error) {
+        console.error("Error fetching books for list:", error);
+      } else {
+        setBooks(data || []);
+      }
+    };
+
+    fetchBooks();
+  }, [list_id]);
   const [open, setOpen] = useState(false);
   const handleOpen = () => {
     setOpen(true);
@@ -42,34 +40,38 @@ export default function CustomList({ id, name, list_id }) {
   };
 
   const updateList = async (listData) => {
-    try {
-      const response = await axios.put(
-        `http://localhost:5001/list/${id}`,
-        listData
-      );
-      setCurrName(response.data.name);
-      console.log(response);
-    } catch (error) {
-      console.error("Error updating list:", error.response.data);
+    const { data, error } = await supabase
+      .from("lists")
+      .update(listData)
+      .eq("id", id)
+      .select("*");
+
+    if (error) console.error("Error fetching data:", error);
+    else {
+      setCurrName(data[0].name);
     }
   };
 
-  const deleteList = async (listData) => {
-    try {
-      const response = await axios.delete(
-        `http://localhost:5001/list/${id}`,
-        listData
-      );
-      console.log(response);
+  const deleteList = async () => {
+    const { error } = await supabase
+      .from("lists")
+      .delete()
+      .eq("id", id);
+
+    if (error) console.error("Error fetching data:", error);
+    else {
       window.location.reload();
-    } catch (error) {
-      console.error("Error deleting list:", error.response.data);
     }
   };
+
+  const handleListClick = () => {
+    navigate(`/customlist/${id}`);
+  };
+  
 
   return (
     <div className="mb-10 w-full">
-      <Typography variant="h5">
+      <Typography variant="h5" onClick={handleListClick} style={{ cursor: "pointer" }}>
         {currName ? currName : name} <EditIcon onClick={handleOpen} />
       </Typography>
       <Dialog
@@ -87,7 +89,6 @@ export default function CustomList({ id, name, list_id }) {
               updateList({
                 user_id: auth.currentUser.uid,
                 name: newName,
-                list_id: list_id,
                 id: id,
               });
 
@@ -104,10 +105,13 @@ export default function CustomList({ id, name, list_id }) {
           </div>
         </DialogContent>
         <DialogActions>
-          <Button variant="dark" onClick={() => {
-            deleteList();
-            handleClose();
-          }}>
+          <Button
+            variant="dark"
+            onClick={() => {
+              deleteList();
+              handleClose();
+            }}
+          >
             Delete
           </Button>
           <Button type="submit" variant="coffee">
@@ -115,20 +119,21 @@ export default function CustomList({ id, name, list_id }) {
           </Button>
         </DialogActions>
       </Dialog>
-      <Box className="bg-vanilla shadow-custom w-full rounded-md">
-        {books.length > 0 ? (
-          books.map((book) => (
-            <div className="p-6">
-              <img
-                src={book.volumeInfo.imageLinks.thumbnail}
-                onClick={() => navigate(`/book/${book.id}`)}
-                className="w-fit"
-              />
-            </div>
-          ))
-        ) : (
-          <p>Nothing added yet!</p>
-        )}
+      <Box className="bg-vanilla shadow-custom w-full rounded-md overflow-x-auto">
+        <Box className="flex gap-x-4 p-4">
+          {books?.length > 0 ? (
+            books.map((book, idx) => (
+          <img
+            key={idx}
+            src={book.thumbnail}
+            onClick={() => navigate(`/book/${book.google_books_id}`)}
+            className="w-[120px] h-auto cursor-pointer flex-shrink-0"
+          />
+        ))
+      ) : (
+      <p className="p-5">Nothing added yet!</p>
+       )}
+        </Box>
       </Box>
     </div>
   );
