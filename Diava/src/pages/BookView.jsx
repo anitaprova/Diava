@@ -60,28 +60,35 @@ export default function BookDetail() {
         return;
       }
       
-      const list_id = listData.id;
-      const { data: existingBooks, error: fetchError } = await supabase
-        .from("list_books")
-        .select(`
-          *,
-          lists!list_id (name)
-        `)
-        .eq("user_id", userId)
-        .eq("google_books_id", book?.id)
-        .in("lists.name", ["Currently Reading", "Want to Read"]);
+    const list_id = listData.id;
+    const exclusiveLists = ["Currently Reading", "Want to Read", "Read"];
+    const { data: existingBooks, error: fetchError } = await supabase
+      .from("list_books")
+      .select(`
+      list_id,
+      lists!list_id (name)
+      `)
+      .eq("user_id", userId)
+      .eq("google_books_id", book?.id)
+      .in("lists.name", exclusiveLists);
 
-      if (fetchError) {
-        console.error("Error checking existing books:", fetchError.message);
-        return;
+    if (fetchError) {
+      console.error("Error checking existing books:", fetchError.message);
+      return;
+    }
+
+    const isAddingToExclusiveList = exclusiveLists.includes(listName);
+    if (existingBooks.length > 0 && isAddingToExclusiveList) {
+      const isInAnotherExclusiveList = existingBooks.some(
+      (b) => b.lists.name !== listName
+      );
+      if (isInAnotherExclusiveList) {
+      alert(
+        `This book is already in '${existingBooks[0].lists.name}'. Please remove it from there before adding to '${listName}'.`
+        );
+      return;
       }
-        if ((existingBooks ?? []).length > 0) {
-          alert(
-            "This book is already in your 'Currently Reading' or 'Want to Read'. Please remove it from one list before adding it to the other."
-          );
-          return;
-        }
-  
+    }
         const bookData = {
           list_id,
           google_books_id: book?.id,
@@ -108,7 +115,6 @@ export default function BookDetail() {
       console.error("Error adding book to list:", error.message);
     }
   };
-
   const handleToggle = () => {
     setOpen((prevOpen) => !prevOpen);
   };
@@ -119,7 +125,6 @@ export default function BookDetail() {
     }
     setOpen(false);
   };
-
   useEffect(() => {
     if (id) {
       axios

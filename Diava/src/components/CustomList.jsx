@@ -54,6 +54,11 @@ export default function CustomList({ id, name, list_id }) {
 
   const deleteList = async () => {
     const { error } = await supabase
+      .from("list_books")
+      .delete()
+      .eq("list_id", id);
+
+    await supabase
       .from("lists")
       .delete()
       .eq("id", id);
