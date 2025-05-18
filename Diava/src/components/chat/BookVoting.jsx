@@ -209,8 +209,9 @@ const BookVoting = ({ clubName, isAdmin }) => {
       .from("voting_books")
       .update({ votes: currentVotes + 1 })
       .eq("id", book.id);
-    console.log("Vote added successfully:", book);
+      
     if (!error) {
+      console.log("Vote added successfully:", book);
       setBooks((prev) =>
         prev.map((b) =>
           b.id === book.id ? { ...b, votes: currentVotes + 1 } : b
@@ -286,7 +287,7 @@ const BookVoting = ({ clubName, isAdmin }) => {
       console.log(error);
 
       if (!error && data?.[0]) {
-        setBooks([...books, bookToAdd]);
+        setBooks([...books, data[0]]);
         setSnackbarMessage("Book added successfully!");
         setSnackbarOpen(true);
       } else {
